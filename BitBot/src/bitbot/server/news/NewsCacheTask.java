@@ -60,26 +60,39 @@ public class NewsCacheTask {
             if (news_Bing_ret != null && news_coindesk_ret != null) { // Only override if we got both data
                 // Read Bing Input
                 JSONParser parser = new JSONParser();
+                
+                mutex_news.lock();
                 try {
                     JSONObject BdiGenericBingResponse10 = (JSONObject) ((JSONObject) parser.parse(news_Bing_ret)).get("BdiGeneric_BingResponse_1_0");
                     JSONObject Responses = (JSONObject) ((JSONArray) BdiGenericBingResponse10.get("Responses")).get(0);
-                    JSONObject ResultSet = (JSONObject) ((JSONArray)Responses.get("ResultSet")).get(0);
+                    JSONObject ResultSet = (JSONObject) ((JSONArray) Responses.get("ResultSet")).get(0);
                     JSONArray Results = (JSONArray) ResultSet.get("Results");
-                    
+
                     for (Object obj_ : Results) {
                         JSONObject obj = (JSONObject) obj_;
-                        
+
                         JSONObject article = (JSONObject) obj.get("Article");
-                        
                         if (article != null) {
-                            Object URLLink = ((JSONObject) article.get("Url")).get("UrlLink");
-                            if (URLLink != null) {
-                                System.out.println(URLLink.toString());
-                            } 
+                            String Title = article.get("Title").toString().replace("", "").replace("", "").trim();
+                            String UrlLink = ((JSONObject) article.get("Url")).get("Url").toString();
+
+                            System.out.println(Title + " " + UrlLink);
+                            
+                           /* NewsItem item = new NewsItem(
+                                    Title, 
+                                    String _ImageUri, 
+                                    "", // desc
+                                    UrlLink, 
+                                    String _PublishDate, 
+                                            String _Source);
+                            
+                            list_News.add(null)*/
                         }
                     }
                 } catch (Exception exp) {
                     exp.printStackTrace();
+                } finally {
+                    mutex_news.unlock();
                 }
             }
         }

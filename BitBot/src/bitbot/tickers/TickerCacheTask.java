@@ -162,7 +162,7 @@ public class TickerCacheTask {
                     Volume = 0;
                     VolumeCur = 0;
                     
-                    LastUsedTime = item.getServerTime();
+                    LastUsedTime = LastUsedTime + (intervalMinutes * 60);// item.getServerTime();
                 } else {
                     high = Math.max(item.getBuy(), high);
                     low = Math.min(item.getBuy(), low);
@@ -206,7 +206,7 @@ public class TickerCacheTask {
             if (cTime_Track <= itemTime && LastUsedTime + (intervalMinutes * 60) < item.getServerTime()) {
                 selectedList.add(item);
 
-                LastUsedTime = item.getServerTime();
+                LastUsedTime =  LastUsedTime + (intervalMinutes * 60); // item.getServerTime();
             }
         }
 
