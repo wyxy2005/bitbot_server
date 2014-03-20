@@ -76,7 +76,7 @@ public class NewsCacheTask {
                             String Title = article.get("Title").toString().replace("", "").replace("", "").trim();
                             String UrlLink = ((JSONObject) article.get("Url")).get("Url").toString();
 
-                            System.out.println(Title + " " + UrlLink);
+                            //System.out.println(Title + " " + UrlLink);
                             
                            /* NewsItem item = new NewsItem(
                                     Title, 
