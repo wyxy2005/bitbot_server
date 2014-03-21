@@ -1,4 +1,4 @@
-package bitbot.tickers;
+package bitbot.cache.tickers;
 
 import bitbot.external.AzureBitBot;
 import bitbot.graph.ExponentialMovingAverage;
@@ -151,6 +151,15 @@ public class TickerCacheTask {
             if (cTime_Track <= itemTime && itemTime >= ServerTimeFrom) {
                 if (LastUsedTime + (intervalMinutes * 60) < item.getServerTime()) {
                     if (item.getServerTime() > cTime) {
+                        if (high == 0) 
+                            high = item.getBuy();
+                        
+                        if (low == Double.MAX_VALUE)
+                            low = item.getBuy();
+                        
+                        if (open == -1)
+                            open = item.getBuy();
+                        
                         list_BTCe2.add(
                                 new TickerItem_CandleBar(item.getServerTime(), (float) item.getBuy(), (float) high, (float) low, (float) open)
                         );

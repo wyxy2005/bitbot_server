@@ -2,7 +2,7 @@ package bitbot.external;
 
 import bitbot.server.Constants;
 import bitbot.server.mssql.DatabaseConnection;
-import bitbot.tickers.TickerItemData;
+import bitbot.cache.tickers.TickerItemData;
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.IOException;

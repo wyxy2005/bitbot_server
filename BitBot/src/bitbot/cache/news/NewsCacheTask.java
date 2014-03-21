@@ -1,4 +1,4 @@
-package bitbot.server.news;
+package bitbot.cache.news;
 
 import bitbot.server.threads.LoggingSaveRunnable;
 import bitbot.server.threads.TimerManager;

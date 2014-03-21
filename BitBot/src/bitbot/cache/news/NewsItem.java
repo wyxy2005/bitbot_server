@@ -1,4 +1,4 @@
-package bitbot.server.news;
+package bitbot.cache.news;
 
 /**
  *

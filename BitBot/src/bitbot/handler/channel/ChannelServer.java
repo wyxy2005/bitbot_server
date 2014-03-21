@@ -2,8 +2,8 @@ package bitbot.handler.channel;
 
 import bitbot.handler.ServerHandler;
 import bitbot.server.Constants;
-import bitbot.server.news.NewsCacheTask;
-import bitbot.tickers.TickerCacheTask;
+import bitbot.cache.news.NewsCacheTask;
+import bitbot.cache.tickers.TickerCacheTask;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;

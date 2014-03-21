@@ -1,4 +1,4 @@
-package bitbot.tickers;
+package bitbot.cache.tickers;
 
 /**
  *

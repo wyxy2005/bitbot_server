@@ -2,8 +2,8 @@ package bitbot.handler.channel.tasks;
 
 import bitbot.handler.channel.ChannelServer;
 import bitbot.server.Constants;
-import bitbot.tickers.TickerItemData;
-import bitbot.tickers.TickerItem_CandleBar;
+import bitbot.cache.tickers.TickerItemData;
+import bitbot.cache.tickers.TickerItem_CandleBar;
 import bitbot.util.HMACSHA1;
 import java.io.IOException;
 import java.io.PrintStream;
@@ -59,7 +59,7 @@ public class ChartTask implements Runnable {
 
         // depth
         int depth_ = Integer.parseInt(query.get("depth"));
-        if (depth_ > 1000 || depth_ <= 4) {
+        if (depth_ > 10080 || depth_ < 1) {
             isAuthorized = false;
         }
         this.depth = depth_;

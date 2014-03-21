@@ -1,6 +1,6 @@
 package bitbot.graph;
 
-import bitbot.tickers.TickerItem;
+import bitbot.cache.tickers.TickerItem;
 import java.util.ArrayList;
 
 /**
