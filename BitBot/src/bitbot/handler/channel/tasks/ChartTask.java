@@ -112,6 +112,8 @@ public class ChartTask implements Runnable {
                             obj.put("Close", item.getClose());
                             obj.put("High", item.getHigh());
                             obj.put("Low", item.getLow());
+                            obj.put("Volume", item.getVol());
+                            obj.put("VolumeCur", item.getVol_Cur());
                             
                             array.add(obj);
                         }

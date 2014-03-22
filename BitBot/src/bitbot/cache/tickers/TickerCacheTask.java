@@ -151,17 +151,17 @@ public class TickerCacheTask {
             if (cTime_Track <= itemTime && itemTime >= ServerTimeFrom) {
                 if (LastUsedTime + (intervalMinutes * 60) < item.getServerTime()) {
                     if (item.getServerTime() > cTime) {
+                        // If there's not enough data available.. 
                         if (high == 0) 
-                            high = item.getBuy();
-                        
+                            high = item.getSell();
                         if (low == Double.MAX_VALUE)
                             low = item.getBuy();
-                        
                         if (open == -1)
                             open = item.getBuy();
                         
+                        // Add to list
                         list_BTCe2.add(
-                                new TickerItem_CandleBar(item.getServerTime(), (float) item.getBuy(), (float) high, (float) low, (float) open)
+                                new TickerItem_CandleBar(item.getServerTime(), (float) item.getBuy(), (float) high, (float) low, (float) open, Volume, VolumeCur)
                         );
                     }
                     // reset
@@ -175,7 +175,7 @@ public class TickerCacheTask {
                         LastUsedTime = item.getServerTime();
                     LastUsedTime = LastUsedTime + (intervalMinutes * 60);// item.getServerTime();
                 } else {
-                    high = Math.max(item.getBuy(), high);
+                    high = Math.max(item.getSell(), high);
                     low = Math.min(item.getBuy(), low);
                     
                     if (open == -1)
