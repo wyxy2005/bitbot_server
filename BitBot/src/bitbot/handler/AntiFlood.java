@@ -121,6 +121,7 @@ public class AntiFlood {
         
 	if (System.getProperty("os.name").toLowerCase().contains("linux")) {
 	    try {
+                // gotcha! bye, you noobs.
 		Runtime.getRuntime().exec(String.format("iptables --append INPUT --source %s -j DROP", address));
 		Runtime.getRuntime().exec(String.format("route add %s gw 127.0.0.1 lo", address));
                 

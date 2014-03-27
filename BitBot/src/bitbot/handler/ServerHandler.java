@@ -81,6 +81,10 @@ public class ServerHandler implements Container {
                     r = new ChartTask(request, response, query);
                     break;
                 }
+                case "CandlestickChart": {
+                    r = new ChartTask_Candlestick(request, response, query);
+                    break;
+                }
                 case "EMA": {
                     r = new ExponentialMovingAverageTask(request, response, query);
                     break;
