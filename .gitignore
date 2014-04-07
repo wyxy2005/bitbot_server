@@ -1,1 +1,5 @@
 *.class
+*.class
+BitBot/build/built-jar.properties
+BitBot/dist/BitBot.jar
+*.class

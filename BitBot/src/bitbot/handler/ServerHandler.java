@@ -49,9 +49,9 @@ public class ServerHandler implements Container {
         //.out.println("IsCloudFlare: " + isCloudFlareAddress);
 
         // Source validation
-        if (ChannelServer.getInstance().isEnforceCloudFlareNetwork()) {
-            if (CloudFlareForwardAddress == null || // No forward address
-                    !isCloudFlareAddress) { // No a cloudflare address
+        if (ChannelServer.getInstance().isEnforceCloudFlareNetwork()) { 
+            if (CloudFlareForwardAddress == null || // No forward address yet we are enforcing "cloud-flare" only,
+                    !isCloudFlareAddress) { // No a cloudflare address :D nice try h4x0r
                 return;
             }
         }

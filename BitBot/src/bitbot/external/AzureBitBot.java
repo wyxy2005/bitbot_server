@@ -42,7 +42,7 @@ public class AzureBitBot {
         try {
             Connection con = DatabaseConnection.getConnection();
 
-            ps = con.prepareStatement("SELECT TOP " + depthSelection + "  high, low, avg, buy, vol, vol_cur, server_time, sell, last, updated FROM BitCoinBot." + tableName + " WHERE __createdAt < dateadd(hh, + " + hoursSelection + ", getdate()) AND server_time > ? ORDER BY server_time ASC;");
+            ps = con.prepareStatement("SELECT TOP " + depthSelection + "  high, low, buy, vol, vol_cur, server_time FROM BitCoinBot." + tableName + " WHERE __createdAt < dateadd(hh, + " + hoursSelection + ", getdate()) AND server_time > ? ORDER BY server_time ASC;");
             ps.setLong(1, start_server_time);
 
             rs = ps.executeQuery();

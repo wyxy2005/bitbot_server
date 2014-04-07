@@ -22,6 +22,7 @@ public enum ServerLogType {
     PartyError		    ("server_error.party", ServerLogGroup.Info),
     ReconnectError	    ("server_error.reconnect", ServerLogGroup.Info),
     UnhandledScript	    ("server_info.UnhandledScript", ServerLogGroup.Info),
+    HistoryCacheTask	    ("server_info.HistoryCacheTask", ServerLogGroup.Warning),
     ;
     private String coutFile;
     private ServerLogGroup group;

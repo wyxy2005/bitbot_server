@@ -1,4 +1,4 @@
-package bitbot.handler.channel.tasks;
+ package bitbot.handler.channel.tasks;
 
 import bitbot.handler.channel.ChannelServer;
 import bitbot.server.Constants;
@@ -124,13 +124,13 @@ public class ChartTask implements Runnable {
                         for (TickerItemData item : ret) {
                             JSONObject obj = new JSONObject();
                             obj.put("server_time", item.getServerTime());
-                            obj.put("updated", item.getUpdated());
+                            obj.put("updated", 0);
                             obj.put("high", item.getHigh());
                             obj.put("low", item.getLow());
-                            obj.put("avg", item.getAvg());
+                            obj.put("avg", 0);
                             obj.put("buy", item.getBuy());
-                            obj.put("sell", item.getSell());
-                            obj.put("last", item.getSell());
+                            obj.put("sell", 0);
+                            obj.put("last", 0);
                             obj.put("vol", item.getVol());
                             obj.put("vol_cur", item.getVol_Cur());
 

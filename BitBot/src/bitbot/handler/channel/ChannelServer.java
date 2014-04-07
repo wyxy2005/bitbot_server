@@ -23,11 +23,12 @@ public class ChannelServer {
     private ServerHandler serverHandler = null;
     private TickerCacheTask tickerTask = null;
     private NewsCacheTask newsTask = null;
-    
+
     // Properties
     private static Properties props = null;
-    private static boolean 
-            EnforceCloudFlareNetwork = false;
+    private static boolean Props_EnforceCloudFlareNetwork = false,
+            Props_EnableTickerHistoryDatabaseCommit = false,
+            Props_EnableTickerHistory = false;
 
     // Etc
     private final List<String> CachingCurrencyPair = new ArrayList();
@@ -53,13 +54,15 @@ public class ChannelServer {
                         props.load(is);
                     }
                 }
-                EnforceCloudFlareNetwork = Boolean.parseBoolean(props.getProperty("server.EnforceCloudFlareNetwork"));
-                
+                Props_EnforceCloudFlareNetwork = Boolean.parseBoolean(props.getProperty("server.EnforceCloudFlareNetwork"));
+                Props_EnableTickerHistory = Boolean.parseBoolean(props.getProperty("server.EnableTickerHistory"));
+                Props_EnableTickerHistoryDatabaseCommit = Boolean.parseBoolean(props.getProperty("server.EnableTickerHistoryDatabaseCommit"));
+
                 // End
                 serverHandler = ServerHandler.Connect();
 
                 LoadCurrencyPairTables(false);
-                
+
                 tickerTask = new TickerCacheTask(); // init automatically
                 newsTask = new NewsCacheTask();
             } catch (Exception exp) {
@@ -75,9 +78,10 @@ public class ChannelServer {
     }
 
     public void LoadCurrencyPairTables(boolean reload) {
-        if (!CachingCurrencyPair.isEmpty() && !reload)
+        if (!CachingCurrencyPair.isEmpty() && !reload) {
             return;
-        
+        }
+
         File f = new File(Constants.CurrencyPairFile);
         if (!f.exists()) {
             try {
@@ -96,9 +100,8 @@ public class ChannelServer {
                 if (str != null) {
                     String[] SourcePairs = str.split("---");
                     CachingCurrencyPair.clear();
-                    
-                    for (String SourcePair : SourcePairs) 
-                    {
+
+                    for (String SourcePair : SourcePairs) {
                         CachingCurrencyPair.add(SourcePair);
                     }
                 }
@@ -111,16 +114,24 @@ public class ChannelServer {
     public List<String> getCachingCurrencyPair() {
         return CachingCurrencyPair;
     }
-    
+
     public TickerCacheTask getTickerTask() {
         return tickerTask;
     }
-    
+
     public NewsCacheTask getNewsTask() {
         return newsTask;
     }
-    
+
     public boolean isEnforceCloudFlareNetwork() {
-        return EnforceCloudFlareNetwork;
+        return Props_EnforceCloudFlareNetwork;
+    }
+
+    public boolean isEnableTickerHistoryDatabaseCommit() {
+        return Props_EnableTickerHistoryDatabaseCommit;
+    }
+
+    public boolean isEnableTickerHistory() {
+        return Props_EnableTickerHistory;
     }
 }

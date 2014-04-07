@@ -26,7 +26,7 @@ public class FileoutputUtil {
 	    f.mkdirs();
 	}
 	try (FileOutputStream out = new FileOutputStream(f.getPath() + filename, true)) {
-	    out.write(String.format("[%s] %s\n--\n", CurrentReadable_Time(), msg.getBytes()).getBytes());
+	    out.write(String.format("[%s] %s\r\n", CurrentReadable_Time(), msg).getBytes());
 	} catch (IOException ess) {
 	    ess.printStackTrace();
 	}

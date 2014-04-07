@@ -11,19 +11,11 @@ public interface TickerItem {
     
     public long getServerTime();
 
-    public long getUpdated();
-
     public float getHigh();
 
     public float getLow();
 
-    public float getAvg();
-
     public float getBuy();
-
-    public float getSell();
-
-    public float getLast();
 
     public double getVol();
 
@@ -40,9 +32,5 @@ public interface TickerItem {
 
     public void setLow(float value);
 
-    public void setAvg(float value);
-
     public void setBuy(float value);
-
-    public void setSell(float value);
 }
