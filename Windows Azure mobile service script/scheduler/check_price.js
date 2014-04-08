@@ -280,6 +280,14 @@ function check_price() {
                 image: "ms-appx:///Assets/ToastImage.png"
             }, {
                     success: function(pushResponse) {
+                        push.wns.sendBadge(clientUniqueId, {
+                            value: 1,
+                            text1: "Hello"
+                        }, {
+                                success: function(pushResponse) {
+                                }
+                            });
+
                     },
                     error: function(error) {
                         // exired channel
