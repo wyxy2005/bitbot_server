@@ -1,11 +1,12 @@
 package bitbot.cache.tickers.history;
 
 import bitbot.handler.channel.ChannelServer;
+import bitbot.server.ServerLog;
+import bitbot.server.ServerLogType;
 import bitbot.server.mssql.DatabaseConnection;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.util.Calendar;
 
 /**
  *
@@ -13,9 +14,7 @@ import java.util.Calendar;
  */
 public class TickerHistoryData {
 
-    private float High;
-    private float Low;
-    private float LastPrice;
+    private float Open, LastPrice, High, Low;
     private double Volume; // BTC * USD
     private double Volume_Cur; // BTC/USD, cur = BTC.
     private long LastPurchaseTime;
@@ -29,14 +28,15 @@ public class TickerHistoryData {
         this.Low = Float.MAX_VALUE;
         this.LastPurchaseTime = LastPurchaseTime;
         this.LastPrice = 0;
+        this.Open = 0;
     }
 
-    public HistoryDatabaseCommitState commitDatabase(long LastCommitTime, String ExchangeSite, String currencyPair) {
+    public HistoryDatabaseCommitEnum commitDatabase(long LastCommitTime, String ExchangeSite, String currencyPair) {
         if (Math.abs(LastCommitTime - LastPurchaseTime) > 60000) { // per minute
             // check if data is available
             if (Volume > 0) { // Commit for real :)
                 if (!ChannelServer.getInstance().isEnableTickerHistoryDatabaseCommit()) {
-                    return HistoryDatabaseCommitState.Ok;
+                    return HistoryDatabaseCommitEnum.Ok;
                 }
                 
                 String tableName;
@@ -54,21 +54,23 @@ public class TickerHistoryData {
                 try {
                     Connection con = DatabaseConnection.getConnection();
 
-                    ps = con.prepareStatement("INSERT INTO bitcoinbot." + tableName + " (high, low, vol, vol_cur, buy, server_time) VALUES (?,?,?,?,?,?);");
+                    ps = con.prepareStatement("INSERT INTO bitcoinbot." + tableName + " (high, low, vol, vol_cur, open, close, server_time) VALUES (?,?,?,?,?,?,?);");
                     ps.setFloat(1, High);
                     ps.setFloat(2, Low);
                     ps.setDouble(3, Volume);
                     ps.setDouble(4, Volume_Cur);
-                    ps.setFloat(5, LastPrice);
-                    ps.setFloat(6, LastCommitTime / 1000);
+                    ps.setFloat(5, Open);
+                    ps.setFloat(6, LastPrice);
+                    ps.setFloat(7, LastCommitTime / 1000);
 
                     ps.execute();
                 } catch (Exception e) {
                     TmpExchangeSite = ExchangeSite; // Set reference to save later, we are fucked! database issue..
                     TmpcurrencyPair = currencyPair;
 
-                    e.printStackTrace();
-                    return HistoryDatabaseCommitState.DatabaseError;
+                    //e.printStackTrace();
+                    ServerLog.RegisterForLoggingException(ServerLogType.HistoryCacheTask_DB, e);
+                    return HistoryDatabaseCommitEnum.DatabaseError;
                 } finally {
                     try {
                         if (ps != null) {
@@ -79,9 +81,9 @@ public class TickerHistoryData {
                     }
                 }
             }
-            return HistoryDatabaseCommitState.Ok;
+            return HistoryDatabaseCommitEnum.Ok;
         }
-        return HistoryDatabaseCommitState.Time_Not_Ready;
+        return HistoryDatabaseCommitEnum.Time_Not_Ready;
     }
 
     public void merge(TickerHistoryData dataNow) {
@@ -90,6 +92,9 @@ public class TickerHistoryData {
         }
         if (dataNow.Low < Low) {
             Low = dataNow.Low;
+        }
+        if (Open == 0) {
+            Open = dataNow.LastPrice;
         }
         this.Volume_Cur += dataNow.Volume_Cur;
         this.Volume += dataNow.Volume_Cur * dataNow.High; 
@@ -103,6 +108,9 @@ public class TickerHistoryData {
         }
         if (price < Low) {
             Low = price;
+        }
+        if (Open == 0) {
+            Open = price;
         }
         this.Volume_Cur += amount;
         this.LastPurchaseTime = LastPurchaseTime;
@@ -125,6 +133,14 @@ public class TickerHistoryData {
         if (this.LastPrice == 0)
             return this.getHigh();
         return this.LastPrice;
+    }
+    
+    public void setOpen(float Open) {
+        this.Open = Open;
+    }
+    
+    public float getOpen() {
+        return this.Open;
     }
     
     public void setHigh(float High) {
