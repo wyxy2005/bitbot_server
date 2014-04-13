@@ -20,7 +20,7 @@ public class TickerHistory_BitFinex implements TickerHistory {
 
     @Override
     public TickerHistoryData connectAndParseHistoryResult(String ExchangeCurrencyPair, String CurrencyPair, long LastPurchaseTime) {
-        String Uri = String.format("https://api.bitfinex.com/v1/trades/%s?timestamp=%d", CurrencyPair.replace("_", ""), LastPurchaseTime);
+        String Uri = String.format("https://api.bitfinex.com/v1/trades/%s?timestamp=%d&limit_trades=999", CurrencyPair.replace("_", ""), LastPurchaseTime);
         String GetResult = HttpClient.httpsGet(Uri, "");
 
         if (GetResult != null) {
@@ -82,11 +82,11 @@ public class TickerHistory_BitFinex implements TickerHistory {
                     cal.add(Calendar.HOUR, -4); // BTC-e, time 
                     cal.add(Calendar.SECOND, (int) (date / 1000));
                     
-                    System.out.println(String.format("[Trades history] Got  [%s], Price: %f, Sum: %f ", cal.getTime().toString(), price, amount));
+                    //System.out.println(String.format("[Trades history] Got  [%s], Price: %f, Sum: %f ", cal.getTime().toString(), price, amount));
                     
                     // Assume things are read in ascending order
                     if (date > LastPurchaseTime) {
-                        System.out.println(String.format("[Trades history] Added [%s], Price: %f, Sum: %f ", cal.getTime().toString(), price, amount));
+                        //System.out.println(String.format("[Trades history] Added [%s], Price: %f, Sum: %f ", cal.getTime().toString(), price, amount));
                         ReturnData.merge(price, amount, date);
                         
                         ChannelServer.getInstance().BroadcastConnectedClients(

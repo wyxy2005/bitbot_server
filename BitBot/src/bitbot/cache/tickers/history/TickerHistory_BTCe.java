@@ -22,7 +22,7 @@ public class TickerHistory_BTCe implements TickerHistory {
     @Override
     public TickerHistoryData connectAndParseHistoryResult(String ExchangeCurrencyPair, String CurrencyPair, long LastPurchaseTime) {
         String Uri = String.format("https://btc-e.com/api/2/%s/trades", CurrencyPair);
-        String GetResult = HttpClient.httpGet(Uri, "");
+        String GetResult = HttpClient.httpsGet(Uri, "");
 
         if (GetResult != null) {
             TickerHistoryData ReturnData = new TickerHistoryData(LastPurchaseTime);
