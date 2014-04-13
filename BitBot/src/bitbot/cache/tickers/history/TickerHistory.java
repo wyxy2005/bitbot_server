@@ -6,5 +6,5 @@ package bitbot.cache.tickers.history;
  */
 public interface TickerHistory {
     
-    public TickerHistoryData connectAndParseHistoryResult(String CurrencyPair, long LastPurchaseTime);
+    public TickerHistoryData connectAndParseHistoryResult(String ExchangeCurrencyPair, String CurrencyPair, long LastPurchaseTime);
 }

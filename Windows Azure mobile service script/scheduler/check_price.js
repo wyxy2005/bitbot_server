@@ -6,9 +6,6 @@ function check_price() {
 
     console.log("Scheduled price check task: " + dateStr);
 
-    var azure = require('azure');
-    var hub = azure.createNotificationHubService('bitcoinbothub', 'Endpoint=sb://bitcoinbothub-ns.servicebus.windows.net/;SharedAccessKeyName=DefaultFullSharedAccessSignature;SharedAccessKey=lZPD5jA09ql3hDpS8lNnQRlK3DMZ2emRSHXcTb2NwtI=');
-
     // start
     fetchItem('btc_usd', 'btce');
     fetchItem('btc_eur', 'btce');
@@ -282,7 +279,7 @@ function check_price() {
                     success: function(pushResponse) {
                         push.wns.sendBadge(clientUniqueId, {
                             value: 1,
-                            text1: "Hello"
+                            text1: alertMsg_Toast
                         }, {
                                 success: function(pushResponse) {
                                 }

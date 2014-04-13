@@ -1,5 +1,6 @@
 package bitbot.cache.tickers.history;
 
+import bitbot.handler.channel.ChannelServer;
 import bitbot.util.HttpClient;
 import java.util.Calendar;
 import java.util.LinkedHashMap;
@@ -23,7 +24,7 @@ public class TickerHistory_Huobi implements TickerHistory {
     private static final TimeZone timeZone = TimeZone.getTimeZone("Etc/GMT-8");
 
     @Override
-    public TickerHistoryData connectAndParseHistoryResult(String CurrencyPair, long LastPurchaseTime) {
+    public TickerHistoryData connectAndParseHistoryResult(String ExchangeCurrencyPair, String CurrencyPair, long LastPurchaseTime) {
         String Uri = String.format("https://market.huobi.com/staticmarket/detail%s.html", CurrencyPair.contains("btc") ? "" : "_ltc");
         String GetResult = HttpClient.httpGet(Uri, "");
 
@@ -40,7 +41,7 @@ public class TickerHistory_Huobi implements TickerHistory {
                 Calendar cal_LastPurchaseTime = Calendar.getInstance(timeZone); // Huobi time
 
                 // Container factory for the JSON array to persist the order
-                ContainerFactory containerFactory = new ContainerFactory() {
+                /*ContainerFactory containerFactory = new ContainerFactory() {
                     @Override
                     public List creatArrayContainer() {
                         return new LinkedList();
@@ -50,7 +51,7 @@ public class TickerHistory_Huobi implements TickerHistory {
                     public Map createObjectContainer() {
                         return new LinkedHashMap();
                     }
-                };
+                };*/
                 JSONArray tradesArray = (JSONArray) ((JSONObject) parser.parse(GetResult)).get("trades");
 
                 for (Object obj_ : tradesArray) {
@@ -59,7 +60,7 @@ public class TickerHistory_Huobi implements TickerHistory {
                     String[] time = obj.get("time").toString().split(":");
                     float price = Float.parseFloat(obj.get("price").toString());
                     float amount = Float.parseFloat(obj.get("amount").toString());
-                    String type = obj.get("type").toString(); // Buy/Sell
+                    String type = obj.get("type").toString(); // 卖出, 买入
 
                     //http://tutorials.jenkov.com/java-date-time/java-util-timezone.html
                     // Timestamp for trades
@@ -79,15 +80,20 @@ public class TickerHistory_Huobi implements TickerHistory {
                     // Assume things are read in ascending order
                     if (cal.getTimeInMillis() > LastPurchaseTime
                             && cal.get(Calendar.MINUTE) == cal_LastPurchaseTime.get(Calendar.MINUTE)) {
-                        //System.out.println("Added: " + cal.getTime().toString());
+                        //System.out.println("[Trades history] Added: " + cal.getTime().toString());
                         ReturnData.merge(price, amount, cal.getTimeInMillis());
 
+                        ChannelServer.getInstance().BroadcastConnectedClients(
+                                type.equals("买入") ? TradeHistoryBuySellEnum.Buy : TradeHistoryBuySellEnum.Sell, 
+                                CurrencyPair,
+                                0);
+                        
                         LastPurchaseTime = cal.getTimeInMillis();
                     }
                 }
             } catch (Exception parseExp) {
                 //parseExp.printStackTrace();
-                System.out.println(GetResult);
+                //System.out.println(GetResult);
                 //ServerLog.RegisterForLogging(ServerLogType.HistoryCacheTask, parseExp.getMessage());
             }
             return ReturnData;

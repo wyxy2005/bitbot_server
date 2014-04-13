@@ -3,7 +3,7 @@ package bitbot.handler.channel.tasks;
 import bitbot.cache.tickers.TickerItem_CandleBar;
 import bitbot.handler.channel.ChannelServer;
 import bitbot.server.Constants;
-import bitbot.util.HMACSHA1;
+import bitbot.util.encryption.HMACSHA1;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.ArrayList;
@@ -23,7 +23,7 @@ public class ChartTask_Candlestick implements Runnable {
     private final Response response;
     private final Request request;
     private final int hours;
-    private final int depth;
+    private final int interval;
     private final String ExchangeSite;
     private final String currencypair, serverAuthorization;
     private final long nonce;
@@ -43,7 +43,7 @@ public class ChartTask_Candlestick implements Runnable {
 
         // hours
         int hours_ = Integer.parseInt(query.get("hours"));
-        if (hours_ <= 0 || hours_ >= (24 * 30 * 12 * 5)) {
+        if (hours_ <= 0 || hours_ >= (24 * 30 * 12 * 10)) {
             isAuthorized = false;
         }
         this.hours = hours_;
@@ -57,10 +57,10 @@ public class ChartTask_Candlestick implements Runnable {
 
         // depth
         int depth_ = Integer.parseInt(query.get("depth"));
-        if (depth_ > 10080 || depth_ < 1) {
+        if (depth_ > 20160 || depth_ < 1) {
             isAuthorized = false;
         }
-        this.depth = depth_;
+        this.interval = depth_;
 
         // currency pair
         this.currencypair = query.get("currencypair");
@@ -71,7 +71,7 @@ public class ChartTask_Candlestick implements Runnable {
         // checks
         this.serverAuthorization = query.get("serverAuthorization").replace(' ', '+');
 
-        final String encoded = HMACSHA1.encode(String.valueOf(nonce), currencypair + (hours ^ depth ^ nonce ^ ServerTimeFrom) + ExchangeSite);
+        final String encoded = HMACSHA1.encode(String.valueOf(nonce), currencypair + (hours ^ interval ^ nonce ^ ServerTimeFrom) + ExchangeSite);
         //System.out.println("FromClient: " + serverAuthorization);
         //System.out.println("Real: " + encoded);
         if (!serverAuthorization.equals(encoded)) {
@@ -93,7 +93,7 @@ public class ChartTask_Candlestick implements Runnable {
                 if (isAuthorized) {
                     JSONArray array = new JSONArray();
 
-                    ArrayList<TickerItem_CandleBar> ret = ChannelServer.getInstance().getTickerTask().getTickerList_Candlestick(currencypair, hours, depth, ExchangeSite, ServerTimeFrom);
+                    ArrayList<TickerItem_CandleBar> ret = ChannelServer.getInstance().getTickerTask().getTickerList_Candlestick(currencypair, hours, interval, ExchangeSite, ServerTimeFrom);
 
                     for (TickerItem_CandleBar item : ret) {
                         JSONObject obj = new JSONObject();

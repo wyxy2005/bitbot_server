@@ -1,9 +1,6 @@
 package bitbot.util;
 
-import bitbot.cache.tickers.history.HistoryDatabaseCommitEnum;
-import bitbot.server.ServerLog;
-import bitbot.server.ServerLogType;
-import bitbot.server.mssql.DatabaseConnection;
+import bitbot.util.mssql.DatabaseConnection;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
@@ -11,7 +8,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.Calendar;
-import java.util.GregorianCalendar;
 
 /**
  *
@@ -21,7 +17,7 @@ public class MT4CVSReader {
 
     public static void ReadCVSFile(String file) {
         Calendar cal_cutoffDate = Calendar.getInstance();
-        cal_cutoffDate.set(2014, 01, 28, 0, 0);
+        cal_cutoffDate.set(2014, 0, 10, 0, 0);
 
         try (BufferedReader br = new BufferedReader(new FileReader(file))) {
             String line;
@@ -54,7 +50,7 @@ public class MT4CVSReader {
                 if (cal.before(cal_cutoffDate)) {
                     System.out.println(String.format("[%d %d %d] Open: %f, High: %f, Low: %f, Close: %f, VolumeCur: %f, Volume: %f", cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1, cal.get(Calendar.DATE), Open, High, Low, Close, VolumeCur, Volume));
                     
-                    InsertSQLTable("btce_price_ltc_rur", High, Low, Volume, VolumeCur, Open, Close, cal.getTimeInMillis());
+                    InsertSQLTable("btce_price_nmc_usd", High, Low, Volume, VolumeCur, Open, Close, cal.getTimeInMillis());
                 }
             }
         } catch (IOException e) {

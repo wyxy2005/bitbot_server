@@ -1,4 +1,4 @@
-package bitbot.server;
+package bitbot.handler;
 
 import java.io.IOException;
 import java.util.Date;

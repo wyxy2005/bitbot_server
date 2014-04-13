@@ -1,0 +1,58 @@
+package bitbot.util.encryption.output;
+
+import bitbot.util.encryption.HexTool;
+import java.io.ByteArrayOutputStream;
+
+/**
+ * Writes a maplestory-packet little-endian stream of bytes.
+ * 
+ * @author Frz
+ * @version 1.0
+ * @since Revision 352
+ */
+public class MaplePacketLittleEndianWriter extends GenericLittleEndianWriter {
+
+    /**
+     * Constructor - initializes this stream with a default size.
+     */
+    public MaplePacketLittleEndianWriter() {
+	this(20);
+    }
+
+    /**
+     * Constructor - initializes this stream with size <code>size</code>.
+     *
+     * @param size The size of the underlying stream.
+     */
+    public MaplePacketLittleEndianWriter(int size) {
+	ByteArrayOutputStream baos = new ByteArrayOutputStream(size);
+
+	setByteOutputStream(baos);
+    }
+
+    /**
+     * Gets a <code>MaplePacket</code> instance representing this
+     * sequence of bytes.
+     *
+     * @return A <code>MaplePacket</code> with the bytes in this stream.
+     */
+    public byte[] getPacket() {
+	//MaplePacket packet = new ByteArrayMaplePacket(baos.toByteArray());
+	//System.out.println("Packet to be sent:\n" +packet.toString() + "\n\n");
+	return getBao().toByteArray();
+    }
+
+    public void printAll() {
+	System.out.println(HexTool.toString(getBao().toByteArray()));
+    }
+
+    /**
+     * Changes this packet into a human-readable hexadecimal stream of bytes.
+     *
+     * @return This packet as hex digits.
+     */
+    @Override
+    public String toString() {
+	return HexTool.toString(getBao().toByteArray());
+    }
+}

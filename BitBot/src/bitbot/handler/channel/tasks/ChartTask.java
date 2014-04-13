@@ -4,7 +4,7 @@ import bitbot.handler.channel.ChannelServer;
 import bitbot.server.Constants;
 import bitbot.cache.tickers.TickerItemData;
 import bitbot.cache.tickers.TickerItem_CandleBar;
-import bitbot.util.HMACSHA1;
+import bitbot.util.encryption.HMACSHA1;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.ArrayList;
@@ -128,7 +128,7 @@ public class ChartTask implements Runnable {
                             obj.put("high", item.getHigh());
                             obj.put("low", item.getLow());
                             obj.put("avg", 0);
-                            obj.put("buy", item.getBuy());
+                            obj.put("buy", item.getOpen());
                             obj.put("sell", 0);
                             obj.put("last", 0);
                             obj.put("vol", item.getVol());

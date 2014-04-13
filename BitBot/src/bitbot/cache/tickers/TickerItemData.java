@@ -11,14 +11,15 @@ import org.json.simple.JSONObject;
 public class TickerItemData implements TickerItem {
 
     private final long server_time;
-    private float high, low, buy;
+    private float high, low, open, close;
     private double vol, vol_cur;
 
     public TickerItemData(ResultSet rs) throws SQLException {
         this.server_time = rs.getLong("server_time");//DateTimeUtil.convertDateTime(Long.parseLong(obj.get("server_time").toString()));
         this.high = rs.getFloat("high");
         this.low = rs.getFloat("low");
-        this.buy = rs.getFloat("buy");
+        this.open = rs.getFloat("open");
+        this.close = rs.getFloat("close");
         this.vol = rs.getDouble("vol");
         this.vol_cur = rs.getDouble("vol_cur");
 
@@ -30,7 +31,8 @@ public class TickerItemData implements TickerItem {
         this.server_time = Long.parseLong(obj.get("server_time").toString());//DateTimeUtil.convertDateTime(Long.parseLong(obj.get("server_time").toString()));
         this.high = Float.parseFloat(obj.get("high").toString());
         this.low = Float.parseFloat(obj.get("low").toString());
-        this.buy = Float.parseFloat(obj.get("buy").toString());
+        this.open = Float.parseFloat(obj.get("open").toString());
+        this.close = Float.parseFloat(obj.get("close").toString());
         this.vol = Double.parseDouble(obj.get("vol").toString());
         this.vol_cur = Double.parseDouble(obj.get("vol_cur").toString());
 
@@ -59,8 +61,13 @@ public class TickerItemData implements TickerItem {
     }
 
     @Override
-    public float getBuy() {
-        return buy;
+    public float getOpen() {
+        return open;
+    }    
+    
+    @Override
+    public float getClose() {
+        return close;
     }
 
     @Override
@@ -94,7 +101,12 @@ public class TickerItemData implements TickerItem {
     }
 
     @Override
-    public void setBuy(float value) {
-        this.buy = value;
+    public void setOpen(float open) {
+        this.open = open;
+    }
+    
+    @Override
+    public void setClose(float close) {
+        this.close = close;
     }
 }

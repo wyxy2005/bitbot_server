@@ -3,10 +3,12 @@ package bitbot.cache.tickers.history;
 import bitbot.handler.channel.ChannelServer;
 import bitbot.server.ServerLog;
 import bitbot.server.ServerLogType;
-import bitbot.server.mssql.DatabaseConnection;
+import bitbot.util.mssql.DatabaseConnection;
+import bitbot.util.FileoutputUtil;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.Calendar;
 
 /**
  *
@@ -32,36 +34,39 @@ public class TickerHistoryData {
     }
 
     public HistoryDatabaseCommitEnum commitDatabase(long LastCommitTime, String ExchangeSite, String currencyPair) {
+        //System.out.println("Time diff: " + Math.abs(LastCommitTime - LastPurchaseTime) );
+        
         if (Math.abs(LastCommitTime - LastPurchaseTime) > 60000) { // per minute
             // check if data is available
             if (Volume > 0) { // Commit for real :)
-                if (!ChannelServer.getInstance().isEnableTickerHistoryDatabaseCommit()) {
-                    return HistoryDatabaseCommitEnum.Ok;
-                }
-                
                 String tableName;
                 if (ExchangeSite != null) {
                     tableName = String.format("%s_price_%s", ExchangeSite, currencyPair);
                 } else {
                     tableName = String.format("%s_price_%s", TmpExchangeSite, TmpcurrencyPair);
                 }
+               
+                // Debug
+                Calendar cal = Calendar.getInstance();
+                cal.setTimeInMillis(LastPurchaseTime);
+                FileoutputUtil.log("//" + tableName + ".txt", "dd:hh:mm = (" + cal.get(Calendar.DAY_OF_MONTH) + ":" + cal.get(Calendar.HOUR) + ":" + cal.get(Calendar.MINUTE) +"), High: " + getHigh() + ", Low: " + getLow() + ", Volume: " + getVolume() + ", VolumeCur: " + getVolume_Cur());
+                // End of debug
                 
-                //Calendar cal = Calendar.getInstance();
-                //cal.setTimeInMillis(LastPurchaseTime);
-                //FileoutputUtil.log("//" + tableName + ".txt", "hh:mm = (" + cal.get(Calendar.HOUR) + ":" + cal.get(Calendar.MINUTE) +"), High: " + getHigh() + ", Low: " + getLow() + ", Volume: " + getVolume() + ", VolumeCur: " + getVolume_Cur());
-                
+                if (!ChannelServer.getInstance().isEnableTickerHistoryDatabaseCommit()) {
+                    return HistoryDatabaseCommitEnum.Ok;
+                }
                 PreparedStatement ps = null;
                 try {
                     Connection con = DatabaseConnection.getConnection();
 
-                    ps = con.prepareStatement("INSERT INTO bitcoinbot." + tableName + " (high, low, vol, vol_cur, open, close, server_time) VALUES (?,?,?,?,?,?,?);");
+                    ps = con.prepareStatement("INSERT INTO bitcoinbot." + tableName + " (\"high\", \"low\", \"vol\", \"vol_cur\", \"open\", \"close\", \"server_time\") VALUES (?,?,?,?,?,?,?);");
                     ps.setFloat(1, High);
                     ps.setFloat(2, Low);
                     ps.setDouble(3, Volume);
                     ps.setDouble(4, Volume_Cur);
                     ps.setFloat(5, Open);
                     ps.setFloat(6, LastPrice);
-                    ps.setFloat(7, LastCommitTime / 1000);
+                    ps.setLong(7, (long) (LastCommitTime / 1000l));
 
                     ps.execute();
                 } catch (Exception e) {
@@ -96,8 +101,10 @@ public class TickerHistoryData {
         if (Open == 0) {
             Open = dataNow.LastPrice;
         }
-        this.Volume_Cur += dataNow.Volume_Cur;
-        this.Volume += dataNow.Volume_Cur * dataNow.High; 
+        if (Volume_Cur != 1 && Volume != 1) {
+            this.Volume_Cur += dataNow.Volume_Cur;
+            this.Volume += dataNow.Volume_Cur * dataNow.High; 
+        }
         this.LastPurchaseTime = dataNow.LastPurchaseTime;
         this.LastPrice = dataNow.getLastPrice();
     }
@@ -115,6 +122,24 @@ public class TickerHistoryData {
         this.Volume_Cur += amount;
         this.LastPurchaseTime = LastPurchaseTime;
         this.LastPrice = price;
+    }
+    
+    public void merge_CoinbaseOrCampBX(float buy, float sell, long LastPurchaseTime) {
+        if (buy > High) {
+            High = buy;
+        }
+        if (sell < Low) {
+            Low = sell;
+        }
+        if (Open == 0) {
+            Open = buy;
+        }
+        this.LastPurchaseTime = LastPurchaseTime;
+        this.LastPrice = buy;
+        
+        // Set volume 1 for exchange without those data feed
+        this.Volume = 1;
+        this.Volume_Cur = 1;
     }
     
     public void setLastPurchaseTime(long LastPurchaseTime) {

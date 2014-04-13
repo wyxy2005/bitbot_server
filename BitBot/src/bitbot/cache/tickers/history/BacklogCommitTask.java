@@ -42,11 +42,11 @@ public class BacklogCommitTask {
             Cache_Backlog.clear(); // Clear existing
             
             for (TickerHistoryData backlog : DatabaseCommitBacklog2) {
-                HistoryDatabaseCommitState commitResult = backlog.commitDatabase(
+                HistoryDatabaseCommitEnum commitResult = backlog.commitDatabase(
                         0, // dummy values
                         null, null);
 
-                if (commitResult != HistoryDatabaseCommitState.Ok) { // if failed once again, add back. Lulz.
+                if (commitResult != HistoryDatabaseCommitEnum.Ok) { // if failed once again, add back. Lulz.
                     Cache_Backlog.add(backlog);
                 }
             }

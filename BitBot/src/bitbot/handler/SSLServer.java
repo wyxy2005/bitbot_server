@@ -10,27 +10,26 @@ import org.simpleframework.transport.Socket;
  */
 public class SSLServer implements org.simpleframework.transport.Server {
 
-   private final Server delegateServer;
+    private final Server delegateServer;
 
-   public SSLServer(Server delegateServer){
-      this.delegateServer = delegateServer;
-   }
+    public SSLServer(Server delegateServer) {
+        this.delegateServer = delegateServer;
+    }
 
-   @Override
-   public void process(Socket socket){
-     //socket.getEngine().setNeedClientAuth(true);
-       try {
-           delegateServer.process(socket);
-       } catch (IOException e) {
-       }
-   }
-   
-   @Override
-   public void stop() {
-       try {
-           delegateServer.stop();
-       } catch (IOException e) {
-       }
-   }
+    @Override
+    public void process(Socket socket) {
+        //socket.getEngine().setNeedClientAuth(true);
+        try {
+            delegateServer.process(socket);
+        } catch (IOException e) {
+        }
+    }
+
+    @Override
+    public void stop() {
+        try {
+            delegateServer.stop();
+        } catch (IOException e) {
+        }
+    }
 }
-

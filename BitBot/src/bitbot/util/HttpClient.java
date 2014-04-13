@@ -1,5 +1,6 @@
 package bitbot.util;
 
+import bitbot.server.Constants;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -21,6 +22,7 @@ public class HttpClient {
 
             //add reuqest header
             con.setRequestMethod("GET");
+            con.setRequestProperty("User-Agent", Constants.IE11_UserAgent);
 
             // Send post request
             con.setDoOutput(false);
@@ -64,6 +66,7 @@ public class HttpClient {
 
             //add reuqest header
             con.setRequestMethod("GET");
+            con.setRequestProperty("User-Agent", Constants.IE11_UserAgent);
 
             // Send post request
             con.setDoOutput(false);

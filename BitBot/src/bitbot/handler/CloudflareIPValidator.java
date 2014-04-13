@@ -1,4 +1,4 @@
-package bitbot.server;
+package bitbot.handler;
 
 import bitbot.util.Pair;
 import java.util.ArrayList;

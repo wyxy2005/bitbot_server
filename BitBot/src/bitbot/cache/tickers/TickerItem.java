@@ -15,7 +15,9 @@ public interface TickerItem {
 
     public float getLow();
 
-    public float getBuy();
+    public float getOpen();
+    
+    public float getClose();
 
     public double getVol();
 
@@ -32,5 +34,7 @@ public interface TickerItem {
 
     public void setLow(float value);
 
-    public void setBuy(float value);
+    public void setOpen(float value);
+    
+    public void setClose(float value);
 }

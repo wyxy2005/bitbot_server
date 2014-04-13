@@ -18,14 +18,14 @@ public class ExponentialMovingAverage {
         
         for (TickerItem sdr : records) {
             if (yesterdayEMA == -1) // default value
-                yesterdayEMA = sdr.getBuy();
+                yesterdayEMA = sdr.getOpen();
             
             //call the EMA calculation
-            double ema = CalculateEMAInternal(sdr.getBuy(), EMA, yesterdayEMA);
+            double ema = CalculateEMAInternal(sdr.getOpen(), EMA, yesterdayEMA);
             
             //put the calculated ema in an array
             if (startTime < sdr.getServerTime())
-                ret.add(new ExponentialMovingAverageData(sdr.getServerTime(), ema, sdr.getBuy()));
+                ret.add(new ExponentialMovingAverageData(sdr.getServerTime(), ema, sdr.getOpen()));
             
             //make sure yesterdayEMA gets filled with the EMA we used this time around
             yesterdayEMA = ema;

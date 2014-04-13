@@ -19,10 +19,11 @@ public enum ServerLogType {
     Timer		    ("server_error.Timer", ServerLogGroup.Info),
     ShutdownError	    ("server_error.shutdown", ServerLogGroup.Info),
     ShutdownHookError	    ("server_error.shutdownhook", ServerLogGroup.Info),
-    PartyError		    ("server_error.party", ServerLogGroup.Info),
     ReconnectError	    ("server_error.reconnect", ServerLogGroup.Info),
     UnhandledScript	    ("server_info.UnhandledScript", ServerLogGroup.Info),
+    PacketSpam  	    ("server_info.PacketSpam", ServerLogGroup.Info),
     HistoryCacheTask	    ("server_info.HistoryCacheTask", ServerLogGroup.Warning),
+    HistoryCacheTask_DB	    ("server_info.HistoryCacheTask_Database", ServerLogGroup.Warning),
     ;
     private String coutFile;
     private ServerLogGroup group;

@@ -17,11 +17,11 @@ import java.util.Map;
  *
  * @author z
  */
-public class AntiFlood {
+public class AntiFloodValidator {
     
     // Anti flood
     private static final int AllowedInterval = 100,
-            AllowedResetInveral = 20000;
+            AllowedResetInveral = 10000;
     private static final String BlockedIPFileList = "BlockedIPs.properties";
     
     // variables

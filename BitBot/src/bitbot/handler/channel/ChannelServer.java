@@ -1,17 +1,29 @@
 package bitbot.handler.channel;
 
-import bitbot.handler.ServerHandler;
+import bitbot.handler.ServerExchangeHandler;
 import bitbot.server.Constants;
 import bitbot.cache.news.NewsCacheTask;
 import bitbot.cache.tickers.TickerCacheTask;
+import bitbot.cache.tickers.history.TradeHistoryBuySellEnum;
+import bitbot.handler.ServerClientHandler;
+import bitbot.handler.mina.BlackListFilter;
+import bitbot.handler.mina.MapleCodecFactory;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
+import org.apache.mina.core.buffer.IoBuffer;
+import org.apache.mina.core.buffer.SimpleBufferAllocator;
+import org.apache.mina.core.session.IdleStatus;
+import org.apache.mina.filter.codec.ProtocolCodecFilter;
+import org.apache.mina.transport.socket.SocketAcceptor;
+import org.apache.mina.transport.socket.nio.NioSocketAcceptor;
 
 /**
  *
@@ -20,15 +32,30 @@ import java.util.Properties;
 public class ChannelServer {
 
     public static final ChannelServer ch = new ChannelServer();
-    private ServerHandler serverHandler = null;
+    private ServerExchangeHandler serverExchangeHandler = null;
+
+    private ServerClientHandler serverClientHandler = null;
+    private SocketAcceptor acceptor;
+    private InetSocketAddress InetSocketadd;
+
+
     private TickerCacheTask tickerTask = null;
     private NewsCacheTask newsTask = null;
 
     // Properties
     private static Properties props = null;
-    private static boolean Props_EnforceCloudFlareNetwork = false,
+    private static boolean 
+            Props_EnforceCloudFlareNetwork = false,
             Props_EnableTickerHistoryDatabaseCommit = false,
-            Props_EnableTickerHistory = false;
+            Props_EnableTickerHistory = false,
+            Props_EnableSQLDataAcquisition = false,
+            Props_EnableSocketStreaming = false;
+    private static String 
+            Props_SocketIPAddress = "127.0.0.1";
+    private static short
+            Props_SocketPort = 8082;
+
+    private boolean isShutdown = false;
 
     // Etc
     private final List<String> CachingCurrencyPair = new ArrayList();
@@ -38,14 +65,14 @@ public class ChannelServer {
     }
 
     public static ChannelServer getInstance() {
-        if (ch.serverHandler == null) {
+        if (ch.serverExchangeHandler == null) {
             ch.initializeChannelServer();
         }
         return ch;
     }
 
     public void initializeChannelServer() {
-        if (serverHandler == null) {
+        if (serverExchangeHandler == null) {
             try {
                 // Init properties
                 if (props == null) {
@@ -57,23 +84,57 @@ public class ChannelServer {
                 Props_EnforceCloudFlareNetwork = Boolean.parseBoolean(props.getProperty("server.EnforceCloudFlareNetwork"));
                 Props_EnableTickerHistory = Boolean.parseBoolean(props.getProperty("server.EnableTickerHistory"));
                 Props_EnableTickerHistoryDatabaseCommit = Boolean.parseBoolean(props.getProperty("server.EnableTickerHistoryDatabaseCommit"));
+                Props_EnableSQLDataAcquisition = Boolean.parseBoolean(props.getProperty("server.EnableSQLDataAcquisition"));
+                Props_SocketIPAddress = props.getProperty("server.SocketIPAddress");
+                Props_SocketPort = Short.parseShort(props.getProperty("server.SocketPort"));
+                Props_EnableSocketStreaming = Boolean.parseBoolean(props.getProperty("server.EnableSocketStreaming"));
 
                 // End
-                serverHandler = ServerHandler.Connect();
+                serverExchangeHandler = ServerExchangeHandler.Connect();
 
                 LoadCurrencyPairTables(false);
 
                 tickerTask = new TickerCacheTask(); // init automatically
                 newsTask = new NewsCacheTask();
+                
+                if (isEnableSocketStreaming()) {
+                    InitializeClientServer();   
+                }
             } catch (Exception exp) {
                 System.out.println("Failed to start Channel server, please ensure the port is unused.");
                 exp.printStackTrace();
 
-                if (serverHandler != null) {
-                    serverHandler.Disconnect();
+                if (serverExchangeHandler != null) {
+                    serverExchangeHandler.Disconnect();
                 }
-                serverHandler = null;
+                serverExchangeHandler = null;
             }
+        }
+    }
+
+    public void InitializeClientServer() {
+        if (acceptor == null) {
+            IoBuffer.setUseDirectBuffer(false);
+            IoBuffer.setAllocator(new SimpleBufferAllocator());
+
+            acceptor = new NioSocketAcceptor(Runtime.getRuntime().availableProcessors() * 4);
+            acceptor.setReuseAddress(true);
+            acceptor.getSessionConfig().setIdleTime(IdleStatus.BOTH_IDLE, 10);
+            acceptor.getSessionConfig().setTcpNoDelay(true);
+            acceptor.getFilterChain().addFirst("blacklist", new BlackListFilter());
+            acceptor.getFilterChain().addLast("codec", new ProtocolCodecFilter(new MapleCodecFactory())); // decrypt last
+
+            try {
+                serverClientHandler = new ServerClientHandler();
+                InetSocketadd = new InetSocketAddress(InetAddress.getByName(Props_SocketIPAddress), Props_SocketPort);
+                acceptor.setHandler(serverClientHandler);
+                acceptor.bind(InetSocketadd);
+
+                System.out.println(String.format("[Socket] Listening on %s:%d", Props_SocketIPAddress, Props_SocketPort));
+            } catch (IOException e) {
+                System.out.println(String.format("[Socket] Failed to listen on %s%d", Props_SocketIPAddress, Props_SocketPort));
+            }
+            Runtime.getRuntime().addShutdownHook(new Thread(new ShutDownListener()));
         }
     }
 
@@ -133,5 +194,30 @@ public class ChannelServer {
 
     public boolean isEnableTickerHistory() {
         return Props_EnableTickerHistory;
+    }
+
+    public boolean isEnableSQLDataAcquisition() {
+        return Props_EnableSQLDataAcquisition;
+    }
+    
+    public boolean isEnableSocketStreaming() {
+        return Props_EnableSocketStreaming;
+    }
+
+    public boolean isShutdown() {
+        return isShutdown;
+    }
+
+    public void BroadcastConnectedClients(TradeHistoryBuySellEnum type, String ExchangeCurrencyPair, int tradeid) {
+        // TODO
+    }
+
+    private final class ShutDownListener implements Runnable {
+
+        @Override
+        public void run() {
+            System.out.println("Shutdown hook task.....");
+
+        }
     }
 }
