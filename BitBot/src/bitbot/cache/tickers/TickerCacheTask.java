@@ -177,7 +177,7 @@ public class TickerCacheTask {
                         Volume = item.getVol();
                     }
                     if (item.getVol_Cur() > VolumeCur) {
-                        VolumeCur = item.getVol();
+                        VolumeCur = item.getVol_Cur();
                     }
                 }
             }
@@ -261,7 +261,7 @@ public class TickerCacheTask {
                         Volume = item.getVol();
                     }
                     if (item.getVol_Cur() > VolumeCur) {
-                        VolumeCur = item.getVol();
+                        VolumeCur = item.getVol_Cur();
                     }
                 }
             }
