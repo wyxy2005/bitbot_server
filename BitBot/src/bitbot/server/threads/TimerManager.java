@@ -30,7 +30,7 @@ public class TimerManager {
 	stpe.setKeepAliveTime(1, TimeUnit.MINUTES);
 	stpe.allowCoreThreadTimeOut(true);
 	stpe.setCorePoolSize(10);
-	stpe.setMaximumPoolSize(20);
+	stpe.setMaximumPoolSize(100);
 	stpe.setContinueExistingPeriodicTasksAfterShutdownPolicy(false);
 	stpe.setRemoveOnCancelPolicy(true);
 	ses = stpe;

@@ -94,7 +94,9 @@ public class TickerCacheTask {
                 //bitfinex-btc_usd---kraken-xbt_usd---kraken-xbt_eur---cexio-ghs_btc
 
                 if (history != null) {
-                    runnable_exchangeHistory.add(TimerManager.register(new TickerCacheTask_ExchangeHistory(ExchangeSite, CurrencyPair, ExchangeCurrencyPair, history), ExchangeHistory_RefreshTime_Seconds * 1000, Integer.MAX_VALUE));
+                    runnable_exchangeHistory.add(TimerManager.register(
+                            new TickerCacheTask_ExchangeHistory(ExchangeSite, CurrencyPair, ExchangeCurrencyPair, history),
+                            ExchangeHistory_RefreshTime_Seconds * 1000, Integer.MAX_VALUE));
                 }
             }
         }
@@ -219,36 +221,34 @@ public class TickerCacheTask {
 
                 // Check if last added tick is above the threshold 'intervalMinutes'
                 if (LastUsedTime + (intervalMinutes * 60) < item.getServerTime()) {
-                    while (LastUsedTime + (intervalMinutes * 60) < item.getServerTime()) {
-                        if (item.getServerTime() > cTime) {
-                            // If there's not enough data available.. 
-                            if (high == 0) {
-                                high = item.getHigh();
-                            }
-                            if (low == Double.MAX_VALUE) {
-                                low = item.getLow();
-                            }
-                            if (open == -1) {
-                                open = item.getOpen();
-                            }
-
-                            // Add to list
-                            list_BTCe2.add(
-                                    new TickerItem_CandleBar(item.getServerTime(), (float) item.getClose() == 0 ? item.getOpen() : item.getClose(), (float) high, (float) low, (float) open, Volume, VolumeCur)
-                            );
+                    if (item.getServerTime() > cTime) {
+                        // If there's not enough data available.. 
+                        if (high == 0) {
+                            high = item.getHigh();
                         }
-                        // reset
-                        high = 0;
-                        low = Double.MAX_VALUE;
-                        open = -1;
-                        Volume = 0;
-                        VolumeCur = 0;
-
-                        if (LastUsedTime == 0) {
-                            LastUsedTime = item.getServerTime();
+                        if (low == Double.MAX_VALUE) {
+                            low = item.getLow();
                         }
-                        LastUsedTime = LastUsedTime + (intervalMinutes * 60);// item.getServerTime();
+                        if (open == -1) {
+                            open = item.getOpen();
+                        }
+
+                        // Add to list
+                        list_BTCe2.add(
+                                new TickerItem_CandleBar(item.getServerTime(), (float) item.getClose() == 0 ? item.getOpen() : item.getClose(), (float) high, (float) low, (float) open, Volume, VolumeCur)
+                        );
                     }
+                    // reset
+                    high = 0;
+                    low = Double.MAX_VALUE;
+                    open = -1;
+                    Volume = 0;
+                    VolumeCur = 0;
+
+                    if (LastUsedTime == 0) {
+                        LastUsedTime = item.getServerTime();
+                    }
+                    LastUsedTime = LastUsedTime + (intervalMinutes * 60);// item.getServerTime();
                 } else {
                     high = Math.max(item.getHigh(), high);
                     low = Math.min(item.getLow(), low);
@@ -369,7 +369,11 @@ public class TickerCacheTask {
                                 ExchangeCurrencyPair, cal.getTime().toString(), HistoryData.getHigh(), HistoryData.getLow(), HistoryData.getVolume()));
 
                         LastCommitTime = HistoryData.getLastPurchaseTime();
-                        HistoryData = null;
+                        
+                        // Set new
+                        HistoryData = null; // remove reference
+                        HistoryData = new TickerHistoryData(HistoryData.getLastPurchaseTime());
+                        HistoryData.setOpen(HistoryData.getLastPrice());
                         break;
                     }
                     case DatabaseError: { // Save to local cache for now until database is available once again.
@@ -383,7 +387,11 @@ public class TickerCacheTask {
                         System.out.println("[TH] Failed commit data hh:mm = (" + cal.get(Calendar.HOUR) + ":" + cal.get(Calendar.MINUTE) + "), High: " + HistoryData.getHigh() + ", Low: " + HistoryData.getLow() + ", Volume: " + HistoryData.getVolume());
 
                         LastCommitTime = HistoryData.getLastPurchaseTime();
-                        HistoryData = null;
+                        
+                        // Set new
+                        HistoryData = null; // remove reference
+                        HistoryData = new TickerHistoryData(HistoryData.getLastPurchaseTime());
+                        HistoryData.setOpen(HistoryData.getLastPrice());
                         break;
                     }
                     case Time_Not_Ready: { // nth to do
@@ -421,7 +429,7 @@ public class TickerCacheTask {
             }
 
             ArrayList<TickerItemData> list_BTCe2 = new ArrayList(); // create a new array first and replace later
-            boolean result = MicrosoftAzureExt.btce_Select_Graph_Data(ExchangeSite, CurrencyPair_, 40000, 24, LastCachedTime, list_BTCe2);
+            boolean result = MicrosoftAzureExt.btce_Select_Graph_Data(ExchangeSite, CurrencyPair_, 999999, 24, LastCachedTime, list_BTCe2);
             if (!result) {
                 return; // temporary network issue?
             }

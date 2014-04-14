@@ -5,9 +5,7 @@ import bitbot.util.Randomizer;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -23,7 +21,7 @@ public class DatabaseConnection {
     private static String DecryptedDatabaseStrings_u = null;
     private static String DecryptedDatabaseStrings_p = null;
 
-    private static long connectionTimeOut = 5 * 60 * 1000; // 5 minutes
+    private static final long connectionTimeOut = 30 * 1000; // 5 minutes
     private static long TIMEOUT_CACHE = -1;
     private static final Object mutex = new Object();
     private static final Map<Long, ConWrapper> connections = new HashMap();
@@ -92,13 +90,6 @@ public class DatabaseConnection {
 
         try {
             Connection con = DriverManager.getConnection(DecryptedDatabaseStrings, DecryptedDatabaseStrings_u, DecryptedDatabaseStrings_p);
-
-            if (connectionTimeOut == (5 * 60 * 1000)) {
-                long timeout = getWaitTimeout(con);
-                if (timeout != -1) {
-                    connectionTimeOut = timeout;
-                }
-            }
             return con;
         } catch (Exception e) {
             e.printStackTrace();
@@ -112,33 +103,6 @@ public class DatabaseConnection {
                 con.connection.close();
             }
             connections.clear();
-        }
-    }
-
-    private static long getWaitTimeout(final Connection con) {
-        if (TIMEOUT_CACHE != -1) {
-            return TIMEOUT_CACHE;
-        }
-        Statement stmt = null;
-        ResultSet rs = null;
-        try {
-            stmt = con.createStatement();
-            rs = stmt.executeQuery("SHOW VARIABLES LIKE 'wait_timeout'"); // TODO: This may be only for MySQL
-            if (rs.next()) {
-                TIMEOUT_CACHE = Math.max(1000, rs.getInt(2) * 1000 - 1000);
-                return TIMEOUT_CACHE;
-            } else {
-                return -1;
-            }
-        } catch (SQLException ex) {
-            return -1;
-        } finally {
-            if (stmt != null) {
-                try {
-                    stmt.close();
-                } catch (SQLException ex) {
-                }
-            }
         }
     }
 

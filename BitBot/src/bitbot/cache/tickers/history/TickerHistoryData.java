@@ -49,8 +49,9 @@ public class TickerHistoryData {
                 // Debug
                 //Calendar cal = Calendar.getInstance();
                 //cal.setTimeInMillis(LastPurchaseTime);
-                //FileoutputUtil.log("//" + tableName + ".txt", "dd:hh:mm = (" + cal.get(Calendar.DAY_OF_MONTH) + ":" + cal.get(Calendar.HOUR) + ":" + cal.get(Calendar.MINUTE) +"), High: " + getHigh() + ", Low: " + getLow() + ", Volume: " + getVolume() + ", VolumeCur: " + getVolume_Cur());
+                //FileoutputUtil.log("//" + tableName + ".txt", "dd:hh:mm = (" + cal.get(Calendar.DAY_OF_MONTH) + ":" + cal.get(Calendar.HOUR) + ":" + cal.get(Calendar.MINUTE) +"), Open: " + getOpen() +", Close: "+getLastPrice()+" High: " + getHigh() + ", Low: " + getLow() + ", Volume: " + getVolume() + ", VolumeCur: " + getVolume_Cur());
                 // End of debug
+                
                 if (!ChannelServer.getInstance().isEnableTickerHistoryDatabaseCommit()) {
                     return HistoryDatabaseCommitEnum.Ok;
                 }

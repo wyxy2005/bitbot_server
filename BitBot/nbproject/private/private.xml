@@ -12,6 +12,10 @@
     </editor-bookmarks>
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
         <group>
+            <file>file:/C:/Users/z/Desktop/Server/bitbot_server/BitBot/src/bitbot/cache/tickers/history/TickerHistory_CexIo.java</file>
+            <file>file:/C:/Users/z/Desktop/Server/bitbot_server/BitBot/src/bitbot/cache/tickers/history/TickerHistoryData.java</file>
+            <file>file:/C:/Users/z/Desktop/Server/bitbot_server/BitBot/src/bitbot/util/mssql/DatabaseConnection.java</file>
+            <file>file:/C:/Users/z/Desktop/Server/bitbot_server/BitBot/src/bitbot/cache/tickers/history/TickerHistory_BTCe.java</file>
             <file>file:/C:/Users/z/Desktop/Server/bitbot_server/BitBot/src/bitbot/cache/tickers/history/TickerHistory_BitFinex.java</file>
         </group>
     </open-files>
