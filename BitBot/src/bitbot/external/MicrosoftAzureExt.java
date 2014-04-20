@@ -13,6 +13,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.List;
 import javax.net.ssl.HttpsURLConnection;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -27,7 +28,7 @@ import org.json.simple.parser.ParseException;
  */
 public class MicrosoftAzureExt {
 
-    public static boolean btce_Select_Graph_Data(String ExchangeSite, String currencyPair, int depthSelection, int hoursSelection, long start_server_time, ArrayList<TickerItemData> list_BTCe2) {
+    public static boolean btce_Select_Graph_Data(String ExchangeSite, String currencyPair, int depthSelection, int hoursSelection, long start_server_time, List<TickerItemData> list_BTCe2) {
         // currencyPair = eg: btc_usd
      /*   String parameters = String.format("nonce=%d&currencypair=%s&depth=%d&hours=%d&start_server_time=%d&exchangesite=%s",
          System.currentTimeMillis(), currencyPair, depthSelection, hoursSelection, start_server_time, ExchangeSite);
@@ -42,7 +43,7 @@ public class MicrosoftAzureExt {
         try {
             Connection con = DatabaseConnection.getConnection();
 
-            ps = con.prepareStatement("SELECT TOP " + depthSelection + "  \"high\", \"low\", \"open\", \"close\", \"vol\", \"vol_cur\", \"server_time\" FROM BitCoinBot." + tableName + " WHERE __createdAt < dateadd(hh, + " + hoursSelection + ", getdate()) AND server_time > ? ORDER BY server_time ASC;");
+            ps = con.prepareStatement("SELECT TOP " + depthSelection + "  \"high\", \"low\", \"open\", \"close\", \"vol\", \"vol_cur\", \"server_time\" FROM BitCoinBot." + tableName + " WHERE server_time > ? AND __createdAt < dateadd(hh, + " + hoursSelection + ", getdate()) ORDER BY server_time ASC;");
             ps.setLong(1, start_server_time);
 
             rs = ps.executeQuery();

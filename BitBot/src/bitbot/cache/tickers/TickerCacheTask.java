@@ -24,8 +24,11 @@ import bitbot.server.threads.LoggingSaveRunnable;
 import bitbot.server.threads.TimerManager;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.Map;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
@@ -35,10 +38,10 @@ import java.util.concurrent.locks.ReentrantLock;
 public class TickerCacheTask {
 
     // MSSQL
-    private static final int MSSQL_CacheRefreshTime_Seconds = 120;
+    private static final int MSSQL_CacheRefreshTime_Seconds = 60;
 
     private final List<LoggingSaveRunnable> runnable_mssql = new ArrayList();
-    private final ConcurrentHashMap<String, ArrayList<TickerItemData>> list_mssql;
+    private final Map<String, List<TickerItemData>> list_mssql;
     private final ReentrantLock mutex_mssql = new ReentrantLock();
 
     // Acquiring of data directly from the trades 
@@ -46,7 +49,7 @@ public class TickerCacheTask {
     private final List<LoggingSaveRunnable> runnable_exchangeHistory = new ArrayList();
 
     public TickerCacheTask() {
-        this.list_mssql = new ConcurrentHashMap<>();
+        this.list_mssql = new LinkedHashMap<>();
         StartScheduleTask();
     }
 
@@ -117,12 +120,12 @@ public class TickerCacheTask {
         }
     }
 
-    public ArrayList<TickerItemData> getListBTCe(final String ticker, String ExchangeSite) {
-        return new ArrayList(list_mssql.get(ExchangeSite + "-" + ticker));
+    public List<TickerItemData> getListBTCe(final String ticker, String ExchangeSite) {
+        return new LinkedList(list_mssql.get(ExchangeSite + "-" + ticker));
     }
 
-    public ArrayList<TickerItemData> getTickerList(final String ticker, final int hoursSelection, int depth, String ExchangeSite, long ServerTimeFrom) {
-        final ArrayList<TickerItemData> list_BTCe2 = new ArrayList(); // create a new array first
+    public List<TickerItemData> getTickerList(final String ticker, final int hoursSelection, int depth, String ExchangeSite, long ServerTimeFrom) {
+        final List<TickerItemData> list_BTCe2 = new LinkedList(); // create a new array first
         final String dataSet = ExchangeSite + "-" + ticker;
 
         // Is the data set available?
@@ -139,8 +142,12 @@ public class TickerCacheTask {
 
         // No need to lock this thread, if we are creating a new ArrayList off existing.
         // Its a copy :)
-        ArrayList<TickerItemData> currentList = new ArrayList(list_mssql.get(dataSet));
-        for (TickerItemData item : currentList) {
+        List<TickerItemData> currentList = new LinkedList(list_mssql.get(dataSet));
+
+        Iterator<TickerItemData> itr = currentList.iterator();
+        while (itr.hasNext()) { // Loop through things in proper sequence
+            TickerItemData item = itr.next();
+
             long itemTime = item.getServerTime();
 
             if (cTime <= itemTime && itemTime >= ServerTimeFrom) {
@@ -187,18 +194,16 @@ public class TickerCacheTask {
         return list_BTCe2;
     }
 
-    public ArrayList<TickerItem_CandleBar> getTickerList_Candlestick(final String ticker, final int backtestHours, int intervalMinutes, String ExchangeSite, long ServerTimeFrom) {
-        final ArrayList<TickerItem_CandleBar> list_BTCe2 = new ArrayList(); // create a new array first
+    public List<TickerItem_CandleBar> getTickerList_Candlestick(final String ticker, final int backtestHours, int intervalMinutes, String ExchangeSite, long ServerTimeFrom) {
+        final List<TickerItem_CandleBar> list_BTCe2 = new LinkedList(); // create a new array first
         final String dataSet = ExchangeSite + "-" + ticker;
 
         // Is the data set available?
         if (!list_mssql.containsKey(dataSet)) {
             return list_BTCe2;
         }
-
         // Timestamp
         long cTime = (System.currentTimeMillis() / 1000l) - (60l * 60l * backtestHours);
-        long cTime_Track = cTime - ((long) (60l * 60l * backtestHours * 0.5));
         long LastUsedTime = 0;
 
         /*  Close = (open + high + low + close) / 4
@@ -211,44 +216,54 @@ public class TickerCacheTask {
 
         // No need to lock this thread, if we are creating a new ArrayList off existing.
         // Its a copy :)
-        ArrayList<TickerItemData> currentList = new ArrayList(list_mssql.get(dataSet));
+        List<TickerItemData> currentList = new LinkedList(list_mssql.get(dataSet));
 
-        for (TickerItemData item : currentList) {
-            long itemTime = item.getServerTime();
+        Iterator<TickerItemData> itr = currentList.iterator();
+        while (itr.hasNext()) { // Loop through things in proper sequence
+            TickerItemData item = itr.next();
 
-            // Check if current time from graph is above the backtrace limit of additional 50%
-            if (cTime_Track <= itemTime && itemTime >= ServerTimeFrom) {
-
+            if (item.getServerTime() >= ServerTimeFrom) {
                 // Check if last added tick is above the threshold 'intervalMinutes'
                 if (LastUsedTime + (intervalMinutes * 60) < item.getServerTime()) {
-                    if (item.getServerTime() > cTime) {
-                        // If there's not enough data available.. 
-                        if (high == 0) {
-                            high = item.getHigh();
+                    while (LastUsedTime + (intervalMinutes * 60) < item.getServerTime()) {
+                        if (item.getServerTime() > cTime) {
+                            // If there's not enough data available.. 
+                            if (high == 0) {
+                                high = item.getHigh();
+                            }
+                            if (low == Double.MAX_VALUE) {
+                                low = item.getLow();
+                            }
+                            if (open == -1) {
+                                open = item.getOpen();
+                            }
+                            if (LastUsedTime == 0) {
+                                LastUsedTime = item.getServerTime();
+                            }
+                            // Add to list
+                            list_BTCe2.add(
+                                    new TickerItem_CandleBar(
+                                            LastUsedTime + (intervalMinutes * 60), 
+                                            (float) item.getClose() == 0 ? item.getOpen() : item.getClose(), 
+                                            (float) high, 
+                                            (float) low, 
+                                            (float) open, 
+                                            Volume, 
+                                            VolumeCur)
+                            );
                         }
-                        if (low == Double.MAX_VALUE) {
-                            low = item.getLow();
-                        }
-                        if (open == -1) {
-                            open = item.getOpen();
-                        }
+                        // reset
+                        high = 0;
+                        low = Double.MAX_VALUE;
+                        open = -1;
+                        Volume = 0;
+                        VolumeCur = 0;
 
-                        // Add to list
-                        list_BTCe2.add(
-                                new TickerItem_CandleBar(item.getServerTime(), (float) item.getClose() == 0 ? item.getOpen() : item.getClose(), (float) high, (float) low, (float) open, Volume, VolumeCur)
-                        );
+                        if (LastUsedTime == 0) {
+                            LastUsedTime = item.getServerTime();
+                        }
+                        LastUsedTime = LastUsedTime + (intervalMinutes * 60);// item.getServerTime();
                     }
-                    // reset
-                    high = 0;
-                    low = Double.MAX_VALUE;
-                    open = -1;
-                    Volume = 0;
-                    VolumeCur = 0;
-
-                    if (LastUsedTime == 0) {
-                        LastUsedTime = item.getServerTime();
-                    }
-                    LastUsedTime = LastUsedTime + (intervalMinutes * 60);// item.getServerTime();
                 } else {
                     high = Math.max(item.getHigh(), high);
                     low = Math.min(item.getLow(), low);
@@ -256,7 +271,6 @@ public class TickerCacheTask {
                     if (open == -1) {
                         open = item.getOpen();
                     }
-
                     if (item.getVol() > Volume) {
                         Volume = item.getVol();
                     }
@@ -269,12 +283,13 @@ public class TickerCacheTask {
         return list_BTCe2;
     }
 
-    public List<ArrayList<ExponentialMovingAverageData>> getExponentialMovingAverage(
+    public List<List<ExponentialMovingAverageData>> getExponentialMovingAverage(
             final String ticker, final String ExchangeSite, int backtestHours, int intervalMinutes,
             final int HighEMA, final int LowEMA) {
+        final String dataSet = ExchangeSite + "-" + ticker;
 
         // check if exist
-        if (!list_mssql.containsKey(ExchangeSite + "-" + ticker)) {
+        if (!list_mssql.containsKey(dataSet)) {
             return null;
         }
         // add an extra 80% to the backtest hours to smooth out EMA at first
@@ -283,11 +298,15 @@ public class TickerCacheTask {
         long LastUsedTime = 0;
 
         // Gets the current array from cache
-        final ArrayList<TickerItem> currentList = new ArrayList(list_mssql.get(ExchangeSite + "-" + ticker)); // BTCChina
-
+        final List<TickerItem> currentList = new LinkedList(list_mssql.get(dataSet));
+        
         // Create a new array to add things within our range we are looking for.
-        final ArrayList<TickerItem> selectedList = new ArrayList();
-        for (TickerItem item : currentList) {
+        final List<TickerItem> selectedList = new LinkedList();
+
+        Iterator<TickerItem> itr = currentList.iterator();
+        while (itr.hasNext()) { // Loop through things in proper sequence
+            TickerItem item = itr.next();
+
             long itemTime = item.getServerTime();
 
             if (cTime_Track <= itemTime && LastUsedTime + (intervalMinutes * 60) < item.getServerTime()) {
@@ -300,7 +319,7 @@ public class TickerCacheTask {
             }
         }
 
-        final List<ArrayList<ExponentialMovingAverageData>> container = new ArrayList<>();
+        final List<List<ExponentialMovingAverageData>> container = new LinkedList<>();
         container.add(ExponentialMovingAverage.CalculateEMA(selectedList, HighEMA, cTime));
         container.add(ExponentialMovingAverage.CalculateEMA(selectedList, LowEMA, cTime));
 
@@ -369,9 +388,8 @@ public class TickerCacheTask {
                                 ExchangeCurrencyPair, cal.getTime().toString(), HistoryData.getHigh(), HistoryData.getLow(), HistoryData.getVolume()));
 
                         LastCommitTime = HistoryData.getLastPurchaseTime();
-                        
+
                         // Set new
-                        HistoryData = null; // remove reference
                         HistoryData = new TickerHistoryData(HistoryData.getLastPurchaseTime());
                         HistoryData.setOpen(HistoryData.getLastPrice());
                         break;
@@ -387,9 +405,8 @@ public class TickerCacheTask {
                         System.out.println("[TH] Failed commit data hh:mm = (" + cal.get(Calendar.HOUR) + ":" + cal.get(Calendar.MINUTE) + "), High: " + HistoryData.getHigh() + ", Low: " + HistoryData.getLow() + ", Volume: " + HistoryData.getVolume());
 
                         LastCommitTime = HistoryData.getLastPurchaseTime();
-                        
+
                         // Set new
-                        HistoryData = null; // remove reference
                         HistoryData = new TickerHistoryData(HistoryData.getLastPurchaseTime());
                         HistoryData.setOpen(HistoryData.getLastPrice());
                         break;
@@ -407,6 +424,7 @@ public class TickerCacheTask {
 
         private final String CurrencyPair_;
         private final String ExchangeSite;
+        private long LastCachedTime = 0;
 
         public TickerCacheTask_MSSql(String ExchangeSite, String CacheCurrencyPair) {
             this.CurrencyPair_ = CacheCurrencyPair;
@@ -417,31 +435,32 @@ public class TickerCacheTask {
         public void run() {
             System.out.println("Caching currency pair from SQLserv: " + ExchangeSite + ":" + CurrencyPair_);
 
-            String ExchangeCurrencyPair = String.format("%s-%s", ExchangeSite, CurrencyPair_);
-
-            long LastCachedTime = 0;
-            if (list_mssql.containsKey(ExchangeCurrencyPair)) {
-                ArrayList<TickerItemData> currentList = list_mssql.get(ExchangeCurrencyPair);
-
-                if (!currentList.isEmpty()) {
-                    LastCachedTime = currentList.get(currentList.size() - 1).getServerTime();
-                }
-            }
-
-            ArrayList<TickerItemData> list_BTCe2 = new ArrayList(); // create a new array first and replace later
+            List<TickerItemData> list_BTCe2 = new LinkedList(); // create a new array first and replace later
             boolean result = MicrosoftAzureExt.btce_Select_Graph_Data(ExchangeSite, CurrencyPair_, 999999, 24, LastCachedTime, list_BTCe2);
             if (!result) {
                 return; // temporary network issue?
             }
-
+            final String ExchangeCurrencyPair = String.format("%s-%s", ExchangeSite, CurrencyPair_);
+            
             mutex_mssql.lock();
             try {
                 if (!list_mssql.containsKey(ExchangeCurrencyPair)) {
                     list_mssql.put(ExchangeCurrencyPair, list_BTCe2);
-                } else {
-                    ArrayList<TickerItemData> currentList = list_mssql.get(ExchangeCurrencyPair);
 
-                    currentList.addAll(list_BTCe2);
+                    for (TickerItemData data : list_BTCe2) {
+                        if (data.getServerTime() > LastCachedTime) {
+                            LastCachedTime = data.getServerTime();
+                        }
+                    }
+                } else {
+                    List<TickerItemData> currentList = list_mssql.get(ExchangeCurrencyPair);
+                    for (TickerItemData data : list_BTCe2) {
+                        if (data.getServerTime() > LastCachedTime) {
+                            currentList.add(data);
+                            
+                            LastCachedTime = data.getServerTime();
+                        }
+                    }
                 }
             } finally {
                 mutex_mssql.unlock();

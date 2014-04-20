@@ -38,7 +38,7 @@ public class TickerHistoryData {
 
         if (Math.abs(LastCommitTime - LastPurchaseTime) > 60000) { // per minute
             // check if data is available
-            if (Volume >= 1 && LastCommitTime >= 0) { // Commit for real :)
+            if (Volume >= 1 && LastPurchaseTime > 0) { // Commit for real :)
                 String tableName;
                 if (ExchangeSite != null) {
                     tableName = String.format("%s_price_%s", ExchangeSite, currencyPair);
@@ -66,7 +66,7 @@ public class TickerHistoryData {
                     ps.setDouble(4, Volume_Cur);
                     ps.setFloat(5, Open);
                     ps.setFloat(6, LastPrice);
-                    ps.setLong(7, (long) (LastCommitTime / 1000l));
+                    ps.setLong(7, (long) (LastPurchaseTime / 1000l));
 
                     ps.execute();
                 } catch (Exception e) {

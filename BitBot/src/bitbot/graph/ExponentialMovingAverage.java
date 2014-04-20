@@ -1,7 +1,9 @@
 package bitbot.graph;
 
 import bitbot.cache.tickers.TickerItem;
-import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  *
@@ -12,11 +14,14 @@ import java.util.ArrayList;
  */
 public class ExponentialMovingAverage {
 
-    public static ArrayList<ExponentialMovingAverageData> CalculateEMA(final ArrayList<TickerItem> records, int EMA, long startTime) {
-        ArrayList<ExponentialMovingAverageData> ret = new ArrayList<>();
+    public static List<ExponentialMovingAverageData> CalculateEMA(final List<TickerItem> records, int EMA, long startTime) {
+        List<ExponentialMovingAverageData> ret = new LinkedList<>();
         double yesterdayEMA = -1;
         
-        for (TickerItem sdr : records) {
+        Iterator<TickerItem> itr = records.iterator();
+        while (itr.hasNext()) { // Loop through things in proper sequence
+            TickerItem sdr = itr.next();
+            
             if (yesterdayEMA == -1) // default value
                 yesterdayEMA = sdr.getOpen();
             

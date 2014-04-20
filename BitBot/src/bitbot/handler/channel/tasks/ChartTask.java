@@ -7,7 +7,7 @@ import bitbot.cache.tickers.TickerItem_CandleBar;
 import bitbot.util.encryption.HMACSHA1;
 import java.io.IOException;
 import java.io.PrintStream;
-import java.util.ArrayList;
+import java.util.List;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.simpleframework.http.Query;
@@ -103,7 +103,7 @@ public class ChartTask implements Runnable {
                     JSONArray array = new JSONArray();
                     
                     if (IsIntervalBased) {
-                        ArrayList<TickerItem_CandleBar> ret = ChannelServer.getInstance().getTickerTask().getTickerList_Candlestick(currencypair, hours, depth, ExchangeSite, ServerTimeFrom);
+                        List<TickerItem_CandleBar> ret = ChannelServer.getInstance().getTickerTask().getTickerList_Candlestick(currencypair, hours, depth, ExchangeSite, ServerTimeFrom);
 
                         for (TickerItem_CandleBar item : ret) {
                             JSONObject obj = new JSONObject();
@@ -119,7 +119,7 @@ public class ChartTask implements Runnable {
                         }
                         body.println(array.toJSONString());
                     } else {
-                        ArrayList<TickerItemData> ret = ChannelServer.getInstance().getTickerTask().getTickerList(currencypair, hours, depth, ExchangeSite, ServerTimeFrom);
+                        List<TickerItemData> ret = ChannelServer.getInstance().getTickerTask().getTickerList(currencypair, hours, depth, ExchangeSite, ServerTimeFrom);
 
                         for (TickerItemData item : ret) {
                             JSONObject obj = new JSONObject();

@@ -26,7 +26,7 @@ public class NewsCacheTask {
 
     public NewsCacheTask() {
         this.list_News = new ArrayList<>();
-        StartScheduleTask();
+        //StartScheduleTask();
     }
 
     public void StartScheduleTask() {
@@ -121,7 +121,7 @@ public class NewsCacheTask {
                 response.append(inputLine);
             }
             in.close();
-
+            
             //print result
             return response.toString();
 

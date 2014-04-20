@@ -59,8 +59,8 @@ public class ExponentialMovingAverageTask implements Runnable {
 
         final String encoded = HMACSHA1.encode(String.valueOf(nonce), currencypair + (highEMA ^ intervalMinutes ^ lowEMA ^ backtestHours ^ nonce) + ExchangeSite);
 
-        System.out.println("FromClient: " + serverAuthorization);
-        System.out.println("Real: " + encoded);
+        //System.out.println("FromClient: " + serverAuthorization);
+        //System.out.println("Real: " + encoded);
 
         if (!serverAuthorization.equals(encoded)) {
             isAuthorized = false;
@@ -79,7 +79,7 @@ public class ExponentialMovingAverageTask implements Runnable {
                 response.setDate("Last-Modified", time);
 
                 if (isAuthorized) {
-                    List<ArrayList<ExponentialMovingAverageData>> ret
+                    List<List<ExponentialMovingAverageData>> ret
                             = ChannelServer.getInstance().getTickerTask().getExponentialMovingAverage(currencypair, ExchangeSite, backtestHours, intervalMinutes, highEMA, lowEMA);
 
                     JSONObject mainObj = new JSONObject();

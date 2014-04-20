@@ -3,7 +3,6 @@ package bitbot;
 import bitbot.handler.channel.ChannelServer;
 import bitbot.server.threads.MultiThreadExecutor;
 import bitbot.server.threads.TimerManager;
-import bitbot.server.threads.TimerManager_Ping;
 import bitbot.util.MT4CVSReader;
 import java.security.cert.X509Certificate;
 import javax.net.ssl.HostnameVerifier;
@@ -30,7 +29,7 @@ public class Main {
                  *           PKIX path building failed: sun.security.provider.certpath.SunCertPathBuilderException:
                  *               unable to find valid certification path to requested target
                  */
-                TrustManager[] trustAllCerts = new TrustManager[]{
+                /*TrustManager[] trustAllCerts = new TrustManager[]{
                     new X509TrustManager() {
                         public java.security.cert.X509Certificate[] getAcceptedIssuers() {
                             return null;
@@ -56,7 +55,7 @@ public class Main {
                     }
                 };
                 // Install the all-trusting host verifier
-                HttpsURLConnection.setDefaultHostnameVerifier(allHostsValid);
+                HttpsURLConnection.setDefaultHostnameVerifier(allHostsValid);*/
                 /*
                  * end of the fix
                  */
@@ -64,7 +63,6 @@ public class Main {
                 // Start services
                 MultiThreadExecutor.start();
                 TimerManager.start();
-                TimerManager_Ping.start();
 
                 ChannelServer.getInstance().initializeChannelServer();
 

@@ -6,7 +6,7 @@ import bitbot.server.Constants;
 import bitbot.util.encryption.HMACSHA1;
 import java.io.IOException;
 import java.io.PrintStream;
-import java.util.ArrayList;
+import java.util.List;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.simpleframework.http.Query;
@@ -93,7 +93,7 @@ public class ChartTask_Candlestick implements Runnable {
                 if (isAuthorized) {
                     JSONArray array = new JSONArray();
 
-                    ArrayList<TickerItem_CandleBar> ret = ChannelServer.getInstance().getTickerTask().getTickerList_Candlestick(currencypair, hours, interval, ExchangeSite, ServerTimeFrom);
+                    List<TickerItem_CandleBar> ret = ChannelServer.getInstance().getTickerTask().getTickerList_Candlestick(currencypair, hours, interval, ExchangeSite, ServerTimeFrom);
 
                     for (TickerItem_CandleBar item : ret) {
                         JSONObject obj = new JSONObject();

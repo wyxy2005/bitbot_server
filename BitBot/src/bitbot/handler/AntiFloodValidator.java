@@ -22,6 +22,7 @@ public class AntiFloodValidator {
     // Anti flood
     private static final int AllowedInterval = 100,
             AllowedResetInveral = 10000;
+    private static final int SpamCount = 100;
     private static final String BlockedIPFileList = "BlockedIPs.properties";
     
     // variables
@@ -76,7 +77,7 @@ public class AntiFloodValidator {
 	    } else if (difference > AllowedResetInveral) {
 		count = 1;
             }
-	    if (count >= 10) {
+	    if (count >= SpamCount) {
 		synchronized (mutex) {
 		    block(address, true);
 		}
