@@ -29,7 +29,7 @@ public class TickerHistory_Huobi implements TickerHistory {
         String GetResult = HttpClient.httpGet(Uri, "");
 
         if (GetResult != null) {
-            TickerHistoryData ReturnData = new TickerHistoryData(LastPurchaseTime);
+            TickerHistoryData ReturnData = new TickerHistoryData(LastPurchaseTime, false);
 
             JSONParser parser = new JSONParser(); // Init parser
             try {

@@ -26,7 +26,7 @@ public class TickerHistory_Coinbase implements TickerHistory {
         String BuyResult = HttpClient.httpsGet(UriBuy, "");
 
         if (SellResult != null && BuyResult != null) {
-            TickerHistoryData ReturnData = new TickerHistoryData(LastPurchaseTime);
+            TickerHistoryData ReturnData = new TickerHistoryData(LastPurchaseTime, true);
 
             JSONParser parser = new JSONParser(); // Init parser
             try {
@@ -57,7 +57,7 @@ public class TickerHistory_Coinbase implements TickerHistory {
                     }
                 };
 
-                LinkedHashMap buyObj = (LinkedHashMap) parser.parse(SellResult, containerFactoryBuy);
+                LinkedHashMap buyObj = (LinkedHashMap) parser.parse(BuyResult, containerFactoryBuy);
                 LinkedHashMap sellObj = (LinkedHashMap) parser.parse(SellResult, containerFactorySell);
 
                 float buy = Float.parseFloat(((LinkedHashMap) buyObj.get("subtotal")).get("amount").toString());

@@ -240,15 +240,21 @@ public class TickerCacheTask {
                             if (LastUsedTime == 0) {
                                 LastUsedTime = item.getServerTime();
                             }
+                            if (item.getVol() == 0) {
+                                Volume = item.getVol();
+                            }
+                            if (item.getVol_Cur() == 0) {
+                                VolumeCur = item.getVol_Cur();
+                            }
                             // Add to list
                             list_BTCe2.add(
                                     new TickerItem_CandleBar(
-                                            LastUsedTime + (intervalMinutes * 60), 
-                                            (float) item.getClose() == 0 ? item.getOpen() : item.getClose(), 
-                                            (float) high, 
-                                            (float) low, 
-                                            (float) open, 
-                                            Volume, 
+                                            LastUsedTime + (intervalMinutes * 60),
+                                            (float) item.getClose() == 0 ? item.getOpen() : item.getClose(),
+                                            (float) high,
+                                            (float) low,
+                                            (float) open,
+                                            Volume,
                                             VolumeCur)
                             );
                         }
@@ -299,7 +305,7 @@ public class TickerCacheTask {
 
         // Gets the current array from cache
         final List<TickerItem> currentList = new LinkedList(list_mssql.get(dataSet));
-        
+
         // Create a new array to add things within our range we are looking for.
         final List<TickerItem> selectedList = new LinkedList();
 
@@ -384,13 +390,13 @@ public class TickerCacheTask {
                         cal.setTimeInMillis(HistoryData.getLastPurchaseTime());
                         cal.set(Calendar.SECOND, 0);
 
-                        System.out.println(String.format("[TH] %s Commited data hh:mm = (%s), High: %f, Low: %f, Volume: %f",
-                                ExchangeCurrencyPair, cal.getTime().toString(), HistoryData.getHigh(), HistoryData.getLow(), HistoryData.getVolume()));
+                        System.out.println(String.format("[TH] %s Commited data hh:mm = (%s), High: %f, Low: %f, Volume: %f, VolumeCur: %f",
+                                ExchangeCurrencyPair, cal.getTime().toString(), HistoryData.getHigh(), HistoryData.getLow(), HistoryData.getVolume(), HistoryData.getVolume_Cur()));
 
                         LastCommitTime = HistoryData.getLastPurchaseTime();
 
                         // Set new
-                        HistoryData = new TickerHistoryData(HistoryData.getLastPurchaseTime());
+                        HistoryData = new TickerHistoryData(HistoryData.getLastPurchaseTime(), HistoryData.isCoinbase_CampBX_CexIO());
                         HistoryData.setOpen(HistoryData.getLastPrice());
                         break;
                     }
@@ -407,7 +413,7 @@ public class TickerCacheTask {
                         LastCommitTime = HistoryData.getLastPurchaseTime();
 
                         // Set new
-                        HistoryData = new TickerHistoryData(HistoryData.getLastPurchaseTime());
+                        HistoryData = new TickerHistoryData(HistoryData.getLastPurchaseTime(), HistoryData.isCoinbase_CampBX_CexIO());
                         HistoryData.setOpen(HistoryData.getLastPrice());
                         break;
                     }
@@ -441,7 +447,7 @@ public class TickerCacheTask {
                 return; // temporary network issue?
             }
             final String ExchangeCurrencyPair = String.format("%s-%s", ExchangeSite, CurrencyPair_);
-            
+
             mutex_mssql.lock();
             try {
                 if (!list_mssql.containsKey(ExchangeCurrencyPair)) {
@@ -457,7 +463,7 @@ public class TickerCacheTask {
                     for (TickerItemData data : list_BTCe2) {
                         if (data.getServerTime() > LastCachedTime) {
                             currentList.add(data);
-                            
+
                             LastCachedTime = data.getServerTime();
                         }
                     }

@@ -49,7 +49,8 @@ public class ChannelServer {
             Props_EnableTickerHistoryDatabaseCommit = false,
             Props_EnableTickerHistory = false,
             Props_EnableSQLDataAcquisition = false,
-            Props_EnableSocketStreaming = false;
+            Props_EnableSocketStreaming = false,
+            Props_EnableDebugSessionPrints = false;
     private static String 
             Props_SocketIPAddress = "127.0.0.1";
     private static short
@@ -88,6 +89,7 @@ public class ChannelServer {
                 Props_SocketIPAddress = props.getProperty("server.SocketIPAddress");
                 Props_SocketPort = Short.parseShort(props.getProperty("server.SocketPort"));
                 Props_EnableSocketStreaming = Boolean.parseBoolean(props.getProperty("server.EnableSocketStreaming"));
+                Props_EnableDebugSessionPrints = Boolean.parseBoolean(props.getProperty("server.EnableDebugSessionPrints"));
 
                 // End
                 serverExchangeHandler = ServerExchangeHandler.Connect();
@@ -204,6 +206,10 @@ public class ChannelServer {
         return Props_EnableSocketStreaming;
     }
 
+    public boolean isEnableDebugSessionPrints() {
+        return Props_EnableDebugSessionPrints;
+    }
+    
     public boolean isShutdown() {
         return isShutdown;
     }

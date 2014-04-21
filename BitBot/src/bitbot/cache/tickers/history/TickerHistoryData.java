@@ -21,16 +21,25 @@ public class TickerHistoryData {
     private double Volume_Cur; // BTC/USD, cur = BTC.
     private long LastPurchaseTime;
 
+    private boolean isCoinbase_CampBX_CexIO = false;
+
     private String TmpExchangeSite, TmpcurrencyPair;
 
-    public TickerHistoryData(long LastPurchaseTime) {
-        this.Volume = 0;
-        this.Volume_Cur = 0;
+    public TickerHistoryData(long LastPurchaseTime, boolean IsCoinbaseOrCexIO) {
         this.High = 0;
         this.Low = Float.MAX_VALUE;
         this.LastPurchaseTime = LastPurchaseTime;
         this.LastPrice = 0;
         this.Open = 0;
+        this.isCoinbase_CampBX_CexIO = IsCoinbaseOrCexIO;
+
+        if (IsCoinbaseOrCexIO) {
+            this.Volume = 1;
+            this.Volume_Cur = 1;
+        } else {
+            this.Volume = 0;
+            this.Volume_Cur = 0;
+        }
     }
 
     public HistoryDatabaseCommitEnum commitDatabase(long LastCommitTime, String ExchangeSite, String currencyPair) {
@@ -38,7 +47,7 @@ public class TickerHistoryData {
 
         if (Math.abs(LastCommitTime - LastPurchaseTime) > 60000) { // per minute
             // check if data is available
-            if (Volume >= 1 && LastPurchaseTime > 0) { // Commit for real :)
+            if (Volume > 0 && LastPurchaseTime > 0) { // Commit for real :)
                 String tableName;
                 if (ExchangeSite != null) {
                     tableName = String.format("%s_price_%s", ExchangeSite, currencyPair);
@@ -47,11 +56,14 @@ public class TickerHistoryData {
                 }
 
                 // Debug
-                //Calendar cal = Calendar.getInstance();
-                //cal.setTimeInMillis(LastPurchaseTime);
-                //FileoutputUtil.log("//" + tableName + ".txt", "dd:hh:mm = (" + cal.get(Calendar.DAY_OF_MONTH) + ":" + cal.get(Calendar.HOUR) + ":" + cal.get(Calendar.MINUTE) +"), Open: " + getOpen() +", Close: "+getLastPrice()+" High: " + getHigh() + ", Low: " + getLow() + ", Volume: " + getVolume() + ", VolumeCur: " + getVolume_Cur());
-                // End of debug
-                
+                if (ChannelServer.getInstance().isEnableDebugSessionPrints()) {
+                    Calendar cal = Calendar.getInstance();
+                    cal.setTimeInMillis(LastPurchaseTime);
+                    String outputLog = String.format("dd:hh:mm = (%d:%d:%d), Open: %f, Close: %f, High: %f, Low: %f, Volume: %f, VolumeCur: %f",
+                            cal.get(Calendar.DAY_OF_MONTH), cal.get(Calendar.HOUR), cal.get(Calendar.MINUTE), getOpen(), getLastPrice(), getHigh(), getLow(), getVolume(), getVolume_Cur());
+                    FileoutputUtil.log("//" + tableName + ".txt", outputLog);
+                }
+
                 if (!ChannelServer.getInstance().isEnableTickerHistoryDatabaseCommit()) {
                     return HistoryDatabaseCommitEnum.Ok;
                 }
@@ -93,16 +105,16 @@ public class TickerHistoryData {
     }
 
     public void merge(TickerHistoryData dataNow) {
-        if (dataNow.High > High) {
-            High = dataNow.High;
+        if (dataNow.High > this.High) {
+            this.High = dataNow.High;
         }
-        if (dataNow.Low < Low) {
-            Low = dataNow.Low;
+        if (dataNow.Low < this.Low) {
+            this.Low = dataNow.Low;
         }
-        if (Open == 0) {
-            Open = dataNow.LastPrice;
+        if (this.Open == 0) {
+            this.Open = dataNow.LastPrice;
         }
-        if (Volume_Cur != 1 && Volume != 1) {
+        if (!isCoinbase_CampBX_CexIO && this.Volume_Cur != 1d && this.Volume != 1d) {
             this.Volume_Cur += dataNow.Volume_Cur;
             this.Volume += dataNow.Volume_Cur * dataNow.High;
         }
@@ -111,16 +123,19 @@ public class TickerHistoryData {
     }
 
     public void merge(float price, float amount, long LastPurchaseTime) {
-        if (price > High) {
-            High = price;
+        if (price > this.High) {
+            this.High = price;
         }
-        if (price < Low) {
-            Low = price;
+        if (price < this.Low) {
+            this.Low = price;
         }
-        if (Open == 0) {
-            Open = price;
+        if (this.Open == 0) {
+            this.Open = price;
         }
-        this.Volume_Cur += amount;
+        if (this.Volume_Cur != 1 && this.Volume != 1) {
+            this.Volume_Cur += amount;
+            this.Volume += amount * High;
+        }
         this.LastPurchaseTime = LastPurchaseTime;
         this.LastPrice = price;
     }
@@ -200,5 +215,9 @@ public class TickerHistoryData {
 
     public void setVolume_Cur(double Volume_Cur) {
         this.Volume_Cur = Volume_Cur;
+    }
+
+    public boolean isCoinbase_CampBX_CexIO() {
+        return isCoinbase_CampBX_CexIO;
     }
 }

@@ -3,6 +3,7 @@ package bitbot.cache.tickers.history;
 import bitbot.handler.channel.ChannelServer;
 import bitbot.util.HttpClient;
 import java.util.Calendar;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -25,7 +26,7 @@ public class TickerHistory_BTCe implements TickerHistory {
         String GetResult = HttpClient.httpsGet(Uri, "");
 
         if (GetResult != null) {
-            TickerHistoryData ReturnData = new TickerHistoryData(LastPurchaseTime);
+            TickerHistoryData ReturnData = new TickerHistoryData(LastPurchaseTime, false);
 
             JSONParser parser = new JSONParser(); // Init parser
             try {
@@ -46,7 +47,10 @@ public class TickerHistory_BTCe implements TickerHistory {
                 };
                 LinkedList<LinkedHashMap> tradesArray = (LinkedList<LinkedHashMap>) parser.parse(GetResult, containerFactory);
 
-                for (LinkedHashMap obj : tradesArray) {
+                Iterator<LinkedHashMap> itr = tradesArray.iterator();
+                while (itr.hasNext()) { // Loop through things in proper sequence
+                    LinkedHashMap obj = itr.next();
+                    
                     int tradeid = Integer.parseInt(obj.get("tid").toString());
                     long date = Integer.parseInt(obj.get("date").toString()) * 1000l;
                     float price = Float.parseFloat(obj.get("price").toString());

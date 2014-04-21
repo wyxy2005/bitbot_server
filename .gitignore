@@ -12,3 +12,5 @@ BitBot/dist/BitBot.jar
 *.class
 *.class
 *.jar
+*.class
+BitBot/dist/BitBot.jar

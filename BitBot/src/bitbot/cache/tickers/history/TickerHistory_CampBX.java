@@ -23,7 +23,7 @@ public class TickerHistory_CampBX implements TickerHistory {
         String Result = HttpClient.httpGet(Uri, "");
 
         if (Result != null) {
-            TickerHistoryData ReturnData = new TickerHistoryData(LastPurchaseTime);
+            TickerHistoryData ReturnData = new TickerHistoryData(LastPurchaseTime, true);
 
             JSONParser parser = new JSONParser(); // Init parser
             try {

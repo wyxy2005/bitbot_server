@@ -23,7 +23,7 @@ public class TickerHistory_Kraken implements TickerHistory {
         String GetResult = HttpClient.httpsGet(Uri, "");
 
         if (GetResult != null) {
-            TickerHistoryData ReturnData = new TickerHistoryData(LastPurchaseTime);
+            TickerHistoryData ReturnData = new TickerHistoryData(LastPurchaseTime, false);
 
             JSONParser parser = new JSONParser(); // Init parser
             try {
