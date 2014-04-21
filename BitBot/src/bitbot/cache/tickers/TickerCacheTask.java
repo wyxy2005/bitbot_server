@@ -45,7 +45,6 @@ public class TickerCacheTask {
     private final ReentrantLock mutex_mssql = new ReentrantLock();
 
     // Acquiring of data directly from the trades 
-    private static final int ExchangeHistory_RefreshTime_Seconds = 10;
     private final List<LoggingSaveRunnable> runnable_exchangeHistory = new ArrayList();
 
     public TickerCacheTask() {
@@ -67,9 +66,11 @@ public class TickerCacheTask {
             // History
             if (ChannelServer.getInstance().isEnableTickerHistory()) {
                 TickerHistory history = null;
+                int UpdateTime = 10;
 
                 if (ExchangeCurrencyPair.contains("huobi")) {
                     history = new TickerHistory_Huobi();
+                    UpdateTime = 3;
                 } else if (ExchangeCurrencyPair.contains("btce")) {
                     history = new TickerHistory_BTCe();
                 } else if (ExchangeCurrencyPair.contains("btcchina")) {
@@ -99,7 +100,7 @@ public class TickerCacheTask {
                 if (history != null) {
                     runnable_exchangeHistory.add(TimerManager.register(
                             new TickerCacheTask_ExchangeHistory(ExchangeSite, CurrencyPair, ExchangeCurrencyPair, history),
-                            ExchangeHistory_RefreshTime_Seconds * 1000, Integer.MAX_VALUE));
+                            UpdateTime * 1000, Integer.MAX_VALUE));
                 }
             }
         }
