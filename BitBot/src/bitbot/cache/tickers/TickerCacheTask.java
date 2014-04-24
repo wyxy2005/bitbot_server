@@ -384,7 +384,7 @@ public class TickerCacheTask {
                 } else {
                     HistoryData = data;
                 }
-                HistoryDatabaseCommitEnum commitResult = HistoryData.commitDatabase(LastCommitTime, ExchangeSite, CurrencyPair);
+                HistoryDatabaseCommitEnum commitResult = HistoryData.tryCommitDatabase(LastCommitTime, ExchangeSite, CurrencyPair);
                 switch (commitResult) {
                     case Ok: {
                         // Output
@@ -402,7 +402,7 @@ public class TickerCacheTask {
                         HistoryData.setOpen(HistoryData.getLastPrice());
                         break;
                     }
-                    case DatabaseError: { // Save to local cache for now until database is available once again.
+                    /*case DatabaseError: { // Save to local cache for now until database is available once again.
                         BacklogCommitTask.RegisterForLogging(HistoryData); // 15 minute task, backlog commit
 
                         Calendar cal = Calendar.getInstance();
@@ -418,7 +418,7 @@ public class TickerCacheTask {
                         HistoryData = new TickerHistoryData(HistoryData.getLastPurchaseTime(), HistoryData.isCoinbase_CampBX_CexIO());
                         HistoryData.setOpen(HistoryData.getLastPrice());
                         break;
-                    }
+                    }*/
                     case Time_Not_Ready: { // nth to do
                         break;
                     }

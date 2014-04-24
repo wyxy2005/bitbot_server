@@ -2,6 +2,7 @@ package bitbot.cache.tickers.history;
 
 import bitbot.handler.channel.ChannelServer;
 import bitbot.util.HttpClient;
+import java.util.Calendar;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -19,7 +20,8 @@ public class TickerHistory_Okcoin implements TickerHistory {
 
     @Override
     public TickerHistoryData connectAndParseHistoryResult(String ExchangeCurrencyPair, String CurrencyPair, long LastPurchaseTime) {
-        String Uri = String.format("https://www.okcoin.com/api/trades.do?symbol={0}", CurrencyPair);
+        //String Uri = String.format("https://www.okcoin.com/api/trades.do?symbol=%s&since=%d", CurrencyPair, LastPurchaseTime);
+        String Uri = String.format("https://www.okcoin.com/api/trades.do?symbol=%s", CurrencyPair);
         String GetResult = HttpClient.httpsGet(Uri, "");
 
         if (GetResult != null) {
@@ -44,8 +46,10 @@ public class TickerHistory_Okcoin implements TickerHistory {
                 };
                  LinkedList<LinkedHashMap> tradesArray = (LinkedList<LinkedHashMap>) parser.parse(GetResult, containerFactory);
 
-                for (LinkedHashMap obj : tradesArray)
+                for (int i = tradesArray.size() - 1; i > 0; i--)
                 {
+                    LinkedHashMap obj = tradesArray.get(i);
+                    
                     float amount = Float.parseFloat(obj.get("amount").toString());
                     float price = Float.parseFloat(obj.get("price").toString());
                     long date = (long) Double.parseDouble(obj.get("date").toString()) * 1000l;
@@ -73,14 +77,13 @@ public class TickerHistory_Okcoin implements TickerHistory {
                     cal.set(Calendar.MONTH, 0);
                     cal.set(Calendar.DATE, 0);
                     
-                    cal.add(Calendar.HOUR, -4); // BTC-e, time 
-                    cal.add(Calendar.SECOND, (int) (date / 1000));
+                    cal.add(Calendar.SECOND, (int) (date / 1000));*/
                     
-                    //System.out.println(String.format("[Trades history] Got [%s], Price: %f, Sum: %f ", cal.getTime().toString(), price, amount));*/
+                    //System.out.println(String.format("[Trades history] Got [%s], Price: %f, Sum: %f ", cal.getTime().toString(), price, amount));
                     
                     // Assume things are read in ascending order
                     if (date > LastPurchaseTime) {
-                        //System.out.println(String.format("[Trades history] Added [%s], Price: %f, Sum: %f ", date, price, amount));
+                        //System.out.println(String.format("[Trades history] Added [%s], Price: %f, Sum: %f ", cal.getTime().toString(), price, amount));
                         ReturnData.merge(price, amount, date);
                         
                         ChannelServer.getInstance().BroadcastConnectedClients(

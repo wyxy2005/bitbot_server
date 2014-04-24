@@ -20,8 +20,8 @@ public class TickerHistory_BTCChina implements TickerHistory {
     @Override
     public TickerHistoryData connectAndParseHistoryResult(String ExchangeCurrencyPair, String CurrencyPair, long LastPurchaseTime) {
         String[] split = CurrencyPair.split("_");
-        String Uri = String.format("https://data.btcchina.com/data/trades?market=%s&since=%d", (split[1] + split[0]).toUpperCase(), LastPurchaseTime);
-        String GetResult = HttpClient.httpGet(Uri, "");
+        String Uri = String.format("https://data.btcchina.com/data/trades?market=%s&since=%d", (split[1] + split[0]).toUpperCase(), LastPurchaseTime / 1000);
+        String GetResult = HttpClient.httpsGet(Uri, "");
 
         if (GetResult != null) {
             TickerHistoryData ReturnData = new TickerHistoryData(LastPurchaseTime, false);
@@ -57,15 +57,15 @@ public class TickerHistory_BTCChina implements TickerHistory {
 
                     // Initialize last purchase time if neccessary
                     if (LastPurchaseTime == 0) {
-                        Calendar cal_LastPurchaseTime = Calendar.getInstance();
+                        /*Calendar cal_LastPurchaseTime = Calendar.getInstance();
                         cal_LastPurchaseTime.set(Calendar.YEAR, 1970);
                         cal_LastPurchaseTime.set(Calendar.MONTH, 0);
                         cal_LastPurchaseTime.set(Calendar.DATE, 0);
                         
                         cal_LastPurchaseTime.add(Calendar.HOUR, 8);
-                        cal_LastPurchaseTime.add(Calendar.SECOND, (int) (date / 1000));
+                        cal_LastPurchaseTime.add(Calendar.SECOND, (int) (date / 1000));*/
                         
-                        LastPurchaseTime = cal_LastPurchaseTime.getTimeInMillis(); // set default param
+                        LastPurchaseTime = date;//cal_LastPurchaseTime.getTimeInMillis(); // set default param
                         ReturnData.setLastPurchaseTime(LastPurchaseTime);
                     }
 
@@ -75,16 +75,15 @@ public class TickerHistory_BTCChina implements TickerHistory {
                     cal.set(Calendar.YEAR, 1970);
                     cal.set(Calendar.MONTH, 0);
                     cal.set(Calendar.DATE, 0);
-                    
-                    cal.add(Calendar.HOUR, 8); // BTC-e, time 
+
                     cal.add(Calendar.SECOND, (int) (date / 1000));
                     
-                    //System.out.println(String.format("[Trades history] Got [%s], Price: %f, Sum: %f ", cal.getTime().toString(), price, amount));
+                    System.out.println(String.format("[Trades history] Got [%s], Price: %f, Sum: %f ", cal.getTime().toString(), price, amount));
                     
                     // Assume things are read in ascending order
                     if (cal.getTimeInMillis() > LastPurchaseTime) {
-                        //System.out.println(String.format("[Trades history] Added [%s], Price: %f, Sum: %f ", cal.getTime().toString(), price, amount));
-                        ReturnData.merge(price, amount, cal.getTimeInMillis());
+                        System.out.println(String.format("[Trades history] Added [%s], Price: %f, Sum: %f ", cal.getTime().toString(), price, amount));
+                        ReturnData.merge(price, amount, date);
                         
                         ChannelServer.getInstance().BroadcastConnectedClients(
                                 TradeHistoryBuySellEnum.Unknown, 
@@ -93,7 +92,7 @@ public class TickerHistory_BTCChina implements TickerHistory {
                     }
                 }
             } catch (Exception parseExp) {
-                //parseExp.printStackTrace();
+                parseExp.printStackTrace();
                 //System.out.println(GetResult);
                 //ServerLog.RegisterForLogging(ServerLogType.HistoryCacheTask, parseExp.getMessage());
             }

@@ -23,6 +23,7 @@ public class TickerHistoryData {
 
     private boolean isCoinbase_CampBX_CexIO = false;
 
+    private boolean isDatasetReadyForCommit = false; // additional boolean to ensure that future changes won't bug this up.. 
     private String TmpExchangeSite, TmpcurrencyPair;
 
     public TickerHistoryData(long LastPurchaseTime, boolean IsCoinbaseOrCexIO) {
@@ -42,66 +43,71 @@ public class TickerHistoryData {
         }
     }
 
-    public HistoryDatabaseCommitEnum commitDatabase(long LastCommitTime, String ExchangeSite, String currencyPair) {
+    public HistoryDatabaseCommitEnum tryCommitDatabase(long LastCommitTime, String ExchangeSite, String currencyPair) {
         //System.out.println("Time diff: " + Math.abs(LastCommitTime - LastPurchaseTime) );
 
         if (Math.abs(LastCommitTime - LastPurchaseTime) > 60000) { // per minute
             // check if data is available
-            if (Volume > 0 && LastPurchaseTime > 0) { // Commit for real :)
-                String tableName;
+            if (Volume > 0 && LastPurchaseTime > 0 && High > 0 && Low > 0) { // Commit for real :)
                 if (ExchangeSite != null) {
-                    tableName = String.format("%s_price_%s", ExchangeSite, currencyPair);
-                } else {
-                    tableName = String.format("%s_price_%s", TmpExchangeSite, TmpcurrencyPair);
+                    TmpExchangeSite = ExchangeSite; // Set reference for backlog, when needed
+                    TmpcurrencyPair = currencyPair;
                 }
-
-                // Debug
-                if (ChannelServer.getInstance().isEnableDebugSessionPrints()) {
-                    Calendar cal = Calendar.getInstance();
-                    cal.setTimeInMillis(LastPurchaseTime);
-                    String outputLog = String.format("dd:hh:mm = (%d:%d:%d), Open: %f, Close: %f, High: %f, Low: %f, Volume: %f, VolumeCur: %f",
-                            cal.get(Calendar.DAY_OF_MONTH), cal.get(Calendar.HOUR), cal.get(Calendar.MINUTE), getOpen(), getLastPrice(), getHigh(), getLow(), getVolume(), getVolume_Cur());
-                    FileoutputUtil.log("//" + tableName + ".txt", outputLog);
-                }
-
-                if (!ChannelServer.getInstance().isEnableTickerHistoryDatabaseCommit()) {
-                    return HistoryDatabaseCommitEnum.Ok;
-                }
-                PreparedStatement ps = null;
-                try {
-                    Connection con = DatabaseConnection.getConnection();
-
-                    ps = con.prepareStatement("INSERT INTO bitcoinbot." + tableName + " (\"high\", \"low\", \"vol\", \"vol_cur\", \"open\", \"close\", \"server_time\") VALUES (?,?,?,?,?,?,?);");
-                    ps.setFloat(1, High);
-                    ps.setFloat(2, Low);
-                    ps.setDouble(3, Volume);
-                    ps.setDouble(4, Volume_Cur);
-                    ps.setFloat(5, Open);
-                    ps.setFloat(6, LastPrice);
-                    ps.setLong(7, (long) (LastPurchaseTime / 1000l));
-
-                    ps.execute();
-                } catch (Exception e) {
-                    if (ExchangeSite != null) { // check for null in case re-commit to backlog
-                        TmpExchangeSite = ExchangeSite; // Set reference to save later, we are fucked! database issue..
-                        TmpcurrencyPair = currencyPair;
-                    }
-                    //e.printStackTrace();
-                    ServerLog.RegisterForLoggingException(ServerLogType.HistoryCacheTask_DB, e);
-                    return HistoryDatabaseCommitEnum.DatabaseError;
-                } finally {
-                    try {
-                        if (ps != null) {
-                            ps.close();
-                        }
-                    } catch (SQLException e) {
-                        e.printStackTrace();
-                    }
-                }
+                isDatasetReadyForCommit = true;
+                BacklogCommitTask.RegisterForImmediateLogging(this);
             }
             return HistoryDatabaseCommitEnum.Ok;
         }
         return HistoryDatabaseCommitEnum.Time_Not_Ready;
+    }
+
+    public HistoryDatabaseCommitEnum commitDatabase(long LastCommitTime, String ExchangeSite, String currencyPair) {
+        //System.out.println("Time diff: " + Math.abs(LastCommitTime - LastPurchaseTime) );
+        if (!isDatasetReadyForCommit || TmpExchangeSite == null || TmpcurrencyPair == null) {
+            return HistoryDatabaseCommitEnum.Time_Not_Ready;
+        }
+        String tableName = String.format("%s_price_%s", TmpExchangeSite, TmpcurrencyPair);
+
+        // Debug
+        if (ChannelServer.getInstance().isEnableDebugSessionPrints()) {
+            Calendar cal = Calendar.getInstance();
+            cal.setTimeInMillis(LastPurchaseTime);
+            String outputLog = String.format("dd:hh:mm = (%d:%d:%d), Open: %f, Close: %f, High: %f, Low: %f, Volume: %f, VolumeCur: %f",
+                    cal.get(Calendar.DAY_OF_MONTH), cal.get(Calendar.HOUR), cal.get(Calendar.MINUTE), getOpen(), getLastPrice(), getHigh(), getLow(), getVolume(), getVolume_Cur());
+            FileoutputUtil.log("//" + tableName + ".txt", outputLog);
+        }
+
+        if (!ChannelServer.getInstance().isEnableTickerHistoryDatabaseCommit()) {
+            return HistoryDatabaseCommitEnum.Ok;
+        }
+        PreparedStatement ps = null;
+        try {
+            Connection con = DatabaseConnection.getConnection();
+
+            ps = con.prepareStatement("INSERT INTO bitcoinbot." + tableName + " (\"high\", \"low\", \"vol\", \"vol_cur\", \"open\", \"close\", \"server_time\") VALUES (?,?,?,?,?,?,?);");
+            ps.setFloat(1, High);
+            ps.setFloat(2, Low);
+            ps.setDouble(3, Volume);
+            ps.setDouble(4, Volume_Cur);
+            ps.setFloat(5, Open);
+            ps.setFloat(6, LastPrice);
+            ps.setLong(7, (long) (LastPurchaseTime / 1000l));
+
+            ps.execute();
+        } catch (Exception e) {
+            //e.printStackTrace();
+            ServerLog.RegisterForLoggingException(ServerLogType.HistoryCacheTask_DB, e);
+            return HistoryDatabaseCommitEnum.DatabaseError;
+        } finally {
+            try {
+                if (ps != null) {
+                    ps.close();
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+        return HistoryDatabaseCommitEnum.Ok;
     }
 
     public void merge(TickerHistoryData dataNow) {
@@ -219,5 +225,9 @@ public class TickerHistoryData {
 
     public boolean isCoinbase_CampBX_CexIO() {
         return isCoinbase_CampBX_CexIO;
+    }
+
+    public boolean isDatasetReadyForCommit() {
+        return isDatasetReadyForCommit;
     }
 }

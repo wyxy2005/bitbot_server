@@ -2,6 +2,7 @@ package bitbot.cache.tickers.history;
 
 import bitbot.handler.channel.ChannelServer;
 import bitbot.util.HttpClient;
+import java.util.Calendar;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -14,11 +15,11 @@ import org.json.simple.parser.JSONParser;
  * @author twili_000
  */
 public class TickerHistory_Bitstamp implements TickerHistory {
-    
+
     @Override
     public TickerHistoryData connectAndParseHistoryResult(String ExchangeCurrencyPair, String CurrencyPair, long LastPurchaseTime) {
         String Uri = "https://www.bitstamp.net/api/transactions?time=min";
-        String GetResult = HttpClient.httpGet(Uri, "");
+        String GetResult = HttpClient.httpsGet(Uri, "");
 
         if (GetResult != null) {
             TickerHistoryData ReturnData = new TickerHistoryData(LastPurchaseTime, false);
@@ -47,19 +48,19 @@ public class TickerHistory_Bitstamp implements TickerHistory {
                     long date = Integer.parseInt(obj.get("date").toString()) * 1000l;
                     float price = Float.parseFloat(obj.get("price").toString());
                     float amount = Float.parseFloat(obj.get("amount").toString());
-                    String type = obj.get("trade_type").toString(); // bid/ask
+                    // bitstamp doesn't broadcast buy/sell
 
                     // Initialize last purchase time if neccessary
                     if (LastPurchaseTime == 0) {
                         LastPurchaseTime = date; // set default param
                         /*cal_LastPurchaseTime = Calendar.getInstance();
-                        cal_LastPurchaseTime.set(Calendar.YEAR, 1970);
-                        cal_LastPurchaseTime.set(Calendar.MONTH, 0);
-                        cal_LastPurchaseTime.set(Calendar.DATE, 0);
+                         cal_LastPurchaseTime.set(Calendar.YEAR, 1970);
+                         cal_LastPurchaseTime.set(Calendar.MONTH, 0);
+                         cal_LastPurchaseTime.set(Calendar.DATE, 0);
                         
-                        cal_LastPurchaseTime.add(Calendar.HOUR, -4); // BTC-e, time 
-                        cal_LastPurchaseTime.add(Calendar.SECOND, (int) (date / 1000));*/
-                        
+                         cal_LastPurchaseTime.add(Calendar.HOUR, -4); // BTC-e, time 
+                         cal_LastPurchaseTime.add(Calendar.SECOND, (int) (date / 1000));*/
+
                         ReturnData.setLastPurchaseTime(LastPurchaseTime);
                     }
 
@@ -69,19 +70,18 @@ public class TickerHistory_Bitstamp implements TickerHistory {
                     cal.set(Calendar.YEAR, 1970);
                     cal.set(Calendar.MONTH, 0);
                     cal.set(Calendar.DATE, 0);
-                    
-                    cal.add(Calendar.HOUR, -4); // BTC-e, time 
-                    cal.add(Calendar.SECOND, (int) (date / 1000));
-                    */
-                    //System.out.println(String.format("Got [%d], Price: %f, Sum: %f ", date, price, amount));
-                    
+
+                    cal.add(Calendar.SECOND, (int) (date / 1000));*/
+
+                    //System.out.println(String.format("Got [%s], Price: %f, Sum: %f ", cal.getTime().toString(), price, amount));
+
                     // Assume things are read in ascending order
                     if (date > LastPurchaseTime) {
-                        //System.out.println(String.format("[Trades history] Added [%d], Price: %f, Sum: %f ", date, price, amount));
+                        //System.out.println(String.format("[Trades history] Added [%s], Price: %f, Sum: %f ", cal.getTime().toString(), price, amount));
                         ReturnData.merge(price, amount, date);
-                        
+
                         ChannelServer.getInstance().BroadcastConnectedClients(
-                                type.equals("bid") ? TradeHistoryBuySellEnum.Buy : TradeHistoryBuySellEnum.Sell, 
+                                TradeHistoryBuySellEnum.Unknown,
                                 CurrencyPair,
                                 tradeid);
                     }
