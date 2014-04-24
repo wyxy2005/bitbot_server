@@ -81,6 +81,7 @@ public class TickerCacheTask {
                     history = new TickerHistory_Kraken();
                 } else if (ExchangeCurrencyPair.contains("okcoin")) {
                     history = new TickerHistory_Okcoin();
+                    UpdateTime = 5;
                 } else if (ExchangeCurrencyPair.contains("itbit")) { // may need more work
                     history = new TickerHistory_ItBit();
                 } else if (ExchangeCurrencyPair.contains("coinbase")) {
@@ -241,10 +242,10 @@ public class TickerCacheTask {
                             if (LastUsedTime == 0) {
                                 LastUsedTime = item.getServerTime();
                             }
-                            if (item.getVol() == 0) {
+                            if (Volume == 0) {
                                 Volume = item.getVol();
                             }
-                            if (item.getVol_Cur() == 0) {
+                            if (VolumeCur == 0) {
                                 VolumeCur = item.getVol_Cur();
                             }
                             // Add to list
@@ -442,8 +443,8 @@ public class TickerCacheTask {
         public void run() {
             System.out.println("Caching currency pair from SQLserv: " + ExchangeSite + ":" + CurrencyPair_);
 
-            List<TickerItemData> list_BTCe2 = new LinkedList(); // create a new array first and replace later
-            boolean result = MicrosoftAzureExt.btce_Select_Graph_Data(ExchangeSite, CurrencyPair_, 999999, 24, LastCachedTime, list_BTCe2);
+            List<TickerItemData> list_newItems = new LinkedList(); // create a new array first and replace later
+            boolean result = MicrosoftAzureExt.btce_Select_Graph_Data(ExchangeSite, CurrencyPair_, 999999, 24, LastCachedTime, list_newItems);
             if (!result) {
                 return; // temporary network issue?
             }
@@ -452,16 +453,16 @@ public class TickerCacheTask {
             mutex_mssql.lock();
             try {
                 if (!list_mssql.containsKey(ExchangeCurrencyPair)) {
-                    list_mssql.put(ExchangeCurrencyPair, list_BTCe2);
+                    list_mssql.put(ExchangeCurrencyPair, list_newItems);
 
-                    for (TickerItemData data : list_BTCe2) {
+                    for (TickerItemData data : list_newItems) {
                         if (data.getServerTime() > LastCachedTime) {
                             LastCachedTime = data.getServerTime();
                         }
                     }
                 } else {
                     List<TickerItemData> currentList = list_mssql.get(ExchangeCurrencyPair);
-                    for (TickerItemData data : list_BTCe2) {
+                    for (TickerItemData data : list_newItems) {
                         if (data.getServerTime() > LastCachedTime) {
                             currentList.add(data);
 
@@ -472,7 +473,7 @@ public class TickerCacheTask {
             } finally {
                 mutex_mssql.unlock();
             }
-            System.out.println("Caching price for " + ExchangeCurrencyPair + " --> " + list_BTCe2.size());
+            System.out.println("Caching price for " + ExchangeCurrencyPair + " --> " + list_newItems.size());
         }
     }
 }
