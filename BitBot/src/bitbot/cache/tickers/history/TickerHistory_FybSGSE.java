@@ -1,10 +1,8 @@
 package bitbot.cache.tickers.history;
 
-import bitbot.cache.tickers.TickerItemData;
 import bitbot.handler.channel.ChannelServer;
 import bitbot.util.HttpClient;
 import java.util.Calendar;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -16,17 +14,23 @@ import org.json.simple.parser.JSONParser;
  *
  * @author z
  */
-public class TickerHistory_CexIo implements TickerHistory {
+public class TickerHistory_FybSGSE implements TickerHistory {
 
-   // private static final TimeZone timeZone = TimeZone.getTimeZone("Etc/GMT+6");
     @Override
     public TickerHistoryData connectAndParseHistoryResult(String ExchangeCurrencyPair, String CurrencyPair, long LastPurchaseTime, int LastTradeId) {
-        String[] CurrencyPairSplit = CurrencyPair.toUpperCase().split("_");
-        String Uri = String.format("https://cex.io/api/trade_history/%s/%s", CurrencyPairSplit[0], CurrencyPairSplit[1]);
+        String[] split = CurrencyPair.split("_");
+        
+        boolean IsFybSG = CurrencyPair.contains("sgd");
+        String Uri = String.format("https://www.fyb%s.%s/api/%s/trades.json%s", 
+                IsFybSG ? "sg" : "se",
+                IsFybSG ? "com" : "se",
+                split[1].toUpperCase(),
+                LastTradeId != 0 ? "?since=" + LastTradeId : "");
+        
         String GetResult = HttpClient.httpsGet(Uri, "");
 
         if (GetResult != null) {
-            TickerHistoryData ReturnData = new TickerHistoryData(LastPurchaseTime, LastTradeId, 0, true);
+            TickerHistoryData ReturnData = new TickerHistoryData(LastPurchaseTime,  LastTradeId, 0, false);
 
             JSONParser parser = new JSONParser(); // Init parser
             try {
@@ -47,26 +51,27 @@ public class TickerHistory_CexIo implements TickerHistory {
                 };
                 LinkedList<LinkedHashMap> tradesArray = (LinkedList<LinkedHashMap>) parser.parse(GetResult, containerFactory);
 
-                Iterator<LinkedHashMap> itr = tradesArray.iterator();
-                while (itr.hasNext()) { // Loop through things in proper sequence
-                    LinkedHashMap obj = itr.next();
-
-                    long date = Integer.parseInt(obj.get("date").toString()) * 1000l;
+                for (int i = tradesArray.size() - 1; i >= 0; i--)
+                {
+                    LinkedHashMap obj = tradesArray.get(i);
+                    
+                    int tradeid = Integer.parseInt(obj.get("tid").toString());
+                    long date = Long.parseLong(obj.get("date").toString()) * 1000;
                     float price = Float.parseFloat(obj.get("price").toString());
                     float amount = Float.parseFloat(obj.get("amount").toString());
-                    //String type = obj.get("trade_type").toString(); // bid/ask
+                    //String type = // FybSGSE doesn't broadcast buy or sell..
 
                     // Initialize last purchase time if neccessary
                     if (LastPurchaseTime == 0) {
-                        LastPurchaseTime = date; // set default param
-                        /*cal_LastPurchaseTime = Calendar.getInstance();
-                         cal_LastPurchaseTime.set(Calendar.YEAR, 1970);
-                         cal_LastPurchaseTime.set(Calendar.MONTH, 0);
-                         cal_LastPurchaseTime.set(Calendar.DATE, 0);
+                        /*Calendar cal_LastPurchaseTime = Calendar.getInstance();
+                        cal_LastPurchaseTime.set(Calendar.YEAR, 1970);
+                        cal_LastPurchaseTime.set(Calendar.MONTH, 0);
+                        cal_LastPurchaseTime.set(Calendar.DATE, 0);
                         
-                         cal_LastPurchaseTime.add(Calendar.HOUR, -4); // BTC-e, time 
-                         cal_LastPurchaseTime.add(Calendar.SECOND, (int) (date / 1000));*/
-
+                        cal_LastPurchaseTime.add(Calendar.HOUR, 8);
+                        cal_LastPurchaseTime.add(Calendar.SECOND, (int) (date / 1000));*/
+                        
+                        LastPurchaseTime = date;//cal_LastPurchaseTime.getTimeInMillis(); // set default param
                         ReturnData.setLastPurchaseTime(LastPurchaseTime);
                     }
 
@@ -77,19 +82,22 @@ public class TickerHistory_CexIo implements TickerHistory {
                     cal.set(Calendar.MONTH, 0);
                     cal.set(Calendar.DATE, 0);
 
-                    cal.add(Calendar.HOUR, -4); // BTC-e, time 
                     cal.add(Calendar.SECOND, (int) (date / 1000));*/
-
-                   // System.out.println(String.format("[Trades history] Got  [%s], Price: %f, Sum: %f ", cal.getTime().toString(), price, amount));
+                    
+                    //System.out.println(String.format("[Trades history] Got [%s], Price: %f, Sum: %f ", cal.getTime().toString(), price, amount));
+                    
                     // Assume things are read in ascending order
                     if (date > LastPurchaseTime) {
                         //System.out.println(String.format("[Trades history] Added [%s], Price: %f, Sum: %f ", cal.getTime().toString(), price, amount));
-                        ReturnData.merge(price, amount, date, 0);
-
+                        ReturnData.merge(price, amount, date, tradeid);
+                        
                         ChannelServer.getInstance().BroadcastConnectedClients(
-                                TradeHistoryBuySellEnum.Unknown,
+                                TradeHistoryBuySellEnum.Unknown, 
                                 CurrencyPair,
-                                0);
+                                tradeid);
+                    }
+                    if (tradeid > ReturnData.getLastTradeId()) {
+                        ReturnData.setLastTradeId(tradeid);
                     }
                 }
             } catch (Exception parseExp) {

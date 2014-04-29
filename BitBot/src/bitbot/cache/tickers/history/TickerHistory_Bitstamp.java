@@ -17,12 +17,12 @@ import org.json.simple.parser.JSONParser;
 public class TickerHistory_Bitstamp implements TickerHistory {
 
     @Override
-    public TickerHistoryData connectAndParseHistoryResult(String ExchangeCurrencyPair, String CurrencyPair, long LastPurchaseTime) {
+    public TickerHistoryData connectAndParseHistoryResult(String ExchangeCurrencyPair, String CurrencyPair, long LastPurchaseTime, int LastTradeId) {
         String Uri = "https://www.bitstamp.net/api/transactions?time=min";
         String GetResult = HttpClient.httpsGet(Uri, "");
 
         if (GetResult != null) {
-            TickerHistoryData ReturnData = new TickerHistoryData(LastPurchaseTime, false);
+            TickerHistoryData ReturnData = new TickerHistoryData(LastPurchaseTime, LastTradeId, 0, false);
 
             JSONParser parser = new JSONParser(); // Init parser
             try {
@@ -78,7 +78,7 @@ public class TickerHistory_Bitstamp implements TickerHistory {
                     // Assume things are read in ascending order
                     if (date > LastPurchaseTime) {
                         //System.out.println(String.format("[Trades history] Added [%s], Price: %f, Sum: %f ", cal.getTime().toString(), price, amount));
-                        ReturnData.merge(price, amount, date);
+                        ReturnData.merge(price, amount, date, tradeid);
 
                         ChannelServer.getInstance().BroadcastConnectedClients(
                                 TradeHistoryBuySellEnum.Unknown,

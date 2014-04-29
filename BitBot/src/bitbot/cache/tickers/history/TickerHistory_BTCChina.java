@@ -18,13 +18,13 @@ public class TickerHistory_BTCChina implements TickerHistory {
     //private static final TimeZone timeZone = TimeZone.getTimeZone("Etc/GMT-6");
 
     @Override
-    public TickerHistoryData connectAndParseHistoryResult(String ExchangeCurrencyPair, String CurrencyPair, long LastPurchaseTime) {
+    public TickerHistoryData connectAndParseHistoryResult(String ExchangeCurrencyPair, String CurrencyPair, long LastPurchaseTime, int LastTradeId) {
         String[] split = CurrencyPair.split("_");
         String Uri = String.format("https://data.btcchina.com/data/trades?market=%s&since=%d", (split[1] + split[0]).toUpperCase(), LastPurchaseTime / 1000);
         String GetResult = HttpClient.httpsGet(Uri, "");
 
         if (GetResult != null) {
-            TickerHistoryData ReturnData = new TickerHistoryData(LastPurchaseTime, false);
+            TickerHistoryData ReturnData = new TickerHistoryData(LastPurchaseTime, LastTradeId, 0, false);
 
             JSONParser parser = new JSONParser(); // Init parser
             try {
@@ -83,7 +83,7 @@ public class TickerHistory_BTCChina implements TickerHistory {
                     // Assume things are read in ascending order
                     if (cal.getTimeInMillis() > LastPurchaseTime) {
                         System.out.println(String.format("[Trades history] Added [%s], Price: %f, Sum: %f ", cal.getTime().toString(), price, amount));
-                        ReturnData.merge(price, amount, date);
+                        ReturnData.merge(price, amount, date, tradeid);
                         
                         ChannelServer.getInstance().BroadcastConnectedClients(
                                 TradeHistoryBuySellEnum.Unknown, 

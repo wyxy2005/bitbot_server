@@ -18,12 +18,12 @@ public class TickerHistory_Kraken implements TickerHistory {
    // private static final TimeZone timeZone = TimeZone.getTimeZone("Etc/GMT+6");
 
     @Override
-    public TickerHistoryData connectAndParseHistoryResult(String ExchangeCurrencyPair, String CurrencyPair, long LastPurchaseTime) {
+    public TickerHistoryData connectAndParseHistoryResult(String ExchangeCurrencyPair, String CurrencyPair, long LastPurchaseTime, int LastTradeId) {
         String Uri = String.format("https://api.kraken.com/0/public/Trades?pair=%s", CurrencyPair.replace("_", "").toUpperCase());
         String GetResult = HttpClient.httpsGet(Uri, "");
 
         if (GetResult != null) {
-            TickerHistoryData ReturnData = new TickerHistoryData(LastPurchaseTime, false);
+            TickerHistoryData ReturnData = new TickerHistoryData(LastPurchaseTime, LastTradeId, 0, false);
 
             JSONParser parser = new JSONParser(); // Init parser
             try {
@@ -86,7 +86,7 @@ public class TickerHistory_Kraken implements TickerHistory {
                     // Assume things are read in ascending order
                     if (date > LastPurchaseTime) {
                         //System.out.println(String.format("[Trades history] Added [%s], Price: %f, Sum: %f ", date, price, amount));
-                        ReturnData.merge(price, amount, date);
+                        ReturnData.merge(price, amount, date, 0);
                         
                         ChannelServer.getInstance().BroadcastConnectedClients(
                                 type.equals("b") ? TradeHistoryBuySellEnum.Buy : TradeHistoryBuySellEnum.Sell, 

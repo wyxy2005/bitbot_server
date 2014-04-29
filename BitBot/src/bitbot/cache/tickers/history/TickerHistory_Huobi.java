@@ -24,12 +24,12 @@ public class TickerHistory_Huobi implements TickerHistory {
     private static final TimeZone timeZone = TimeZone.getTimeZone("Etc/GMT-8");
 
     @Override
-    public TickerHistoryData connectAndParseHistoryResult(String ExchangeCurrencyPair, String CurrencyPair, long LastPurchaseTime) {
+    public TickerHistoryData connectAndParseHistoryResult(String ExchangeCurrencyPair, String CurrencyPair, long LastPurchaseTime, int LastTradeId) {
         String Uri = String.format("https://market.huobi.com/staticmarket/detail%s.html", CurrencyPair.contains("btc") ? "" : "_ltc");
         String GetResult = HttpClient.httpGet(Uri, "");
 
         if (GetResult != null) {
-            TickerHistoryData ReturnData = new TickerHistoryData(LastPurchaseTime, false);
+            TickerHistoryData ReturnData = new TickerHistoryData(LastPurchaseTime, LastTradeId, 0, false);
 
             JSONParser parser = new JSONParser(); // Init parser
             try {
@@ -81,7 +81,7 @@ public class TickerHistory_Huobi implements TickerHistory {
                     if (cal.getTimeInMillis() > LastPurchaseTime
                             && cal.get(Calendar.MINUTE) == cal_LastPurchaseTime.get(Calendar.MINUTE)) {
                         //System.out.println("[Trades history] Added: " + cal.getTime().toString());
-                        ReturnData.merge(price, amount, cal.getTimeInMillis());
+                        ReturnData.merge(price, amount, cal.getTimeInMillis(), 0);
 
                         ChannelServer.getInstance().BroadcastConnectedClients(
                                 type.equals("买入") ? TradeHistoryBuySellEnum.Buy : TradeHistoryBuySellEnum.Sell, 

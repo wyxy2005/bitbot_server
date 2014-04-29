@@ -45,7 +45,7 @@ public class BacklogCommitTask {
         mutex.lock();
         try {
             Cache_Backlog.addAll(data);
-            System.out.println("Backlog size: " + Cache_Backlog.size());
+            System.out.println("Backlog size2: " + Cache_Backlog.size());
         } finally {
             mutex.unlock();
         }
@@ -67,31 +67,26 @@ public class BacklogCommitTask {
 
         @Override
         public void run() {
-            FlushLogs();
-        }
-    }
+            mutex.lock();
+            try {
+                List<TickerHistoryData> DatabaseCommitBacklog2 = new ArrayList<>(Cache_Backlog); // Create a new array off existing data
+                
+                Cache_Backlog.clear(); // Clear existing
 
-    public static void FlushLogs() {
-        List<TickerHistoryData> DatabaseCommitBacklog2 = new ArrayList<>(Cache_Backlog); // Create a new array off existing data
+                for (TickerHistoryData backlog : DatabaseCommitBacklog2) {
+                    HistoryDatabaseCommitEnum commitResult = backlog.commitDatabase(
+                            0, // dummy values
+                            null, null);
 
-        mutex.lock();
-        try {
-            Cache_Backlog.clear(); // Clear existing
-
-            for (TickerHistoryData backlog : DatabaseCommitBacklog2) {
-                HistoryDatabaseCommitEnum commitResult = backlog.commitDatabase(
-                        0, // dummy values
-                        null, null);
-
-                if (commitResult != HistoryDatabaseCommitEnum.Ok) { // if failed once again, add back. Lulz.
-                    Cache_Backlog.add(backlog);
+                    if (commitResult != HistoryDatabaseCommitEnum.Ok) { // if failed once again, add back. Lulz.
+                        Cache_Backlog.add(backlog);
+                    }
                 }
+                DatabaseCommitBacklog2.clear();
+            } finally {
+                mutex.unlock();
             }
-        } finally {
-            mutex.unlock();
         }
-
-        DatabaseCommitBacklog2.clear();
     }
 
     public static final void RegisterForImmediateLogging(TickerHistoryData type) {
@@ -119,38 +114,34 @@ public class BacklogCommitTask {
 
         @Override
         public void run() {
-            ImmediateFlushLogs();
-        }
-    }
+            List<TickerHistoryData> DatabaseCommitBacklog_Failed = new ArrayList<>(); // Create a new array off existing data
 
-    public static void ImmediateFlushLogs() {
-        List<TickerHistoryData> DatabaseCommitBacklog_Failed = new ArrayList<>(); // Create a new array off existing data
+            ImmediateMutex.lock();
+            try {
+                Iterator<TickerHistoryData> backlogItr = Cache_ImmediateBacklog.iterator();
+                while (backlogItr.hasNext()) {
+                    TickerHistoryData backlog = backlogItr.next();
 
-        ImmediateMutex.lock();
-        try {
-            Iterator<TickerHistoryData> backlogItr = Cache_ImmediateBacklog.iterator();
-            while (backlogItr.hasNext()) {
-                TickerHistoryData backlog = backlogItr.next();
-                
-                HistoryDatabaseCommitEnum commitResult = backlog.commitDatabase(
-                        0, // dummy values
-                        null, null);
+                    HistoryDatabaseCommitEnum commitResult = backlog.commitDatabase(
+                            0, // dummy values
+                            null, null);
 
-                if (commitResult != HistoryDatabaseCommitEnum.Ok) { // if failed once again, add back. Lulz.
-                    DatabaseCommitBacklog_Failed.add(backlog);
-                } else {
-                    backlogItr.remove(); // remove list if successful
+                    if (commitResult != HistoryDatabaseCommitEnum.Ok) { // if failed once again, add back. Lulz.
+                        DatabaseCommitBacklog_Failed.add(backlog);
+                    } else {
+                        backlogItr.remove(); // remove list if successful
+                    }
                 }
+            } finally {
+                ImmediateMutex.unlock();
             }
-        } finally {
-            ImmediateMutex.unlock();
+            // Register the failed items to the main backlog list that'll commit once every 5 minutes instead
+            // This line must always be after the ImmediateMutex.unlock to avoid deadlocks
+            if (!DatabaseCommitBacklog_Failed.isEmpty()) {
+                RegisterForLogging(DatabaseCommitBacklog_Failed);
+            }
+            // GC
+            DatabaseCommitBacklog_Failed.clear();
         }
-        // Register the failed items to the main backlog list that'll commit once every 5 minutes instead
-        // This line must always be after the ImmediateMutex.unlock to avoid deadlocks
-        if (!DatabaseCommitBacklog_Failed.isEmpty()) {
-            RegisterForLogging(DatabaseCommitBacklog_Failed);
-        }
-        // GC
-        DatabaseCommitBacklog_Failed.clear();
     }
 }

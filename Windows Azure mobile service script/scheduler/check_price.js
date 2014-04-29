@@ -15,6 +15,7 @@ function check_price() {
     fetchItem('ltc_btc', 'btce');
     fetchItem('ltc_usd', 'btce');
     fetchItem('ltc_rur', 'btce');
+    fetchItem('ltc_eur', 'btce');
     fetchItem('ltc_cnh', 'btce');
     fetchItem('ltc_gbp', 'btce');
     fetchItem('nmc_usd', 'btce');
@@ -276,23 +277,32 @@ function check_price() {
                 text3: "",
                 image: "ms-appx:///Assets/ToastImage.png"
             }, {
-                    success: function(pushResponse) {
-                        push.wns.sendBadge(clientUniqueId, {
-                            value: 1,
-                            text1: alertMsg_Toast
+                launch: alertMsg_ToastNavigateURI,
+                duration: 'long',
+            }, {
+                success: function(pushResponse) {
+                    push.wns.sendBadge(clientUniqueId, {
+                        value: 1,
+                        text1: alertMsg_Toast
                         }, {
-                                success: function(pushResponse) {
-                                }
-                            });
-
-                    },
-                    error: function(error) {
-                        // exired channel
+                            success: function(pushResponse) {
+                                updateNotificationCount(sqlTable, client.pushuri, client, source, currencypair, platform);
+                         }});
+                    }, error: function(error) {
+                        // expired channel
                         if (error.statusCode == 410 || error.statusCode == 404 || error.statusCode == 412) {
                             removeExpiredChannel(sqlTable, client.pushuri, clientuniqueid);
                         }
                         console.log(error);
                     }
+                }, {
+                error: function(error) {
+                    // expired channel
+                        if (error.statusCode == 410 || error.statusCode == 404 || error.statusCode == 412) {
+                            removeExpiredChannel(sqlTable, client.pushuri, clientuniqueid);
+                        }
+                        console.log(error);
+                }
                 });
         }
 
@@ -330,27 +340,31 @@ function check_price() {
     }
 
     function insertTickerData(returnJson, currencypair, source) {
-        if ((source == 'btce' && currencypair == 'btc_usd') ||
-            (source == 'btce' && currencypair == 'btc_rur') ||
-            (source == 'btce' && currencypair == 'btc_eur') ||
-            (source == 'btce' && currencypair == 'btc_cnh') ||
-            (source == 'btce' && currencypair == 'ltc_usd') ||
-            (source == 'btce' && currencypair == 'ltc_rur') ||
-            (source == 'btce' && currencypair == 'ltc_cnh') ||
-            (source == 'btce' && currencypair == 'nmc_usd') ||
-            (source == 'btce' && currencypair == 'ppc_usd') ||
-            (source == 'btce' && currencypair == 'nvc_usd') ||
-            (source == 'btce' && currencypair == 'trc_btc') ||
-            (source == 'btce' && currencypair == 'xpm_btc') ||
-            (source == 'btce' && currencypair == 'ftc_btc') ||
+        if (
+            //(source == 'btce' && currencypair == 'btc_usd') ||
+            //(source == 'btce' && currencypair == 'btc_rur') ||
+            //(source == 'btce' && currencypair == 'btc_eur') ||
+            //(source == 'btce' && currencypair == 'btc_cnh') ||
+            //(source == 'btce' && currencypair == 'btc_gbp') ||
+            //(source == 'btce' && currencypair == 'ltc_usd') ||
+            //(source == 'btce' && currencypair == 'ltc_rur') ||
+            //(source == 'btce' && currencypair == 'ltc_cnh') ||
+            //(source == 'btce' && currencypair == 'ltc_eur') ||
+            //(source == 'btce' && currencypair == 'ltc_gbp') ||
+            //(source == 'btce' && currencypair == 'nmc_usd') ||
+            //(source == 'btce' && currencypair == 'ppc_usd') ||
+            //(source == 'btce' && currencypair == 'nvc_usd') ||
+            //(source == 'btce' && currencypair == 'trc_btc') ||
+            //(source == 'btce' && currencypair == 'xpm_btc') ||
+            //(source == 'btce' && currencypair == 'ftc_btc') ||
             //(source == 'mtgox' && currencypair == 'btc_usd') ||
             (source == 'btcchina' && currencypair == 'btc_cny') ||
             (source == 'btcchina' && currencypair == 'ltc_cny') ||
-            (source == 'okcoin' && currencypair == 'btc_cny') ||
-            (source == 'okcoin' && currencypair == 'ltc_cny') ||
-            (source == 'bitstamp' && currencypair == 'btc_usd') ||
-            (source == 'coinbase' && currencypair == 'btc_usd') ||
-            (source == 'huobi' && currencypair == 'btc_cny') ||
+            //(source == 'okcoin' && currencypair == 'btc_cny') ||
+            //(source == 'okcoin' && currencypair == 'ltc_cny') ||
+            //(source == 'bitstamp' && currencypair == 'btc_usd') ||
+            //(source == 'coinbase' && currencypair == 'btc_usd') ||
+            //(source == 'huobi' && currencypair == 'btc_cny') ||
             (source == 'itbit' && currencypair == 'xbt_usd') ||
             (source == 'itbit' && currencypair == 'xbt_sgd') ||
             (source == 'itbit' && currencypair == 'xbt_eur') ||
@@ -385,32 +399,22 @@ function check_price() {
     function insertTickerData_btce(returnJson, currencypair, source) {
         var pushTable = source + '_price_' + currencypair;
 
-        var query = "SELECT TOP (1) * FROM " + pushTable + " WHERE updated = ?;";
-        mssql.query(query, [returnJson.ticker.updated], {
-            success: function(results) {
-
-                if (results.length === 0) {
-                    var query_insert = "INSERT  TOP (1) INTO " + pushTable + " (high,low,buy,vol,vol_cur,server_time) VALUES (?,?,?,?,?,?);";
-                    mssql.query(query_insert, [
-                        returnJson.ticker.high,
-                        returnJson.ticker.low,
-                        returnJson.ticker.buy,
-                        returnJson.ticker.vol,
-                        returnJson.ticker.vol_cur,
-                        returnJson.ticker.server_time],
-                        {
-                            success: function(results) {
-                            }, error: function(err) {
-                                console.log('Unable to log current currency ticker ' + currencypair + '' + err);
-                            }
-                        });
-                } else {
-                    // update current copy
+        var query_insert = 'INSERT INTO bitcoinbot.' + pushTable + ' ("high","low","open","vol","vol_cur","server_time","close") VALUES (?,?,?,?,?,?,?);';
+        mssql.query(query_insert, [
+            returnJson.ticker.high,
+            returnJson.ticker.low,
+            returnJson.ticker.buy,
+            returnJson.ticker.vol,
+            returnJson.ticker.vol_cur,
+            returnJson.ticker.server_time,
+            returnJson.ticker.buy // close
+        ],
+            {
+                success: function(results) {
+                }, error: function(err) {
+                    console.log('Unable to log current currency ticker ' + currencypair + '' + err);
                 }
-            }, error: function(err) {
-                console.log("[insertTickerData_btce] Error is: " + err);
-            }
-        });
+            });
     }
 
     function insertTickerData_Kraken(returnJson, currencypair, source) {
@@ -421,14 +425,16 @@ function check_price() {
 
         var epochdate = new Date().valueOf() / 1000;
 
-        var query_insert = "INSERT  TOP (1) INTO " + pushTable + " (high,low,buy,vol,vol_cur,server_time) VALUES (?,?,?,?,?,?);";
+        var query_insert = 'INSERT INTO bitcoinbot.' + pushTable + ' ("high","low","open","vol","vol_cur","server_time","close") VALUES (?,?,?,?,?,?,?);';
         mssql.query(query_insert, [
             parseFloat(pairresult.h[0]),
             parseFloat(pairresult.l[0]),
             parseFloat(pairresult.b[0]), // buy
             parseFloat(pairresult.v[0]) * parseFloat(pairresult.b[0]),
             parseFloat(pairresult.v[0]),
-            epochdate], // server time
+            epochdate, // server time
+            parseFloat(pairresult.b[0]) // close
+        ],
             {
                 success: function(results) {
                 }, error: function(err) {
@@ -442,14 +448,15 @@ function check_price() {
 
         var epochdate = parseInt(returnJson.timestamp);
 
-        var query_insert = "INSERT  TOP (1) INTO " + pushTable + " (high,low,buy,vol,vol_cur,server_time) VALUES (?,?,?,?,?,?);";
+        var query_insert = 'INSERT INTO bitcoinbot.' + pushTable + ' ("high","low","open","vol","vol_cur","server_time","close") VALUES (?,?,?,?,?,?,?);';
         mssql.query(query_insert, [
             parseFloat(returnJson.high),
             parseFloat(returnJson.low),
             parseFloat(returnJson.bid),
             parseFloat(returnJson.volume) * parseFloat(returnJson.bid),
             parseFloat(returnJson.volume),
-            epochdate], // server time
+            epochdate, // server time
+            parseFloat(returnJson.bid)], // close
             {
                 success: function(results) {
                 }, error: function(err) {
@@ -463,14 +470,15 @@ function check_price() {
 
         var epochdate = new Date().valueOf() / 1000;
 
-        var query_insert = "INSERT  TOP (1) INTO " + pushTable + " (high,low,buy,vol,vol_cur,server_time) VALUES (?,?,?,?,?,?);";
+        var query_insert = 'INSERT INTO bitcoinbot.' + pushTable + ' ("high","low","open","vol","vol_cur","server_time","close") VALUES (?,?,?,?,?,?,?);';
         mssql.query(query_insert, [
             parseFloat(returnJson.high),
             parseFloat(returnJson.low),
             parseFloat(returnJson.bid),
             parseFloat(returnJson.volume) * parseFloat(returnJson.bid),
             parseFloat(returnJson.volume),
-            epochdate], // server time],
+            epochdate, // server time,
+            parseFloat(returnJson.bid)], // close
             {
                 success: function(results) {
                 }, error: function(err) {
@@ -484,14 +492,15 @@ function check_price() {
 
         var epochdate = parseInt(returnJson.timestamp);
 
-        var query_insert = "INSERT  TOP (1) INTO " + pushTable + " (high,low,buy,vol,vol_cur,server_time) VALUES (?,?,?,?,?,?);";
+        var query_insert = 'INSERT INTO bitcoinbot.' + pushTable + ' ("high","low","open","vol","vol_cur","server_time","close") VALUES (?,?,?,?,?,?,?);';
         mssql.query(query_insert, [
             parseFloat(returnJson.high),
             parseFloat(returnJson.low),
             parseFloat(returnJson.bid),
             parseFloat(returnJson.volume) * parseFloat(returnJson.bid),
             parseFloat(returnJson.volume),
-            epochdate], // server time
+            epochdate, // server time
+            parseFloat(returnJson.bid)],
             {
                 success: function(results) {
                 }, error: function(err) {
@@ -505,32 +514,22 @@ function check_price() {
 
         var epochdate = new Date().valueOf() / 1000;
 
-        var query = "SELECT  TOP (1) * FROM " + pushTable + " WHERE updated = ?;";
-        mssql.query(query, [epochdate], {
-            success: function(results) {
 
-                if (results.length === 0) {
-                    var query_insert = "INSERT  TOP (1) INTO " + pushTable + " (high,low,buy,vol,vol_cur,server_time) VALUES (?,?,?,?,?,?);";
-                    mssql.query(query_insert, [
-                        0,
-                        0,
-                        returnJson.amount, // buy
-                        0,
-                        0,
-                        epochdate],
-                        {
-                            success: function(results) {
-                            }, error: function(err) {
-                                console.log('Unable to log current currency ticker ' + currencypair + '' + err);
-                            }
-                        });
-                } else {
-                    // update current copy
+        var query_insert = 'INSERT INTO bitcoinbot.' + pushTable + ' ("high","low","open","vol","vol_cur","server_time","close") VALUES (?,?,?,?,?,?,?);';
+        mssql.query(query_insert, [
+            0,
+            0,
+            returnJson.amount, // buy
+            0,
+            0,
+            epochdate,
+            returnJson.amount], // buy
+            {
+                success: function(results) {
+                }, error: function(err) {
+                    console.log('Unable to log current currency ticker ' + currencypair + '' + err);
                 }
-            }, error: function(err) {
-                console.log("[insertTickerData_Coinbase] Error is: " + err);
-            }
-        });
+            });
     }
 
     function insertTickerData_Okcoin(returnJson, currencypair, source) {
@@ -538,32 +537,21 @@ function check_price() {
 
         var epochdate = new Date().valueOf() / 1000;
 
-        var query = "SELECT  TOP (1) * FROM " + pushTable + " WHERE updated = ?;";
-        mssql.query(query, [epochdate], {
-            success: function(results) {
-
-                if (results.length === 0) {
-                    var query_insert = "INSERT  TOP (1) INTO " + pushTable + " (high,low,buy,vol,vol_cur,server_time) VALUES (?,?,?,?,?,?);";
-                    mssql.query(query_insert, [
-                        returnJson.ticker.high,
-                        returnJson.ticker.low,
-                        returnJson.ticker.buy,
-                        parseFloat(returnJson.ticker.vol) * parseFloat(returnJson.ticker.buy),
-                        returnJson.ticker.vol,
-                        epochdate],
-                        {
-                            success: function(results) {
-                            }, error: function(err) {
-                                console.log('Unable to log current currency ticker ' + currencypair + '' + err);
-                            }
-                        });
-                } else {
-                    // update current copy
+        var query_insert = 'INSERT INTO bitcoinbot.' + pushTable + ' ("high","low","open","vol","vol_cur","server_time","close") VALUES (?,?,?,?,?,?,?);';
+        mssql.query(query_insert, [
+            returnJson.ticker.high,
+            returnJson.ticker.low,
+            returnJson.ticker.buy,
+            parseFloat(returnJson.ticker.vol) * parseFloat(returnJson.ticker.buy),
+            returnJson.ticker.vol,
+            epochdate,
+            returnJson.ticker.buy], // close
+            {
+                success: function(results) {
+                }, error: function(err) {
+                    console.log('Unable to log current currency ticker ' + currencypair + '' + err);
                 }
-            }, error: function(err) {
-                console.log("[insertTickerData_Okcoin] Error is: " + err);
-            }
-        });
+            });
     }
 
     function insertTickerData_MTGox(returnJson, currencypair, source) {
@@ -571,14 +559,15 @@ function check_price() {
 
         var epochdate = parseInt(returnJson.data.now) / 1000000;
 
-        var query_insert = "INSERT TOP (1) INTO " + pushTable + " (high,low,buy,vol,vol_cur,server_time) VALUES (?,?,?,?,?,?);";
+        var query_insert = 'INSERT INTO bitcoinbot.' + pushTable + ' ("high","low","open","vol","vol_cur","server_time","close") VALUES (?,?,?,?,?,?,?);';
         mssql.query(query_insert, [
             parseFloat(returnJson.data.high.value),
             parseFloat(returnJson.data.low.value),
             parseFloat(returnJson.data.buy.value),
             parseFloat(returnJson.data.vol.value) * parseFloat(returnJson.data.buy.value),
             parseFloat(returnJson.data.vol.value),
-            epochdate], // server time],
+            epochdate, // server time],
+            parseFloat(returnJson.data.buy.value)],
             {
                 success: function(results) {
                 }, error: function(err) {
@@ -592,14 +581,15 @@ function check_price() {
 
         var epochdate = new Date().valueOf() / 1000;
 
-        var query_insert = "INSERT TOP (1) INTO " + pushTable + " (high,low,buy,vol,vol_cur,server_time) VALUES (?,?,?,?,?,?);";
+        var query_insert = 'INSERT INTO bitcoinbot.' + pushTable + ' ("high","low","open","vol","vol_cur","server_time","close") VALUES (?,?,?,?,?,?,?);';
         mssql.query(query_insert, [
             returnJson.ticker.high,
             returnJson.ticker.low,
             returnJson.ticker.buy,
             parseFloat(returnJson.ticker.vol) * parseFloat(returnJson.ticker.buy),
             returnJson.ticker.vol,
-            epochdate], // server time
+            epochdate, // server time
+            returnJson.ticker.buy],
             {
                 success: function(results) {
                 }, error: function(err) {

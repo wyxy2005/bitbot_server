@@ -18,12 +18,12 @@ public class TickerHistory_CampBX implements TickerHistory {
 
    // private static final TimeZone timeZone = TimeZone.getTimeZone("Etc/GMT+6");
     @Override
-    public TickerHistoryData connectAndParseHistoryResult(String ExchangeCurrencyPair, String CurrencyPair, long LastPurchaseTime) {
+    public TickerHistoryData connectAndParseHistoryResult(String ExchangeCurrencyPair, String CurrencyPair, long LastPurchaseTime, int LastTradeId) {
         String Uri = "http://CampBX.com/api/xticker.php";
         String Result = HttpClient.httpGet(Uri, "");
 
         if (Result != null) {
-            TickerHistoryData ReturnData = new TickerHistoryData(LastPurchaseTime, true);
+            TickerHistoryData ReturnData = new TickerHistoryData(LastPurchaseTime, LastTradeId, 0, true);
 
             JSONParser parser = new JSONParser(); // Init parser
             try {

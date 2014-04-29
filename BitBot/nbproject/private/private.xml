@@ -13,8 +13,8 @@
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
         <group>
             <file>file:/C:/Users/z/Desktop/Server/bitbot_server/BitBot/src/bitbot/cache/tickers/history/BacklogCommitTask.java</file>
+            <file>file:/C:/Users/z/Desktop/Server/bitbot_server/BitBot/src/bitbot/cache/tickers/history/TickerHistory_FybSGSE.java</file>
             <file>file:/C:/Users/z/Desktop/Server/bitbot_server/BitBot/src/bitbot/cache/tickers/history/TickerHistoryData.java</file>
-            <file>file:/C:/Users/z/Desktop/Server/bitbot_server/BitBot/src/bitbot/cache/tickers/history/TickerHistory_BTCChina.java</file>
             <file>file:/C:/Users/z/Desktop/Server/bitbot_server/BitBot/src/bitbot/cache/tickers/TickerCacheTask.java</file>
             <file>file:/C:/Users/z/Desktop/Server/bitbot_server/BitBot/src/bitbot/cache/tickers/history/TickerHistory_Okcoin.java</file>
         </group>

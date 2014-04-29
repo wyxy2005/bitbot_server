@@ -1,6 +1,5 @@
 package bitbot.cache.tickers;
 
-import bitbot.cache.tickers.history.BacklogCommitTask;
 import bitbot.cache.tickers.history.HistoryDatabaseCommitEnum;
 import bitbot.cache.tickers.history.TickerHistory;
 import bitbot.cache.tickers.history.TickerHistoryData;
@@ -11,6 +10,7 @@ import bitbot.cache.tickers.history.TickerHistory_Bitstamp;
 import bitbot.cache.tickers.history.TickerHistory_CampBX;
 import bitbot.cache.tickers.history.TickerHistory_CexIo;
 import bitbot.cache.tickers.history.TickerHistory_Coinbase;
+import bitbot.cache.tickers.history.TickerHistory_FybSGSE;
 import bitbot.cache.tickers.history.TickerHistory_Huobi;
 import bitbot.cache.tickers.history.TickerHistory_ItBit;
 import bitbot.cache.tickers.history.TickerHistory_Kraken;
@@ -24,12 +24,12 @@ import bitbot.server.threads.LoggingSaveRunnable;
 import bitbot.server.threads.TimerManager;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.locks.ReentrantLock;
 
 /**
  *
@@ -42,7 +42,6 @@ public class TickerCacheTask {
 
     private final List<LoggingSaveRunnable> runnable_mssql = new ArrayList();
     private final Map<String, List<TickerItemData>> list_mssql;
-    private final ReentrantLock mutex_mssql = new ReentrantLock();
 
     // Acquiring of data directly from the trades 
     private final List<LoggingSaveRunnable> runnable_exchangeHistory = new ArrayList();
@@ -82,6 +81,9 @@ public class TickerCacheTask {
                 } else if (ExchangeCurrencyPair.contains("okcoin")) {
                     history = new TickerHistory_Okcoin();
                     UpdateTime = 5;
+                } else if (ExchangeCurrencyPair.contains("fybsg") || ExchangeCurrencyPair.contains("fybse")) {
+                    history = new TickerHistory_FybSGSE();
+                    UpdateTime = 30;
                 } else if (ExchangeCurrencyPair.contains("itbit")) { // may need more work
                     history = new TickerHistory_ItBit();
                 } else if (ExchangeCurrencyPair.contains("coinbase")) {
@@ -288,6 +290,87 @@ public class TickerCacheTask {
                 }
             }
         }
+        /*
+        while (itr.hasNext()) { // Loop through things in proper sequence
+            TickerItemData item = itr.next();
+
+            if (item.getServerTime() >= ServerTimeFrom) {
+                // Check if last added tick is above the threshold 'intervalMinutes'
+                if (LastUsedTime + (intervalMinutes * 60) < item.getServerTime()) {
+                    while (LastUsedTime + (intervalMinutes * 60) < item.getServerTime()) {
+                        if (item.getServerTime() > cTime) {
+                            // If there's not enough data available.. 
+                            if (LastUsedTime == 0) {
+                                LastUsedTime = item.getServerTime();
+                            }
+                            if (high == 0 || low == Double.MAX_VALUE || open == -1) { // add last daya
+                                list_BTCe2.add(
+                                        new TickerItem_CandleBar(
+                                                LastUsedTime + (intervalMinutes * 60),
+                                                (float) item.getClose() == 0 ? item.getOpen() : item.getClose(),
+                                                (float) item.getClose(),
+                                                (float) item.getClose(),
+                                                (float) item.getClose(),
+                                                0,
+                                                0)
+                                );
+                            } else {
+                                // Add to list
+                                list_BTCe2.add(
+                                        new TickerItem_CandleBar(
+                                                LastUsedTime + (intervalMinutes * 60),
+                                                (float) item.getClose() == 0 ? item.getOpen() : item.getClose(),
+                                                (float) high,
+                                                (float) low,
+                                                (float) open,
+                                                Volume,
+                                                VolumeCur)
+                                );
+                            }
+                        }
+                        // reset
+                        high = 0;
+                        low = Double.MAX_VALUE;
+                        open = -1;
+                        Volume = 0;
+                        VolumeCur = 0;
+
+                        if (LastUsedTime == 0) {
+                            LastUsedTime = item.getServerTime();
+                        }
+                        LastUsedTime = LastUsedTime + (intervalMinutes * 60);// item.getServerTime();
+                    }
+                } else {
+                    high = Math.max(item.getHigh(), high);
+                    low = Math.min(item.getLow(), low);
+                    if (high == 0) {
+                        high = item.getHigh();
+                    }
+                    if (low == Double.MAX_VALUE) {
+                        low = item.getLow();
+                    }
+                    if (open == -1) {
+                        open = item.getOpen();
+                    }
+                    if (item.getVol() > Volume) {
+                        Volume = item.getVol();
+                    }
+                    if (item.getVol_Cur() > VolumeCur) {
+                        VolumeCur = item.getVol_Cur();
+                    }
+                }
+            }
+        }
+        */
+        Collections.sort(list_BTCe2, (TickerItem_CandleBar o1, TickerItem_CandleBar o2) -> {
+            if (o1.getServerTime() > o2.getServerTime()) {
+                return 1;
+            } else if (o1.getServerTime() < o2.getServerTime()) {
+                return 0;
+            } else {
+                return -1;
+            }
+        });
         return list_BTCe2;
     }
 
@@ -376,7 +459,8 @@ public class TickerCacheTask {
             TickerHistoryData data = HistoryConnector.connectAndParseHistoryResult(
                     ExchangeCurrencyPair,
                     CurrencyPair,
-                    HistoryData != null ? HistoryData.getLastPurchaseTime() : 0); // Read from buy/sell history
+                    HistoryData != null ? HistoryData.getLastPurchaseTime() : 0, // Read from buy/sell history
+                    HistoryData != null ? HistoryData.getLastTradeId() : 0);
 
             if (data != null) { // Network unavailable?
                 if (HistoryData != null) {
@@ -398,27 +482,11 @@ public class TickerCacheTask {
                         LastCommitTime = HistoryData.getLastPurchaseTime();
 
                         // Set new
-                        HistoryData = new TickerHistoryData(HistoryData.getLastPurchaseTime(), HistoryData.isCoinbase_CampBX_CexIO());
-                        HistoryData.setOpen(HistoryData.getLastPrice());
+                        HistoryData = new TickerHistoryData(HistoryData.getLastPurchaseTime(), HistoryData.getLastTradeId(), HistoryData.getLastPrice(), HistoryData.isCoinbase_CampBX_CexIO());
                         break;
                     }
-                    /*case DatabaseError: { // Save to local cache for now until database is available once again.
-                        BacklogCommitTask.RegisterForLogging(HistoryData); // 15 minute task, backlog commit
-
-                        Calendar cal = Calendar.getInstance();
-                        cal.setTimeInMillis(HistoryData.getLastPurchaseTime());
-                        cal.set(Calendar.SECOND, 0);
-
-                        // Output
-                        System.out.println("[TH] Failed commit data hh:mm = (" + cal.get(Calendar.HOUR) + ":" + cal.get(Calendar.MINUTE) + "), High: " + HistoryData.getHigh() + ", Low: " + HistoryData.getLow() + ", Volume: " + HistoryData.getVolume());
-
-                        LastCommitTime = HistoryData.getLastPurchaseTime();
-
-                        // Set new
-                        HistoryData = new TickerHistoryData(HistoryData.getLastPurchaseTime(), HistoryData.isCoinbase_CampBX_CexIO());
-                        HistoryData.setOpen(HistoryData.getLastPrice());
-                        break;
-                    }*/
+                    /*case DatabaseError: { // Not possible to be returned by 'tryCommitDatabase'.
+                     }*/
                     case Time_Not_Ready: { // nth to do
                         break;
                     }
@@ -450,28 +518,23 @@ public class TickerCacheTask {
             }
             final String ExchangeCurrencyPair = String.format("%s-%s", ExchangeSite, CurrencyPair_);
 
-            mutex_mssql.lock();
-            try {
-                if (!list_mssql.containsKey(ExchangeCurrencyPair)) {
-                    list_mssql.put(ExchangeCurrencyPair, list_newItems);
+            if (!list_mssql.containsKey(ExchangeCurrencyPair)) { // First item, no sync needed
+                list_mssql.put(ExchangeCurrencyPair, list_newItems);
 
-                    for (TickerItemData data : list_newItems) {
-                        if (data.getServerTime() > LastCachedTime) {
-                            LastCachedTime = data.getServerTime();
-                        }
-                    }
-                } else {
-                    List<TickerItemData> currentList = list_mssql.get(ExchangeCurrencyPair);
-                    for (TickerItemData data : list_newItems) {
-                        if (data.getServerTime() > LastCachedTime) {
-                            currentList.add(data);
-
-                            LastCachedTime = data.getServerTime();
-                        }
+                for (TickerItemData data : list_newItems) {
+                    if (data.getServerTime() > LastCachedTime) {
+                        LastCachedTime = data.getServerTime();
                     }
                 }
-            } finally {
-                mutex_mssql.unlock();
+            } else {
+                List<TickerItemData> currentList = list_mssql.get(ExchangeCurrencyPair);
+                for (TickerItemData data : list_newItems) {
+                    if (data.getServerTime() > LastCachedTime) {
+                        currentList.add(data); // Don't need to lock the current list, since we are not removing any items off it.
+
+                        LastCachedTime = data.getServerTime();
+                    }
+                }
             }
             System.out.println("Caching price for " + ExchangeCurrencyPair + " --> " + list_newItems.size());
         }

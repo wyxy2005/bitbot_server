@@ -20,18 +20,20 @@ public class TickerHistoryData {
     private double Volume; // BTC * USD
     private double Volume_Cur; // BTC/USD, cur = BTC.
     private long LastPurchaseTime;
+    private int LastTradeId;
 
     private boolean isCoinbase_CampBX_CexIO = false;
 
     private boolean isDatasetReadyForCommit = false; // additional boolean to ensure that future changes won't bug this up.. 
     private String TmpExchangeSite, TmpcurrencyPair;
 
-    public TickerHistoryData(long LastPurchaseTime, boolean IsCoinbaseOrCexIO) {
+    public TickerHistoryData(long LastPurchaseTime, int LastTradeId, float LastPrice, boolean IsCoinbaseOrCexIO) {
         this.High = 0;
         this.Low = Float.MAX_VALUE;
         this.LastPurchaseTime = LastPurchaseTime;
+        this.LastTradeId = LastTradeId;
         this.LastPrice = 0;
-        this.Open = 0;
+        this.Open = LastPrice;
         this.isCoinbase_CampBX_CexIO = IsCoinbaseOrCexIO;
 
         if (IsCoinbaseOrCexIO) {
@@ -125,10 +127,12 @@ public class TickerHistoryData {
             this.Volume += dataNow.Volume_Cur * dataNow.High;
         }
         this.LastPurchaseTime = dataNow.LastPurchaseTime;
+        if (dataNow.getLastTradeId() != 0)
+            this.LastTradeId = dataNow.getLastTradeId();
         this.LastPrice = dataNow.getLastPrice();
     }
 
-    public void merge(float price, float amount, long LastPurchaseTime) {
+    public void merge(float price, float amount, long LastPurchaseTime, int LastTradeId) {
         if (price > this.High) {
             this.High = price;
         }
@@ -143,6 +147,7 @@ public class TickerHistoryData {
             this.Volume += amount * High;
         }
         this.LastPurchaseTime = LastPurchaseTime;
+        this.LastTradeId = LastTradeId;
         this.LastPrice = price;
     }
 
@@ -206,7 +211,15 @@ public class TickerHistoryData {
     public float getLow() {
         return this.Low;
     }
+    
+    public void setLastTradeId(int LastTradeId) {
+        this.LastTradeId = LastTradeId;
+    }
 
+    public int getLastTradeId() {
+        return this.LastTradeId;
+    }
+    
     public void setVolume(double Volume) {
         this.Volume = Volume;
     }

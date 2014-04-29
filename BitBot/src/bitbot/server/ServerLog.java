@@ -57,7 +57,7 @@ public class ServerLog {
 	    mutex.unlock();
 	}
     }
-
+    
     private static String getFileTimeString(String file) {
 	final Calendar cal = Calendar.getInstance();
 	return String.format("%s;%d.%d.%d.rtf", file, cal.get(Calendar.DATE), cal.get(Calendar.MONTH) + 1, cal.get(Calendar.YEAR));

@@ -9,7 +9,7 @@ public class TickerHistory_MTGox implements TickerHistory {
    // private static final TimeZone timeZone = TimeZone.getTimeZone("Etc/GMT+6");
 
     @Override
-    public TickerHistoryData connectAndParseHistoryResult(String ExchangeCurrencyPair, String CurrencyPair, long LastPurchaseTime) {
+    public TickerHistoryData connectAndParseHistoryResult(String ExchangeCurrencyPair, String CurrencyPair, long LastPurchaseTime, int LastTradeId) {
         return null;
     }
 }
