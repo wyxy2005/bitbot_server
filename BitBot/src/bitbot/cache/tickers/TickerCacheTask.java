@@ -207,7 +207,8 @@ public class TickerCacheTask {
             return list_BTCe2;
         }
         // Timestamp
-        long cTime = (System.currentTimeMillis() / 1000l) - (60l * 60l * backtestHours);
+        long cTime = (System.currentTimeMillis() / 1000l);
+        long startTime = cTime - (60l * 60l * backtestHours);
         long LastUsedTime = 0;
 
         /*  Close = (open + high + low + close) / 4
@@ -230,7 +231,7 @@ public class TickerCacheTask {
                 // Check if last added tick is above the threshold 'intervalMinutes'
                 if (LastUsedTime + (intervalMinutes * 60) < item.getServerTime()) {
                     while (LastUsedTime + (intervalMinutes * 60) < item.getServerTime()) {
-                        if (item.getServerTime() > cTime) {
+                        if (item.getServerTime() > startTime) {
                             // If there's not enough data available.. 
                             if (high == 0) {
                                 high = item.getHigh();
@@ -243,12 +244,6 @@ public class TickerCacheTask {
                             }
                             if (LastUsedTime == 0) {
                                 LastUsedTime = item.getServerTime();
-                            }
-                            if (Volume == 0) {
-                                Volume = item.getVol();
-                            }
-                            if (VolumeCur == 0) {
-                                VolumeCur = item.getVol_Cur();
                             }
                             // Add to list
                             list_BTCe2.add(
@@ -272,7 +267,7 @@ public class TickerCacheTask {
                         if (LastUsedTime == 0) {
                             LastUsedTime = item.getServerTime();
                         }
-                        LastUsedTime = LastUsedTime + (intervalMinutes * 60);// item.getServerTime();
+                        LastUsedTime += (intervalMinutes * 60);
                     }
                 } else {
                     high = Math.max(item.getHigh(), high);
@@ -281,96 +276,101 @@ public class TickerCacheTask {
                     if (open == -1) {
                         open = item.getOpen();
                     }
-                    if (item.getVol() > Volume) {
-                        Volume = item.getVol();
-                    }
-                    if (item.getVol_Cur() > VolumeCur) {
-                        VolumeCur = item.getVol_Cur();
-                    }
+
+                    Volume += item.getVol();
+                    VolumeCur += item.getVol_Cur();
                 }
             }
+        }
+        
+        while (LastUsedTime + (intervalMinutes * 60) < cTime) {
+            TickerItem_CandleBar lastItem = list_BTCe2.get(list_BTCe2.size() - 1);
+            
+            LastUsedTime += (intervalMinutes * 60);
+            
+            list_BTCe2.add(
+                    new TickerItem_CandleBar(
+                            LastUsedTime,
+                            (float) lastItem.getClose() == 0 ? lastItem.getOpen() : lastItem.getClose(),
+                            (float) lastItem.getClose(),
+                            (float) lastItem.getClose(),
+                            (float) lastItem.getClose(),
+                            0,
+                            0)
+            );
         }
         /*
-        while (itr.hasNext()) { // Loop through things in proper sequence
-            TickerItemData item = itr.next();
+         while (itr.hasNext()) { // Loop through things in proper sequence
+         TickerItemData item = itr.next();
 
-            if (item.getServerTime() >= ServerTimeFrom) {
-                // Check if last added tick is above the threshold 'intervalMinutes'
-                if (LastUsedTime + (intervalMinutes * 60) < item.getServerTime()) {
-                    while (LastUsedTime + (intervalMinutes * 60) < item.getServerTime()) {
-                        if (item.getServerTime() > cTime) {
-                            // If there's not enough data available.. 
-                            if (LastUsedTime == 0) {
-                                LastUsedTime = item.getServerTime();
-                            }
-                            if (high == 0 || low == Double.MAX_VALUE || open == -1) { // add last daya
-                                list_BTCe2.add(
-                                        new TickerItem_CandleBar(
-                                                LastUsedTime + (intervalMinutes * 60),
-                                                (float) item.getClose() == 0 ? item.getOpen() : item.getClose(),
-                                                (float) item.getClose(),
-                                                (float) item.getClose(),
-                                                (float) item.getClose(),
-                                                0,
-                                                0)
-                                );
-                            } else {
-                                // Add to list
-                                list_BTCe2.add(
-                                        new TickerItem_CandleBar(
-                                                LastUsedTime + (intervalMinutes * 60),
-                                                (float) item.getClose() == 0 ? item.getOpen() : item.getClose(),
-                                                (float) high,
-                                                (float) low,
-                                                (float) open,
-                                                Volume,
-                                                VolumeCur)
-                                );
-                            }
-                        }
-                        // reset
-                        high = 0;
-                        low = Double.MAX_VALUE;
-                        open = -1;
-                        Volume = 0;
-                        VolumeCur = 0;
+         if (item.getServerTime() >= ServerTimeFrom) {
+         // Check if last added tick is above the threshold 'intervalMinutes'
+         if (LastUsedTime + (intervalMinutes * 60) < item.getServerTime()) {
+         while (LastUsedTime + (intervalMinutes * 60) < item.getServerTime()) {
+         if (item.getServerTime() > cTime) {
+         // If there's not enough data available.. 
+         if (LastUsedTime == 0) {
+         LastUsedTime = item.getServerTime();
+         }
+         if (high == 0 || low == Double.MAX_VALUE || open == -1) { // add last daya
+         list_BTCe2.add(
+         new TickerItem_CandleBar(
+         LastUsedTime + (intervalMinutes * 60),
+         (float) item.getClose() == 0 ? item.getOpen() : item.getClose(),
+         (float) item.getClose(),
+         (float) item.getClose(),
+         (float) item.getClose(),
+         0,
+         0)
+         );
+         } else {
+         // Add to list
+         list_BTCe2.add(
+         new TickerItem_CandleBar(
+         LastUsedTime + (intervalMinutes * 60),
+         (float) item.getClose() == 0 ? item.getOpen() : item.getClose(),
+         (float) high,
+         (float) low,
+         (float) open,
+         Volume,
+         VolumeCur)
+         );
+         }
+         }
+         // reset
+         high = 0;
+         low = Double.MAX_VALUE;
+         open = -1;
+         Volume = 0;
+         VolumeCur = 0;
 
-                        if (LastUsedTime == 0) {
-                            LastUsedTime = item.getServerTime();
-                        }
-                        LastUsedTime = LastUsedTime + (intervalMinutes * 60);// item.getServerTime();
-                    }
-                } else {
-                    high = Math.max(item.getHigh(), high);
-                    low = Math.min(item.getLow(), low);
-                    if (high == 0) {
-                        high = item.getHigh();
-                    }
-                    if (low == Double.MAX_VALUE) {
-                        low = item.getLow();
-                    }
-                    if (open == -1) {
-                        open = item.getOpen();
-                    }
-                    if (item.getVol() > Volume) {
-                        Volume = item.getVol();
-                    }
-                    if (item.getVol_Cur() > VolumeCur) {
-                        VolumeCur = item.getVol_Cur();
-                    }
-                }
-            }
-        }
-        */
-        Collections.sort(list_BTCe2, (TickerItem_CandleBar o1, TickerItem_CandleBar o2) -> {
-            if (o1.getServerTime() > o2.getServerTime()) {
-                return 1;
-            } else if (o1.getServerTime() < o2.getServerTime()) {
-                return 0;
-            } else {
-                return -1;
-            }
-        });
+         if (LastUsedTime == 0) {
+         LastUsedTime = item.getServerTime();
+         }
+         LastUsedTime = LastUsedTime + (intervalMinutes * 60);// item.getServerTime();
+         }
+         } else {
+         high = Math.max(item.getHigh(), high);
+         low = Math.min(item.getLow(), low);
+         if (high == 0) {
+         high = item.getHigh();
+         }
+         if (low == Double.MAX_VALUE) {
+         low = item.getLow();
+         }
+         if (open == -1) {
+         open = item.getOpen();
+         }
+         if (item.getVol() > Volume) {
+         Volume = item.getVol();
+         }
+         if (item.getVol_Cur() > VolumeCur) {
+         VolumeCur = item.getVol_Cur();
+         }
+         }
+         }
+         }
+         */
         return list_BTCe2;
     }
 

@@ -20,7 +20,7 @@ public class TickerHistory_BitFinex implements TickerHistory {
 
     @Override
     public TickerHistoryData connectAndParseHistoryResult(String ExchangeCurrencyPair, String CurrencyPair, long LastPurchaseTime, int LastTradeId) {
-        String Uri = String.format("https://api.bitfinex.com/v1/trades/%s?timestamp=%d&limit_trades=999", CurrencyPair.replace("_", ""), LastPurchaseTime);
+        String Uri = String.format("https://api.bitfinex.com/v1/trades/%s?timestamp=%d&limit_trades=%d", CurrencyPair.replace("_", ""), (LastPurchaseTime / 1000) + 1, 200);
         String GetResult = HttpClient.httpsGet(Uri, "");
 
         if (GetResult != null) {
@@ -50,7 +50,7 @@ public class TickerHistory_BitFinex implements TickerHistory {
                     long date = Integer.parseInt(obj.get("timestamp").toString()) * 1000l;
                     float price = Float.parseFloat(obj.get("price").toString());
                     float amount = Float.parseFloat(obj.get("amount").toString());
-                    String type = obj.get("type").toString(); // bid/ask
+                    String type = obj.get("type").toString();
 /*tid (integer)
  timestamp (time)
  price (price)
@@ -74,7 +74,7 @@ public class TickerHistory_BitFinex implements TickerHistory {
 
                     //http://tutorials.jenkov.com/java-date-time/java-util-timezone.html
                     // Timestamp for trades
-                    Calendar cal = Calendar.getInstance(); // BTCe time
+                    /*Calendar cal = Calendar.getInstance(); // BTCe time
                     cal.set(Calendar.YEAR, 1970);
                     cal.set(Calendar.MONTH, 0);
                     cal.set(Calendar.DATE, 0);
@@ -82,7 +82,7 @@ public class TickerHistory_BitFinex implements TickerHistory {
                     cal.add(Calendar.HOUR, -4); // BTC-e, time 
                     cal.add(Calendar.SECOND, (int) (date / 1000));
                     
-                    //System.out.println(String.format("[Trades history] Got  [%s], Price: %f, Sum: %f ", cal.getTime().toString(), price, amount));
+                    System.out.println(String.format("[Trades history] Got  [%s], Price: %f, Sum: %f ", cal.getTime().toString(), price, amount));*/
                     
                     // Assume things are read in ascending order
                     if (date > LastPurchaseTime) {
@@ -97,7 +97,7 @@ public class TickerHistory_BitFinex implements TickerHistory {
                 }
             } catch (Exception parseExp) {
                 //parseExp.printStackTrace();
-                System.out.println(GetResult);
+                //System.out.println(GetResult);
                 //ServerLog.RegisterForLogging(ServerLogType.HistoryCacheTask, parseExp.getMessage());
             }
             return ReturnData;

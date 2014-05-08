@@ -20,7 +20,7 @@ public class TickerHistory_ItBit implements TickerHistory {
 
     @Override
     public TickerHistoryData connectAndParseHistoryResult(String ExchangeCurrencyPair, String CurrencyPair, long LastPurchaseTime, int LastTradeId) {
-        String Uri = String.format("https://www.itbit.com/api/v2/markets/%s/trades?since=%d", CurrencyPair.replace("_", "").toUpperCase(), LastPurchaseTime);
+        String Uri = String.format("https://www.itbit.com/api/v2/markets/%s/trades?since=%d", CurrencyPair.replace("_", "").toUpperCase(), LastTradeId);
         String GetResult = HttpClient.httpsGet(Uri, "");
 
         if (GetResult != null) {
@@ -51,7 +51,7 @@ public class TickerHistory_ItBit implements TickerHistory {
                     float price = Float.parseFloat(obj.get("price").toString());
                     long date = (long) Double.parseDouble(obj.get("date").toString()) * 1000l;
                     //String type = // Not known
-                    int tid = Integer.parseInt(obj.get("tid").toString());
+                    int tradeid = Integer.parseInt(obj.get("tid").toString());
 
                     // Initialize last purchase time if neccessary
                     if (LastPurchaseTime == 0) {
@@ -69,7 +69,7 @@ public class TickerHistory_ItBit implements TickerHistory {
 
                     //http://tutorials.jenkov.com/java-date-time/java-util-timezone.html
                     // Timestamp for trades
-                    /*Calendar cal = Calendar.getInstance(); // BTCe time
+                   /* Calendar cal = Calendar.getInstance(); // BTCe time
                     cal.set(Calendar.YEAR, 1970);
                     cal.set(Calendar.MONTH, 0);
                     cal.set(Calendar.DATE, 0);
@@ -77,17 +77,20 @@ public class TickerHistory_ItBit implements TickerHistory {
                     cal.add(Calendar.HOUR, -4); // BTC-e, time 
                     cal.add(Calendar.SECOND, (int) (date / 1000));
                     
-                    System.out.println(String.format("[Trades history] Got [%s], Price: %f, Sum: %f ", cal.getTime().toString(), price, amount));
-                    */
+                    System.out.println(String.format("[Trades history] Got [%s], Price: %f, Sum: %f ", cal.getTime().toString(), price, amount));*/
+                    
                     // Assume things are read in ascending order
                     if (date > LastPurchaseTime) {
                         //System.out.println(String.format("[Trades history] Added [%s], Price: %f, Sum: %f ", date, price, amount));
-                        ReturnData.merge(price, amount, date, tid);
+                        ReturnData.merge(price, amount, date, tradeid);
                         
                         ChannelServer.getInstance().BroadcastConnectedClients(
                                 TradeHistoryBuySellEnum.Unknown,
                                 CurrencyPair,
-                                tid);
+                                tradeid);
+                    }
+                    if (tradeid > ReturnData.getLastTradeId()) {
+                        ReturnData.setLastTradeId(tradeid);
                     }
                 }
             } catch (Exception parseExp) {
