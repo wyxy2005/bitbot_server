@@ -49,14 +49,19 @@ function check_price() {
     fetchItem('xbt_sgd', 'itbit');
     fetchItem('xbt_eur', 'itbit');
 
-    //fetchItem('btc_usd', 'bitfinex');
+    fetchItem('btc_usd', 'bitfinex');
+    fetchItem('ltc_usd', 'bitfinex');
+    fetchItem('ltc_btc', 'bitfinex');
 
-    //fetchItem('btc_usd', 'campbx');
+    fetchItem('btc_usd', 'campbx');
 
     fetchItem('xbt_usd', 'kraken');
     fetchItem('xbt_eur', 'kraken');
 
     fetchItem('ghs_btc', 'cexio');
+
+    fetchItem('btc_sgd', 'fybsg');
+    fetchItem('btc_sek', 'fybse');
 
     function fetchItem(currencypair, source) {
         if (source == 'btce') {
@@ -72,8 +77,6 @@ function check_price() {
             fetchfromSource(currencypair, source, 'http://data.mtgox.com/api/2/BTCUSD/money/ticker');
         } else if (source == 'okcoin') {
             fetchfromSource(currencypair, source, 'https://www.okcoin.com/api/ticker.do?symbol=' + currencypair);
-        } else if (source == 'huobi') {
-            fetchfromSource(currencypair, source, '');
         } else if (source == 'coinbase') {
             fetchfromSource(currencypair, source, 'https://coinbase.com/api/v1/prices/buy');
         } else if (source == 'bitstamp') {
@@ -83,12 +86,19 @@ function check_price() {
         } else if (source == 'kraken') {
             var symbol = currencypair.toUpperCase().replace('_', "");
             fetchfromSource(currencypair, source, 'https://api.kraken.com/0/public/Ticker?pair=' + symbol);
+        } else if (source == 'huobi') {
+            fetchfromSource(currencypair, source, '');
         } else if (source == 'campbx') {
-
+            fetchfromSource(currencypair, source, 'http://CampBX.com/api/xticker.php')
         } else if (source == 'bitfinex') {
-            //fetchfromSource(currencypair, source, 'https://api.bitfinex.com/v1/ticker/{0}' + symbol);
+             var symbol = currencypair.replace('_', "");
+            fetchfromSource(currencypair, source, 'https://api.bitfinex.com/v1/ticker/' + symbol);
         } else if (source == 'cexio') {
             fetchfromSource(currencypair, source, 'https://cex.io/api/ticker/GHS/BTC');
+        } else if (source == 'fybsg') {
+            fetchfromSource(currencypair, source, 'https://www.fybsg.com/api/SGD/ticker.json');
+        } else if (source == 'fybse') {
+            fetchfromSource(currencypair, source, 'https://www.fybse.se/api/SEK/ticker.json');
         }
     }
 
@@ -112,11 +122,11 @@ function check_price() {
 
                     // acquire data here
                     var currentPrice = 0;
-                    var average24Hrs = 999;  //  Buy / Average * 100 - 100
+                    var average24Hrs = 0;  //  Buy / Average * 100 - 100
                     switch (source) {
                         case 'coinbase':
                             currentPrice = parseFloat(returnJson.amount);
-                            average24Hrs = 999; // no data available
+                            average24Hrs = 0; // no data available
                             break;
                         case 'itbit':
                         case 'cexio':
@@ -127,6 +137,19 @@ function check_price() {
                         case 'mtgox':
                             currentPrice = parseFloat(returnJson.data.buy.value);
                             average24Hrs = currentPrice / parseFloat(returnJson.data.avg.value) * 100 - 100;
+                            break;
+                        case 'fybsg':
+                        case 'fybse':
+                            currentPrice = parseFloat(returnJson.bid);
+                            average24Hrs = 0; // no data available
+                            break;
+                        case 'campbx':
+                            currentPrice = parseFloat(returnJson['Best Bid']);
+                            average24Hrs = 0; // no data available
+                            break;
+                        case 'bitfinex':
+                            currentPrice = parseFloat(returnJson['bid']);
+                            average24Hrs = 0; // no data available
                             break;
                         case 'kraken':
                             var pairName2 = "X" + currencypair.replace("_", "Z").toUpperCase();
@@ -142,7 +165,7 @@ function check_price() {
                     }
                     average24Hrs = Math.abs(average24Hrs);
                     if (isNaN(average24Hrs))
-                        average24Hrs = 999;
+                        average24Hrs = 0;
 
                     // insert data for graph
                     insertTickerData(returnJson, currencypair, source);
@@ -277,17 +300,18 @@ function check_price() {
                 text3: "",
                 image: "ms-appx:///Assets/ToastImage.png"
             }, {
-                launch: alertMsg_ToastNavigateURI,
-                duration: 'long',
-            }, {
-                success: function(pushResponse) {
-                    push.wns.sendBadge(clientUniqueId, {
-                        value: 1,
-                        text1: alertMsg_Toast
+                    launch: alertMsg_ToastNavigateURI,
+                    duration: 'long',
+                }, {
+                    success: function(pushResponse) {
+                        push.wns.sendBadge(clientUniqueId, {
+                            value: 1,
+                            text1: alertMsg_Toast
                         }, {
-                            success: function(pushResponse) {
-                                updateNotificationCount(sqlTable, client.pushuri, client, source, currencypair, platform);
-                         }});
+                                success: function(pushResponse) {
+                                    updateNotificationCount(sqlTable, client.pushuri, client, source, currencypair, platform);
+                                }
+                            });
                     }, error: function(error) {
                         // expired channel
                         if (error.statusCode == 410 || error.statusCode == 404 || error.statusCode == 412) {
@@ -296,13 +320,13 @@ function check_price() {
                         console.log(error);
                     }
                 }, {
-                error: function(error) {
-                    // expired channel
+                    error: function(error) {
+                        // expired channel
                         if (error.statusCode == 410 || error.statusCode == 404 || error.statusCode == 412) {
                             removeExpiredChannel(sqlTable, client.pushuri, clientuniqueid);
                         }
                         console.log(error);
-                }
+                    }
                 });
         }
 
@@ -365,9 +389,9 @@ function check_price() {
             //(source == 'bitstamp' && currencypair == 'btc_usd') ||
             //(source == 'coinbase' && currencypair == 'btc_usd') ||
             //(source == 'huobi' && currencypair == 'btc_cny') ||
-            (source == 'itbit' && currencypair == 'xbt_usd') ||
-            (source == 'itbit' && currencypair == 'xbt_sgd') ||
-            (source == 'itbit' && currencypair == 'xbt_eur') ||
+            //(source == 'itbit' && currencypair == 'xbt_usd') ||
+            //(source == 'itbit' && currencypair == 'xbt_sgd') ||
+            //(source == 'itbit' && currencypair == 'xbt_eur') ||
             (source == 'kraken' && currencypair == 'xbt_usd') ||
             (source == 'kraken' && currencypair == 'xbt_eur') ||
             (source == 'cexio' && currencypair == 'ghs_btc')
