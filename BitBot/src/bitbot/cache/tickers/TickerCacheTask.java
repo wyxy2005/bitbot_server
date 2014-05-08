@@ -282,12 +282,12 @@ public class TickerCacheTask {
                 }
             }
         }
-        
+
         while (LastUsedTime + (intervalMinutes * 60) < cTime) {
             TickerItem_CandleBar lastItem = list_BTCe2.get(list_BTCe2.size() - 1);
-            
+
             LastUsedTime += (intervalMinutes * 60);
-            
+
             list_BTCe2.add(
                     new TickerItem_CandleBar(
                             LastUsedTime,
@@ -454,45 +454,48 @@ public class TickerCacheTask {
             }
             IsLoading = true;
 
-            System.out.println(String.format("[TH] Updating price: %s", ExchangeCurrencyPair));
+            try {
+                System.out.println(String.format("[TH] Updating price: %s", ExchangeCurrencyPair));
 
-            TickerHistoryData data = HistoryConnector.connectAndParseHistoryResult(
-                    ExchangeCurrencyPair,
-                    CurrencyPair,
-                    HistoryData != null ? HistoryData.getLastPurchaseTime() : 0, // Read from buy/sell history
-                    HistoryData != null ? HistoryData.getLastTradeId() : 0);
+                TickerHistoryData data = HistoryConnector.connectAndParseHistoryResult(
+                        ExchangeCurrencyPair,
+                        CurrencyPair,
+                        HistoryData != null ? HistoryData.getLastPurchaseTime() : 0, // Read from buy/sell history
+                        HistoryData != null ? HistoryData.getLastTradeId() : 0);
 
-            if (data != null) { // Network unavailable?
-                if (HistoryData != null) {
-                    HistoryData.merge(data); // Merge high + lows, volume and set last date where it is read
-                } else {
-                    HistoryData = data;
-                }
-                HistoryDatabaseCommitEnum commitResult = HistoryData.tryCommitDatabase(LastCommitTime, ExchangeSite, CurrencyPair);
-                switch (commitResult) {
-                    case Ok: {
-                        // Output
-                        Calendar cal = Calendar.getInstance();
-                        cal.setTimeInMillis(HistoryData.getLastPurchaseTime());
-                        cal.set(Calendar.SECOND, 0);
-
-                        System.out.println(String.format("[TH] %s Commited data hh:mm = (%s), High: %f, Low: %f, Volume: %f, VolumeCur: %f",
-                                ExchangeCurrencyPair, cal.getTime().toString(), HistoryData.getHigh(), HistoryData.getLow(), HistoryData.getVolume(), HistoryData.getVolume_Cur()));
-
-                        LastCommitTime = HistoryData.getLastPurchaseTime();
-
-                        // Set new
-                        HistoryData = new TickerHistoryData(HistoryData.getLastPurchaseTime(), HistoryData.getLastTradeId(), HistoryData.getLastPrice(), HistoryData.isCoinbase_CampBX_CexIO());
-                        break;
+                if (data != null) { // Network unavailable?
+                    if (HistoryData != null) {
+                        HistoryData.merge(data); // Merge high + lows, volume and set last date where it is read
+                    } else {
+                        HistoryData = data;
                     }
-                    /*case DatabaseError: { // Not possible to be returned by 'tryCommitDatabase'.
-                     }*/
-                    case Time_Not_Ready: { // nth to do
-                        break;
+                    HistoryDatabaseCommitEnum commitResult = HistoryData.tryCommitDatabase(LastCommitTime, ExchangeSite, CurrencyPair);
+                    switch (commitResult) {
+                        case Ok: {
+                            // Output
+                            Calendar cal = Calendar.getInstance();
+                            cal.setTimeInMillis(HistoryData.getLastPurchaseTime());
+                            cal.set(Calendar.SECOND, 0);
+
+                            System.out.println(String.format("[TH] %s Commited data hh:mm = (%s), High: %f, Low: %f, Volume: %f, VolumeCur: %f",
+                                    ExchangeCurrencyPair, cal.getTime().toString(), HistoryData.getHigh(), HistoryData.getLow(), HistoryData.getVolume(), HistoryData.getVolume_Cur()));
+
+                            LastCommitTime = HistoryData.getLastPurchaseTime();
+
+                            // Set new
+                            HistoryData = new TickerHistoryData(HistoryData.getLastPurchaseTime(), HistoryData.getLastTradeId(), HistoryData.getLastPrice(), HistoryData.isCoinbase_CampBX_CexIO());
+                            break;
+                        }
+                        /*case DatabaseError: { // Not possible to be returned by 'tryCommitDatabase'.
+                         }*/
+                        case Time_Not_Ready: { // nth to do
+                            break;
+                        }
                     }
                 }
+            } finally {
+                IsLoading = false;
             }
-            IsLoading = false;
         }
     }
 

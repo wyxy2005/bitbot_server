@@ -67,25 +67,29 @@ public class BacklogCommitTask {
 
         @Override
         public void run() {
-            mutex.lock();
-            try {
-                List<TickerHistoryData> DatabaseCommitBacklog2 = new ArrayList<>(Cache_Backlog); // Create a new array off existing data
-                
-                Cache_Backlog.clear(); // Clear existing
+            BacklogTimerPersistingTask();
+        }
+    }
 
-                for (TickerHistoryData backlog : DatabaseCommitBacklog2) {
-                    HistoryDatabaseCommitEnum commitResult = backlog.commitDatabase(
-                            0, // dummy values
-                            null, null);
+    public static void BacklogTimerPersistingTask() {
+        mutex.lock();
+        try {
+            List<TickerHistoryData> DatabaseCommitBacklog2 = new ArrayList<>(Cache_Backlog); // Create a new array off existing data
 
-                    if (commitResult != HistoryDatabaseCommitEnum.Ok) { // if failed once again, add back. Lulz.
-                        Cache_Backlog.add(backlog);
-                    }
+            Cache_Backlog.clear(); // Clear existing
+
+            for (TickerHistoryData backlog : DatabaseCommitBacklog2) {
+                HistoryDatabaseCommitEnum commitResult = backlog.commitDatabase(
+                        0, // dummy values
+                        null, null);
+
+                if (commitResult != HistoryDatabaseCommitEnum.Ok) { // if failed once again, add back. Lulz.
+                    Cache_Backlog.add(backlog);
                 }
-                DatabaseCommitBacklog2.clear();
-            } finally {
-                mutex.unlock();
             }
+            DatabaseCommitBacklog2.clear();
+        } finally {
+            mutex.unlock();
         }
     }
 
@@ -114,34 +118,38 @@ public class BacklogCommitTask {
 
         @Override
         public void run() {
-            List<TickerHistoryData> DatabaseCommitBacklog_Failed = new ArrayList<>(); // Create a new array off existing data
-
-            ImmediateMutex.lock();
-            try {
-                Iterator<TickerHistoryData> backlogItr = Cache_ImmediateBacklog.iterator();
-                while (backlogItr.hasNext()) {
-                    TickerHistoryData backlog = backlogItr.next();
-
-                    HistoryDatabaseCommitEnum commitResult = backlog.commitDatabase(
-                            0, // dummy values
-                            null, null);
-
-                    if (commitResult != HistoryDatabaseCommitEnum.Ok) { // if failed once again, add back. Lulz.
-                        DatabaseCommitBacklog_Failed.add(backlog);
-                    } else {
-                        backlogItr.remove(); // remove list if successful
-                    }
-                }
-            } finally {
-                ImmediateMutex.unlock();
-            }
-            // Register the failed items to the main backlog list that'll commit once every 5 minutes instead
-            // This line must always be after the ImmediateMutex.unlock to avoid deadlocks
-            if (!DatabaseCommitBacklog_Failed.isEmpty()) {
-                RegisterForLogging(DatabaseCommitBacklog_Failed);
-            }
-            // GC
-            DatabaseCommitBacklog_Failed.clear();
+            ImmediateBacklogTimerPersistingTask();
         }
+    }
+
+    public static void ImmediateBacklogTimerPersistingTask() {
+        List<TickerHistoryData> DatabaseCommitBacklog_Failed = new ArrayList<>(); // Create a new array off existing data
+
+        ImmediateMutex.lock();
+        try {
+            Iterator<TickerHistoryData> backlogItr = Cache_ImmediateBacklog.iterator();
+            while (backlogItr.hasNext()) {
+                TickerHistoryData backlog = backlogItr.next();
+
+                HistoryDatabaseCommitEnum commitResult = backlog.commitDatabase(
+                        0, // dummy values
+                        null, null);
+
+                if (commitResult != HistoryDatabaseCommitEnum.Ok) { // if failed once again, add back. Lulz.
+                    DatabaseCommitBacklog_Failed.add(backlog);
+                } else {
+                    backlogItr.remove(); // remove list if successful
+                }
+            }
+        } finally {
+            ImmediateMutex.unlock();
+        }
+            // Register the failed items to the main backlog list that'll commit once every 5 minutes instead
+        // This line must always be after the ImmediateMutex.unlock to avoid deadlocks
+        if (!DatabaseCommitBacklog_Failed.isEmpty()) {
+            RegisterForLogging(DatabaseCommitBacklog_Failed);
+        }
+        // GC
+        DatabaseCommitBacklog_Failed.clear();
     }
 }

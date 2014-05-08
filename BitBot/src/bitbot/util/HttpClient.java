@@ -70,6 +70,7 @@ public class HttpClient {
 
             // Send post request
             con.setDoOutput(false);
+            con.setReadTimeout(10000);
 
             int responseCode = con.getResponseCode();
             //System.out.println("\nSending 'POST' request to URL : " + obj.toString());

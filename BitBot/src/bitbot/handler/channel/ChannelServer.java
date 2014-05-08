@@ -4,6 +4,7 @@ import bitbot.handler.ServerExchangeHandler;
 import bitbot.server.Constants;
 import bitbot.cache.news.NewsCacheTask;
 import bitbot.cache.tickers.TickerCacheTask;
+import bitbot.cache.tickers.history.BacklogCommitTask;
 import bitbot.cache.tickers.history.TradeHistoryBuySellEnum;
 import bitbot.handler.ServerClientHandler;
 import bitbot.handler.mina.BlackListFilter;
@@ -223,7 +224,9 @@ public class ChannelServer {
         @Override
         public void run() {
             System.out.println("Shutdown hook task.....");
-
+            
+            BacklogCommitTask.BacklogTimerPersistingTask();
+            BacklogCommitTask.ImmediateBacklogTimerPersistingTask();
         }
     }
 }

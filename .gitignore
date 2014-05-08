@@ -22,3 +22,4 @@ BitBot/dist/BitBot.jar
 BitBot/dist/BitBot.jar
 *.class
 *.class
+BitBot/build/classes/bitbot/handler/channel/ChannelServer.class
