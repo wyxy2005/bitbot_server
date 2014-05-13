@@ -114,7 +114,7 @@ public class ChartTask_Candlestick implements Runnable {
                 }
                 body.close();
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }

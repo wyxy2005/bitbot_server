@@ -71,18 +71,18 @@ public class TickerHistory_BTCChina implements TickerHistory {
 
                     //http://tutorials.jenkov.com/java-date-time/java-util-timezone.html
                     // Timestamp for trades
-                    Calendar cal = Calendar.getInstance(); // BTCe time
+                    /*Calendar cal = Calendar.getInstance(); // BTCe time
                     cal.set(Calendar.YEAR, 1970);
                     cal.set(Calendar.MONTH, 0);
                     cal.set(Calendar.DATE, 0);
 
                     cal.add(Calendar.SECOND, (int) (date / 1000));
                     
-                    System.out.println(String.format("[Trades history] Got [%s], Price: %f, Sum: %f ", cal.getTime().toString(), price, amount));
+                    System.out.println(String.format("[Trades history] Got [%s], Price: %f, Sum: %f ", cal.getTime().toString(), price, amount));*/
                     
                     // Assume things are read in ascending order
-                    if (cal.getTimeInMillis() > LastPurchaseTime) {
-                        System.out.println(String.format("[Trades history] Added [%s], Price: %f, Sum: %f ", cal.getTime().toString(), price, amount));
+                    if (date > LastPurchaseTime) {
+                        //System.out.println(String.format("[Trades history] Added [%s], Price: %f, Sum: %f ", cal.getTime().toString(), price, amount));
                         ReturnData.merge(price, amount, date, tradeid);
                         
                         ChannelServer.getInstance().BroadcastConnectedClients(
@@ -92,7 +92,7 @@ public class TickerHistory_BTCChina implements TickerHistory {
                     }
                 }
             } catch (Exception parseExp) {
-                parseExp.printStackTrace();
+                //parseExp.printStackTrace();
                 //System.out.println(GetResult);
                 //ServerLog.RegisterForLogging(ServerLogType.HistoryCacheTask, parseExp.getMessage());
             }

@@ -23,13 +23,15 @@ import bitbot.handler.channel.ChannelServer;
 import bitbot.server.threads.LoggingSaveRunnable;
 import bitbot.server.threads.TimerManager;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
-import java.util.Collections;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 /**
  *
@@ -221,84 +223,87 @@ public class TickerCacheTask {
 
         // No need to lock this thread, if we are creating a new ArrayList off existing.
         // Its a copy :)
-        List<TickerItemData> currentList = new LinkedList(list_mssql.get(dataSet));
+        //List<TickerItemData> currentList = new LinkedList(list_mssql.get(dataSet));
+        //Iterator<TickerItemData> itr = currentList.iterator();
+        List<TickerItemData> currentList = list_mssql.get(dataSet);
+        Stream<TickerItemData> items = currentList.stream().filter((data) -> (data.getServerTime() > ServerTimeFrom));
+        
+        Object[] arrays = items.toArray();
+        Arrays.sort(arrays, TickerItemComparator);
 
-        Iterator<TickerItemData> itr = currentList.iterator();
-        while (itr.hasNext()) { // Loop through things in proper sequence
-            TickerItemData item = itr.next();
-
-            if (item.getServerTime() >= ServerTimeFrom) {
-                // Check if last added tick is above the threshold 'intervalMinutes'
-                if (LastUsedTime + (intervalMinutes * 60) < item.getServerTime()) {
-                    while (LastUsedTime + (intervalMinutes * 60) < item.getServerTime()) {
-                        if (item.getServerTime() > startTime) {
-                            // If there's not enough data available.. 
-                            if (high == 0) {
-                                high = item.getHigh();
-                            }
-                            if (low == Double.MAX_VALUE) {
-                                low = item.getLow();
-                            }
-                            if (open == -1) {
-                                open = item.getOpen();
-                            }
-                            if (LastUsedTime == 0) {
-                                LastUsedTime = item.getServerTime();
-                            }
-                            // Add to list
-                            list_BTCe2.add(
-                                    new TickerItem_CandleBar(
-                                            LastUsedTime + (intervalMinutes * 60),
-                                            (float) item.getClose() == 0 ? item.getOpen() : item.getClose(),
-                                            (float) high,
-                                            (float) low,
-                                            (float) open,
-                                            Volume,
-                                            VolumeCur)
-                            );
+        for (Object obj : arrays) {
+            TickerItemData item = (TickerItemData) obj;
+            
+            // Check if last added tick is above the threshold 'intervalMinutes'
+            if (LastUsedTime + (intervalMinutes * 60) < item.getServerTime()) {
+                while (LastUsedTime + (intervalMinutes * 60) < item.getServerTime()) {
+                    if (item.getServerTime() > startTime) {
+                        // If there's not enough data available.. 
+                        if (high == 0) {
+                            high = item.getHigh();
                         }
-                        // reset
-                        high = 0;
-                        low = Double.MAX_VALUE;
-                        open = -1;
-                        Volume = 0;
-                        VolumeCur = 0;
-
+                        if (low == Double.MAX_VALUE) {
+                            low = item.getLow();
+                        }
+                        if (open == -1) {
+                            open = item.getOpen();
+                        }
                         if (LastUsedTime == 0) {
                             LastUsedTime = item.getServerTime();
                         }
-                        LastUsedTime += (intervalMinutes * 60);
+                        // Add to list
+                        list_BTCe2.add(
+                                new TickerItem_CandleBar(
+                                        LastUsedTime + (intervalMinutes * 60),
+                                        (float) item.getClose() == 0 ? item.getOpen() : item.getClose(),
+                                        (float) high,
+                                        (float) low,
+                                        (float) open,
+                                        Volume,
+                                        VolumeCur)
+                        );
                     }
-                } else {
-                    high = Math.max(item.getHigh(), high);
-                    low = Math.min(item.getLow(), low);
+                    // reset
+                    high = 0;
+                    low = Double.MAX_VALUE;
+                    open = -1;
+                    Volume = 0;
+                    VolumeCur = 0;
 
-                    if (open == -1) {
-                        open = item.getOpen();
+                    if (LastUsedTime == 0) {
+                        LastUsedTime = item.getServerTime();
                     }
-
-                    Volume += item.getVol();
-                    VolumeCur += item.getVol_Cur();
+                    LastUsedTime += (intervalMinutes * 60);
                 }
+            } else {
+                high = Math.max(item.getHigh(), high);
+                low = Math.min(item.getLow(), low);
+
+                if (open == -1) {
+                    open = item.getOpen();
+                }
+
+                Volume += item.getVol();
+                VolumeCur += item.getVol_Cur();
             }
         }
 
-        while (LastUsedTime + (intervalMinutes * 60) < cTime) {
-            TickerItem_CandleBar lastItem = list_BTCe2.get(list_BTCe2.size() - 1);
+        /*while (LastUsedTime + (intervalMinutes * 60) < cTime) {
+         TickerItem_CandleBar lastItem = list_BTCe2.get(list_BTCe2.size() - 1);
 
-            LastUsedTime += (intervalMinutes * 60);
+         LastUsedTime += (intervalMinutes * 60);
 
-            list_BTCe2.add(
-                    new TickerItem_CandleBar(
-                            LastUsedTime,
-                            (float) lastItem.getClose() == 0 ? lastItem.getOpen() : lastItem.getClose(),
-                            (float) lastItem.getClose(),
-                            (float) lastItem.getClose(),
-                            (float) lastItem.getClose(),
-                            0,
-                            0)
-            );
-        }
+         list_BTCe2.add(
+         new TickerItem_CandleBar(
+         LastUsedTime,
+         (float) lastItem.getClose() == 0 ? lastItem.getOpen() : lastItem.getClose(),
+         (float) lastItem.getClose(),
+         (float) lastItem.getClose(),
+         (float) lastItem.getClose(),
+         0,
+         0)
+         );
+         }*/
         /*
          while (itr.hasNext()) { // Loop through things in proper sequence
          TickerItemData item = itr.next();
@@ -425,6 +430,19 @@ public class TickerCacheTask {
         return container;
     }
 
+    private static final Comparator<Object> TickerItemComparator = (Object obj1, Object obj2) -> {
+        TickerItemData data1 = (TickerItemData) obj1;
+        TickerItemData data2 = (TickerItemData) obj2;
+        
+        if (data1.getServerTime() > data2.getServerTime()) {
+            return 1;
+        } else if (data1.getServerTime() == data2.getServerTime()) {
+            return -1;
+        }
+        return 0;
+    };
+
+    
     public class TickerCacheTask_ExchangeHistory implements Runnable {
 
         private final String CurrencyPair;

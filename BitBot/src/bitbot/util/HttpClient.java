@@ -5,6 +5,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
+import java.net.SocketTimeoutException;
 import java.net.URL;
 import javax.net.ssl.HttpsURLConnection;
 
@@ -26,6 +27,7 @@ public class HttpClient {
 
             // Send post request
             con.setDoOutput(false);
+            con.setReadTimeout(10000);
 
             int responseCode = con.getResponseCode();
             //System.out.println("\nSending 'POST' request to URL : " + obj.toString());
@@ -57,7 +59,7 @@ public class HttpClient {
         }
         return null;
     }
-    
+
     public static String httpsGet(String URL, String parameters) {
         BufferedReader in = null;
         try {

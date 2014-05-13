@@ -234,7 +234,7 @@ function check_price() {
         var alertMsg_ToastNavigateURI = '/DetailedPricePage.xaml?QuoteDataSource=' + source + '&CurrencyPair=' + currencypair;
 
         // Start sending
-        if (platform == "WindowsPhone8") {
+        if (platform == "WindowsPhone8" || platform == "WindowsPhone8.1") {
             push.mpns.sendToast(clientUniqueId,
                 {
                     text1: currentPrice.toString(),
