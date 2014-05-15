@@ -26,11 +26,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.stream.Stream;
 
 /**
@@ -209,8 +211,8 @@ public class TickerCacheTask {
             return list_BTCe2;
         }
         // Timestamp
-        long cTime = (System.currentTimeMillis() / 1000l);
-        long startTime = cTime - (60l * 60l * backtestHours);
+        final long cTime = (System.currentTimeMillis() / 1000l);
+        final long startTime = cTime - (60l * 60l * backtestHours);
         long LastUsedTime = 0;
 
         /*  Close = (open + high + low + close) / 4
@@ -225,14 +227,14 @@ public class TickerCacheTask {
         // Its a copy :)
         //List<TickerItemData> currentList = new LinkedList(list_mssql.get(dataSet));
         //Iterator<TickerItemData> itr = currentList.iterator();
-        List<TickerItemData> currentList = list_mssql.get(dataSet);
-        Stream<TickerItemData> items = currentList.stream().filter((data) -> (data.getServerTime() > ServerTimeFrom));
+        final List<TickerItemData> currentList = list_mssql.get(dataSet);
+        final Iterator<TickerItemData> items = currentList.stream().
+                filter((data) -> (data.getServerTime() > ServerTimeFrom)).
+                sorted(TickerItemComparator).
+                iterator();
         
-        Object[] arrays = items.toArray();
-        Arrays.sort(arrays, TickerItemComparator);
-
-        for (Object obj : arrays) {
-            TickerItemData item = (TickerItemData) obj;
+        while (items.hasNext()) {
+            TickerItemData item = items.next();
             
             // Check if last added tick is above the threshold 'intervalMinutes'
             if (LastUsedTime + (intervalMinutes * 60) < item.getServerTime()) {
@@ -377,6 +379,16 @@ public class TickerCacheTask {
          }
          */
         return list_BTCe2;
+    }
+    
+    public Map<String, List<TickerItemData>> getBitcoinPriceIndex(final String ticker, final int backtestHours, int intervalMinutes, long ServerTimeFrom) {
+        final Map<String, List<TickerItemData>> listMaps = new HashMap();
+        
+        list_mssql.entrySet().stream().filter((mapItem) -> (mapItem.getKey().contains(ticker))).forEach((mapItem) -> {
+            listMaps.put(mapItem.getKey(), mapItem.getValue());
+        });
+        
+        return listMaps;
     }
 
     public List<List<ExponentialMovingAverageData>> getExponentialMovingAverage(
@@ -542,20 +554,17 @@ public class TickerCacheTask {
             if (!list_mssql.containsKey(ExchangeCurrencyPair)) { // First item, no sync needed
                 list_mssql.put(ExchangeCurrencyPair, list_newItems);
 
-                for (TickerItemData data : list_newItems) {
-                    if (data.getServerTime() > LastCachedTime) {
-                        LastCachedTime = data.getServerTime();
-                    }
-                }
+                list_newItems.stream().filter((data) -> (data.getServerTime() > LastCachedTime)).forEach((data) -> {
+                    LastCachedTime = data.getServerTime();
+                });
             } else {
                 List<TickerItemData> currentList = list_mssql.get(ExchangeCurrencyPair);
-                for (TickerItemData data : list_newItems) {
-                    if (data.getServerTime() > LastCachedTime) {
-                        currentList.add(data); // Don't need to lock the current list, since we are not removing any items off it.
-
-                        LastCachedTime = data.getServerTime();
-                    }
-                }
+                list_newItems.stream().filter((data) -> (data.getServerTime() > LastCachedTime)).map((data) -> {
+                    currentList.add(data);
+                    return data;
+                }).forEach((data) -> {
+                    LastCachedTime = data.getServerTime();
+                });
             }
             System.out.println("Caching price for " + ExchangeCurrencyPair + " --> " + list_newItems.size());
         }
