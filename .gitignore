@@ -26,3 +26,6 @@ BitBot/build/classes/bitbot/handler/channel/ChannelServer.class
 *.class
 *.class
 *.class
+*.class
+BitBot/DataLog/Info/server_error.Timer;25.5.2014.rtf
+*.class

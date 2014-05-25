@@ -73,7 +73,7 @@ public class TickerCacheTask {
 
                 if (ExchangeCurrencyPair.contains("huobi")) {
                     history = new TickerHistory_Huobi();
-                    UpdateTime = 3;
+                    UpdateTime = 1;
                 } else if (ExchangeCurrencyPair.contains("btce")) {
                     history = new TickerHistory_BTCe();
                 } else if (ExchangeCurrencyPair.contains("btcchina")) {
@@ -203,12 +203,12 @@ public class TickerCacheTask {
     }
 
     public List<TickerItem_CandleBar> getTickerList_Candlestick(final String ticker, final int backtestHours, int intervalMinutes, String ExchangeSite, long ServerTimeFrom) {
-        final List<TickerItem_CandleBar> list_BTCe2 = new LinkedList(); // create a new array first
+        final List<TickerItem_CandleBar> list_chart = new LinkedList(); // create a new array first
         final String dataSet = ExchangeSite + "-" + ticker;
 
         // Is the data set available?
         if (!list_mssql.containsKey(dataSet)) {
-            return list_BTCe2;
+            return list_chart;
         }
         // Timestamp
         final long cTime = (System.currentTimeMillis() / 1000l);
@@ -220,7 +220,7 @@ public class TickerCacheTask {
          Low = minimum of low, open, or close (whichever is lowest)
          Open = (open of previous bar + close of previous bar) / 2
          */
-        double high = 0, low = Double.MAX_VALUE, open = -1;
+        float high = 0, low = Float.MAX_VALUE, open = -1, lastPriceSet = 0;
         double Volume = 0, VolumeCur = 0;
 
         // No need to lock this thread, if we are creating a new ArrayList off existing.
@@ -244,7 +244,7 @@ public class TickerCacheTask {
                         if (high == 0) {
                             high = item.getHigh();
                         }
-                        if (low == Double.MAX_VALUE) {
+                        if (low == Float.MAX_VALUE) {
                             low = item.getLow();
                         }
                         if (open == -1) {
@@ -254,7 +254,7 @@ public class TickerCacheTask {
                             LastUsedTime = item.getServerTime();
                         }
                         // Add to list
-                        list_BTCe2.add(
+                        list_chart.add(
                                 new TickerItem_CandleBar(
                                         LastUsedTime + (intervalMinutes * 60),
                                         (float) item.getClose() == 0 ? item.getOpen() : item.getClose(),
@@ -267,10 +267,11 @@ public class TickerCacheTask {
                     }
                     // reset
                     high = 0;
-                    low = Double.MAX_VALUE;
+                    low = Float.MAX_VALUE;
                     open = -1;
                     Volume = 0;
                     VolumeCur = 0;
+                    lastPriceSet = 0;
 
                     if (LastUsedTime == 0) {
                         LastUsedTime = item.getServerTime();
@@ -284,11 +285,26 @@ public class TickerCacheTask {
                 if (open == -1) {
                     open = item.getOpen();
                 }
-
                 Volume += item.getVol();
                 VolumeCur += item.getVol_Cur();
+                
+                lastPriceSet = item.getOpen();
             }
         }
+        // For unmatured chart
+        if (high != 0 && low != Float.MAX_VALUE && open != -1 && LastUsedTime != 0 && lastPriceSet != 0) {
+                        // Add to list
+                        list_chart.add(
+                                new TickerItem_CandleBar(
+                                        LastUsedTime + (intervalMinutes * 60),
+                                        (float) lastPriceSet, // last
+                                        (float) high,
+                                        (float) low,
+                                        (float) open,
+                                        Volume,
+                                        VolumeCur)
+                        );
+                        }
 
         /*while (LastUsedTime + (intervalMinutes * 60) < cTime) {
          TickerItem_CandleBar lastItem = list_BTCe2.get(list_BTCe2.size() - 1);
@@ -378,7 +394,7 @@ public class TickerCacheTask {
          }
          }
          */
-        return list_BTCe2;
+        return list_chart;
     }
     
     public Map<String, List<TickerItemData>> getBitcoinPriceIndex(final String ticker, final int backtestHours, int intervalMinutes, long ServerTimeFrom) {

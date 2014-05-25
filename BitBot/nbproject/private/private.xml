@@ -14,6 +14,7 @@
         <group>
             <file>file:/C:/Users/z/Desktop/Server/bitbot_server/BitBot/src/bitbot/cache/tickers/history/TickerHistoryData.java</file>
             <file>file:/C:/Users/z/Desktop/Server/bitbot_server/BitBot/src/bitbot/cache/tickers/history/TickerHistory_BTCChina.java</file>
+            <file>file:/C:/Users/z/Desktop/Server/bitbot_server/BitBot/src/bitbot/handler/channel/tasks/ChartTask_Candlestick.java</file>
             <file>file:/C:/Users/z/Desktop/Server/bitbot_server/BitBot/src/bitbot/cache/tickers/TickerCacheTask.java</file>
             <file>file:/C:/Users/z/Desktop/Server/bitbot_server/BitBot/src/bitbot/cache/tickers/history/TickerHistory_Okcoin.java</file>
         </group>
