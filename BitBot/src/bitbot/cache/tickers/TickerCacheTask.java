@@ -10,6 +10,7 @@ import bitbot.cache.tickers.history.TickerHistory_Bitstamp;
 import bitbot.cache.tickers.history.TickerHistory_CampBX;
 import bitbot.cache.tickers.history.TickerHistory_CexIo;
 import bitbot.cache.tickers.history.TickerHistory_Coinbase;
+import bitbot.cache.tickers.history.TickerHistory_Dgex;
 import bitbot.cache.tickers.history.TickerHistory_FybSGSE;
 import bitbot.cache.tickers.history.TickerHistory_Huobi;
 import bitbot.cache.tickers.history.TickerHistory_ItBit;
@@ -23,7 +24,6 @@ import bitbot.handler.channel.ChannelServer;
 import bitbot.server.threads.LoggingSaveRunnable;
 import bitbot.server.threads.TimerManager;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -32,8 +32,6 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.stream.Stream;
 
 /**
  *
@@ -73,7 +71,7 @@ public class TickerCacheTask {
 
                 if (ExchangeCurrencyPair.contains("huobi")) {
                     history = new TickerHistory_Huobi();
-                    UpdateTime = 3;
+                    UpdateTime = 1;
                 } else if (ExchangeCurrencyPair.contains("btce")) {
                     history = new TickerHistory_BTCe();
                 } else if (ExchangeCurrencyPair.contains("btcchina")) {
@@ -87,7 +85,7 @@ public class TickerCacheTask {
                     UpdateTime = 5;
                 } else if (ExchangeCurrencyPair.contains("fybsg") || ExchangeCurrencyPair.contains("fybse")) {
                     history = new TickerHistory_FybSGSE();
-                    UpdateTime = 30;
+                    UpdateTime = 30; // volume is still too low to make an impact
                 } else if (ExchangeCurrencyPair.contains("itbit")) { // may need more work
                     history = new TickerHistory_ItBit();
                 } else if (ExchangeCurrencyPair.contains("coinbase")) {
@@ -98,6 +96,9 @@ public class TickerCacheTask {
                     history = new TickerHistory_CampBX();
                 } else if (ExchangeCurrencyPair.contains("bitfinex")) {
                     history = new TickerHistory_BitFinex();
+                } else if (ExchangeCurrencyPair.contains("dgex")) {
+                    history = new TickerHistory_Dgex();
+                    UpdateTime = 30; // volume is still too low to make an impact
 
                 } else if (ExchangeCurrencyPair.contains("mtgox")) {
                     history = new TickerHistory_MTGox();
