@@ -530,7 +530,7 @@ public class TickerCacheTask {
                             LastCommitTime = HistoryData.getLastPurchaseTime();
 
                             // Set new
-                            HistoryData = new TickerHistoryData(HistoryData.getLastPurchaseTime(), HistoryData.getLastTradeId(), HistoryData.getLastPrice(), HistoryData.isCoinbase_CampBX_CexIO());
+                            HistoryData = new TickerHistoryData(HistoryData.getLastPurchaseTime(), HistoryData.getLastTradeId(), HistoryData.getLastPrice(), HistoryData.isCoinbase_CampBX());
                             break;
                         }
                         /*case DatabaseError: { // Not possible to be returned by 'tryCommitDatabase'.

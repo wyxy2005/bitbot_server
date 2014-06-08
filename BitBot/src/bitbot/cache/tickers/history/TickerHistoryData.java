@@ -22,7 +22,7 @@ public class TickerHistoryData {
     private long LastPurchaseTime;
     private int LastTradeId;
 
-    private boolean isCoinbase_CampBX_CexIO = false;
+    private boolean isCoinbase_CampBX = false;
 
     private boolean isDatasetReadyForCommit = false; // additional boolean to ensure that future changes won't bug this up.. 
     private String TmpExchangeSite, TmpcurrencyPair;
@@ -34,7 +34,7 @@ public class TickerHistoryData {
         this.LastTradeId = LastTradeId;
         this.LastPrice = 0;
         this.Open = LastPrice;
-        this.isCoinbase_CampBX_CexIO = IsCoinbaseOrCexIO;
+        this.isCoinbase_CampBX = IsCoinbaseOrCexIO;
 
         if (IsCoinbaseOrCexIO) {
             this.Volume = 1;
@@ -122,7 +122,7 @@ public class TickerHistoryData {
         if (this.Open == 0) {
             this.Open = dataNow.LastPrice;
         }
-        if (!isCoinbase_CampBX_CexIO && this.Volume_Cur != 1d && this.Volume != 1d) {
+        if (!isCoinbase_CampBX && this.Volume_Cur != 1d && this.Volume != 1d) {
             this.Volume_Cur += dataNow.Volume_Cur;
             this.Volume += dataNow.Volume_Cur * dataNow.High;
         }
@@ -236,8 +236,8 @@ public class TickerHistoryData {
         this.Volume_Cur = Volume_Cur;
     }
 
-    public boolean isCoinbase_CampBX_CexIO() {
-        return isCoinbase_CampBX_CexIO;
+    public boolean isCoinbase_CampBX() {
+        return isCoinbase_CampBX;
     }
 
     public boolean isDatasetReadyForCommit() {
