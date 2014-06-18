@@ -1,0 +1,12 @@
+grant {
+  permission java.security.AllPermission;
+
+/*    permission java.security.SecurityPermission "*","read,write,execute";
+    permission java.lang.RuntimePermission "*","read,write,execute";
+    permission java.util.PropertyPermission "*","read,write";
+    permission java.io.FilePermission "<<ALL FILES>>", "read,write,execute"; // Dont allow "delete"
+    permission java.net.SocketPermission "127.0.0.1:1099", "connect,resolve,accept,listen";
+    permission java.net.SocketPermission "127.0.0.1:5529", "connect,resolve,accept,listen";
+
+    permission java.net.SocketPermission "127.0.0.1:1500-", "connect,resolve,accept,listen";*/
+};
