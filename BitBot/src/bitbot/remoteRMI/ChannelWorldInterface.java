@@ -17,5 +17,7 @@ public interface ChannelWorldInterface extends Remote, WorldChannelCommonOperati
     public byte getChannelId() throws RemoteException;
 
     public String getIP() throws RemoteException;
+    
+    public void shutdown(int exitCode) throws RemoteException;
 
 }

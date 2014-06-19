@@ -74,7 +74,8 @@ public class ChannelServer {
             Props_EnableDebugSessionPrints = false;
     private static String 
             Props_SocketIPAddress = "127.0.0.1",
-            Props_WorldIPAddress = "127.0.0.1";
+            Props_WorldIPAddress = "127.0.0.1",
+            Props_WorldRMIHash = "";
     private static short
             Props_SocketPort = 8082,
             Props_WorldRMIPort = 5454;
@@ -120,7 +121,7 @@ public class ChannelServer {
                 Props_EnableDebugSessionPrints = Boolean.parseBoolean(props.getProperty("server.EnableDebugSessionPrints"));
                 Props_WorldIPAddress = props.getProperty("server.WorldIPAddress");
                 Props_WorldRMIPort = Short.parseShort(props.getProperty("server.WorldRMIPort"));
-                
+                Props_WorldRMIHash = props.getProperty("server.WorldRMIHash");
                 
                 // Establish RMI connection
                 System.out.println(String.format("[Info] Locating world server RMI connection at %s:%d..", Props_WorldIPAddress, Props_WorldRMIPort));
@@ -129,7 +130,7 @@ public class ChannelServer {
                 worldRegistry = (WorldRegistry) registry.lookup(Constants.Server_AzureAuthorization);
 
                 cwi = new ChannelWorldInterfaceImpl(this);
-                wci = worldRegistry.registerChannelServer("Test123", cwi, false);
+                wci = worldRegistry.registerChannelServer(Props_WorldRMIHash, cwi, false);
 
                 // End
                 System.out.println("[Info] Loading tasks..");

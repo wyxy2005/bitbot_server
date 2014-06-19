@@ -3,10 +3,14 @@ package bitbot.handler.world;
 import bitbot.remoteRMI.ChannelWorldInterface;
 import bitbot.remoteRMI.WorldChannelInterface;
 import bitbot.remoteRMI.world.WorldRegistry;
+import bitbot.util.encryption.SHA256;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
+import java.util.Calendar;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 import javax.rmi.ssl.SslRMIClientSocketFactory;
 import javax.rmi.ssl.SslRMIServerSocketFactory;
 
@@ -18,94 +22,96 @@ public class WorldRegistryImpl extends UnicastRemoteObject implements WorldRegis
 
     private static final long serialVersionUID = -170574938159280746L;
     private static WorldRegistryImpl instance = null;
-    
-    // Others
+
+    // List of channels connected to this world
     private static final Map<Byte, ChannelWorldInterface> channelServer = new LinkedHashMap();
     private static final Map<Byte, WorldChannelInterface> channelServer_wci = new LinkedHashMap();
-
     
+    // Timestamp
+    private static Calendar cal = Calendar.getInstance();
+
+    // hashes for authentication
+    private static final String[] ChannelServerHashes = {
+        "4e79a7e08f6de175f7b2f89fb38b9cc140b7711f927543751b79c05dfc14cf3e", // channel 1 [For serving of client data] asdas15as1d51as5d4yt89j4657u56o7056034;>:#R>:#@$)@O$23dfg541df
+        "38c325602b59ee29cef7ee79edee9a0bae0a1edc6278fd2f5da0b13df82cf603", // channel 2 [For caching of data from exchange] asd4d5fg154348544y51gh5641uy89k451h2d3f1h56451y8t48t345r"#:":#@"$R:@™
+    };
+
     private WorldRegistryImpl() throws RemoteException {
-	super(0, new SslRMIClientSocketFactory(), new SslRMIServerSocketFactory());
+        super(0, new SslRMIClientSocketFactory(), new SslRMIServerSocketFactory());
     }
 
     public static WorldRegistryImpl getInstance() {
-	if (instance == null) {
-	    try {
-		System.out.println("[Info] Initializing WorldRegistryImpl...");
-		instance = new WorldRegistryImpl();
-	    } catch (RemoteException e) {
-		// can't do much anyway we are fucked ^^
-		throw new RuntimeException(e);
-	    }
-	}
-	return instance;
+        if (instance == null) {
+            try {
+                System.out.println("[Info] Initializing WorldRegistryImpl...");
+                instance = new WorldRegistryImpl();
+            } catch (RemoteException e) {
+                // can't do much anyway we are fucked ^^
+                throw new RuntimeException(e);
+            }
+        }
+        return instance;
+    }
+    
+    public ChannelWorldInterface getChannel(byte channel) {
+        return channelServer.get(channel);
+    }
+    
+    public Calendar getCalendar() {
+        return cal;
+    }
+    
+    public Set<Byte> getChannelServer() {
+	return new HashSet(channelServer.keySet());
     }
 
     @Override
-    public WorldChannelInterface registerChannelServer(final String authKey, final ChannelWorldInterface cb, boolean isReconnect) throws RemoteException {
-	/*Connection con = DatabaseConnection.getConnection();
-	try (PreparedStatement ps = con.prepareStatement("SELECT * FROM auth_server_channel WHERE `key` = SHA1(?) AND world = ?")) {
-	    ps.setString(1, authKey);
-	    ps.setInt(2, WorldServer.getInstance().getWorldId());
-	    try (ResultSet rs = ps.executeQuery()) {
-		if (rs.next()) {
-		    byte channelId = rs.getByte("number");
-		    if (channelId < 1) {
-			channelId = getFreeChannelId();
-			if (channelId == -1) {
-			    throw new RuntimeException("Maximum channels reached");
-			}
-		    } else {
-			if (channelServer.containsKey(channelId) && !isReconnect) {
-			    ChannelWorldInterface oldch = channelServer.get(channelId);
-			    try {
-				oldch.shutdown(0);
-			    } catch (ConnectException ce) {
-				// silently ignore as we assume that the server is offline
-			    }
-			    // int switchChannel = getFreeChannelId();
-			    // if (switchChannel == -1) {
-			    // throw new RuntimeException("Maximum channels reached");
-			    // }
-			    // ChannelWorldInterface switchIf = channelServer.get(channelId);
-			    // deregisterChannelServer(switchChannel);
-			    // channelServer.put(switchChannel, switchIf);
-			    // switchIf.setChannelId(switchChannel);
-			    // for (LoginWorldInterface wli : loginServer) {
-			    // wli.channelOnline(switchChannel, switchIf.getIP());
-			    // }
-			}
-		    }
-		    channelServer.put(channelId, cb);
-		    cb.setChannelId(channelId);
-		    WorldChannelInterface ret = new WorldChannelInterfaceImpl(cb, rs.getInt("channelid"));
+    public WorldChannelInterface registerChannelServer(String authKey, final ChannelWorldInterface cb, boolean isReconnect) throws RemoteException {
+        authKey = SHA256.sha256(authKey);
 
-		    channelServer_wci.put(channelId, ret); // Keep reference.
-		    return ret;
-		}
-	    }
-	} catch (SQLException ex) {
-	    ex.printStackTrace();
-	    System.err.println("Encountered database error while authenticating channelserver" + ex);
-	}*/
-	throw new RuntimeException("Couldn't find a channel with the given key (" + authKey + ")");
+        byte channelId = -1;
+        for (int i = 0; i < ChannelServerHashes.length; i++) {
+            if (ChannelServerHashes[i].equals(authKey)) {
+                channelId = (byte) i;
+            }
+        }
+
+        if (channelId > -1) {
+            if (channelServer.containsKey(channelId) && !isReconnect) {
+                ChannelWorldInterface oldch = channelServer.get(channelId);
+                try {
+                    oldch.shutdown(0);
+                } catch (RemoteException ce) {
+                    // silently ignore as we assume that the server is offline
+                }
+            }
+            channelServer.put(channelId, cb);
+            cb.setChannelId(channelId);
+            WorldChannelInterface ret = new WorldChannelInterfaceImpl(cb, channelId);
+
+            channelServer_wci.put(channelId, ret); // Keep reference.
+            return ret;
+        }
+        throw new RuntimeException("Couldn't find a channel with the given key (" + authKey + ")");
     }
 
+    @Override
     public void deregisterChannelServer(final byte channel) throws RemoteException {
-	deregisterChannelServer(channel, null);
+        deregisterChannelServer(channel, null);
     }
 
     public void deregisterChannelServer(final byte channel, final Exception e) throws RemoteException {
-	/*channelServer.remove(channel);
-	for (final LoginWorldInterface wli : loginServer) {
-	    wli.channelOffline(channel);
-	}
-	if (e != null) {
-	    ServerLog.RegisterForLoggingException(ServerLogType.ShutdownError, e);
-	}*/
-	System.out.println("Channel " + channel + " is disconnected/offline.");
+        /*channelServer.remove(channel);
+         for (final LoginWorldInterface wli : loginServer) {
+         wli.channelOffline(channel);
+         }
+         if (e != null) {
+         ServerLog.RegisterForLoggingException(ServerLogType.ShutdownError, e);
+         }*/
+        System.out.println("Channel " + channel + " is disconnected/offline.");
     }
 
+    @Override
     public String getStatus() throws RemoteException {
         return "";
     }

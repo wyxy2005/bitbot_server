@@ -71,7 +71,7 @@ public class TickerCacheTask {
 
                 if (ExchangeCurrencyPair.contains("huobi")) {
                     history = new TickerHistory_Huobi();
-                    UpdateTime = 1;
+                    UpdateTime = 2;
                 } else if (ExchangeCurrencyPair.contains("btce")) {
                     history = new TickerHistory_BTCe();
                 } else if (ExchangeCurrencyPair.contains("btcchina")) {

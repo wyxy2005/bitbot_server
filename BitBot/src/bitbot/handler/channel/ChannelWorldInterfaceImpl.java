@@ -43,4 +43,9 @@ public class ChannelWorldInterfaceImpl extends UnicastRemoteObject implements Ch
     public void broadcastMessage(byte[] message) throws RemoteException{
          
     }
+    
+    @Override
+    public void shutdown(int exitCode) throws RemoteException {
+        
+    }
 }
