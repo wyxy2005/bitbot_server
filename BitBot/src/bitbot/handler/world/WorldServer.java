@@ -1,5 +1,7 @@
 package bitbot.handler.world;
 
+import bitbot.remoteRMI.encryption.XorClientSocketFactory;
+import bitbot.remoteRMI.encryption.XorServerSocketFactory;
 import bitbot.server.Constants;
 import java.io.FileReader;
 import java.rmi.AlreadyBoundException;
@@ -8,8 +10,6 @@ import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.util.Properties;
-import javax.rmi.ssl.SslRMIClientSocketFactory;
-import javax.rmi.ssl.SslRMIServerSocketFactory;
 
 /**
  *
@@ -29,6 +29,20 @@ public class WorldServer {
 
     public void initializeWorldServer() {
         try {
+            if (System.getSecurityManager() == null) {
+                System.setSecurityManager(new RMISecurityManager() {
+
+                    /*		    @Override
+                     public void checkConnect(String host, int port) {
+                     }
+
+                     @Override
+                     public void checkConnect(String host, int port, Object context) {
+                     }*/
+                });
+                System.out.println("[Info] Set SecurityManager as RMISecurityManager");
+            }
+                        
             // Init properties
             System.out.println("[Info] Loading server properties..");
 
@@ -44,31 +58,16 @@ public class WorldServer {
             // RMI connection
             System.out.println(String.format("[Info] Establishing RMI connection at %s:%d", Props_WorldIPAddress, Props_WorldRMIPort));
             
-            final SslRMIClientSocketFactory srcsf = new SslRMIClientSocketFactory();
-            final SslRMIServerSocketFactory srssf = new SslRMIServerSocketFactory();
+            final XorClientSocketFactory srcsf = new XorClientSocketFactory();
+            final XorServerSocketFactory srssf = new XorServerSocketFactory();
 
-            final Registry registry = LocateRegistry.createRegistry(Props_WorldRMIPort, srcsf, srssf);
+            final Registry registry = LocateRegistry.createRegistry(Props_WorldRMIPort/*, srcsf, srssf*/);
             registry.bind(Constants.Server_AzureAuthorization, WorldRegistryImpl.getInstance());
 
             // Shutdown hooks
             System.out.println("[Info] Registering shutdown hooks");
             Runtime.getRuntime().addShutdownHook(new Thread(new ShutDownListener()));
-            
-            if (System.getSecurityManager() == null) {
-                System.setSecurityManager(new RMISecurityManager() {
-
-                    /*		    @Override
-                     public void checkConnect(String host, int port) {
-                     }
-
-                     @Override
-                     public void checkConnect(String host, int port, Object context) {
-                     }*/
-                });
-                System.out.println("[Info] Installed RMISecurityManager successfully!");
-            } else {
-                System.out.println("[Info] RMISecurityManager already exists.");
-            }
+           
         } catch (final RemoteException ex) {
             System.err.println("Could not initialize RMI system" + ex);
             System.exit(464131385);

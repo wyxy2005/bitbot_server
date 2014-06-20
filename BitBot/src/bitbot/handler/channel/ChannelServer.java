@@ -14,7 +14,6 @@ import bitbot.remoteRMI.WorldChannelInterface;
 import bitbot.remoteRMI.world.WorldRegistry;
 import bitbot.server.ServerLog;
 import bitbot.server.ServerLogType;
-import bitbot.util.mssql.DatabaseConnection;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -22,6 +21,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.rmi.RMISecurityManager;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
@@ -48,36 +48,31 @@ public class ChannelServer {
     private static WorldRegistry worldRegistry;
 
     private Boolean worldReady = true;
-    private boolean 
-            isShutdown = false, 
+    private boolean isShutdown = false,
             finishedShutdown = false,
             isReconnectState = false;
-    
+
     private ServerExchangeHandler serverExchangeHandler = null;
 
     private ServerClientHandler serverClientHandler = null;
     private SocketAcceptor acceptor;
     private InetSocketAddress InetSocketadd;
-   
 
     private TickerCacheTask tickerTask = null;
     private NewsCacheTask newsTask = null;
 
     // Properties
     private static Properties props = null;
-    private static boolean 
-            Props_EnforceCloudFlareNetwork = false,
+    private static boolean Props_EnforceCloudFlareNetwork = false,
             Props_EnableTickerHistoryDatabaseCommit = false,
             Props_EnableTickerHistory = false,
             Props_EnableSQLDataAcquisition = false,
             Props_EnableSocketStreaming = false,
             Props_EnableDebugSessionPrints = false;
-    private static String 
-            Props_SocketIPAddress = "127.0.0.1",
+    private static String Props_SocketIPAddress = "127.0.0.1",
             Props_WorldIPAddress = "127.0.0.1",
             Props_WorldRMIHash = "";
-    private static short
-            Props_SocketPort = 8082,
+    private static short Props_SocketPort = 8082,
             Props_WorldRMIPort = 5454;
 
     // Etc
@@ -86,11 +81,10 @@ public class ChannelServer {
     private ChannelServer() {
 
     }
-    
-    public static final WorldRegistry getWorldRegistry() {
-	return worldRegistry;
-    }
 
+    public static final WorldRegistry getWorldRegistry() {
+        return worldRegistry;
+    }
 
     public static ChannelServer getInstance() {
         if (ch.serverExchangeHandler == null) {
@@ -102,9 +96,23 @@ public class ChannelServer {
     public void initializeChannelServer() {
         if (serverExchangeHandler == null) {
             try {
+                if (System.getSecurityManager() == null) {
+                    System.setSecurityManager(new RMISecurityManager() {
+
+                        /*		    @Override
+                         public void checkConnect(String host, int port) {
+                         }
+
+                         @Override
+                         public void checkConnect(String host, int port, Object context) {
+                         }*/
+                    });
+                    System.out.println("[Info] Set SecurityManager as RMISecurityManager");
+                }
+
                 // Init properties
                 System.out.println("[Info] Loading server properties..");
-                
+
                 if (props == null) {
                     props = new Properties();
                     try (FileReader is = new FileReader("server.properties")) {
@@ -122,11 +130,11 @@ public class ChannelServer {
                 Props_WorldIPAddress = props.getProperty("server.WorldIPAddress");
                 Props_WorldRMIPort = Short.parseShort(props.getProperty("server.WorldRMIPort"));
                 Props_WorldRMIHash = props.getProperty("server.WorldRMIHash");
-                
+
                 // Establish RMI connection
                 System.out.println(String.format("[Info] Locating world server RMI connection at %s:%d..", Props_WorldIPAddress, Props_WorldRMIPort));
-                
-                final Registry registry = LocateRegistry.getRegistry(Props_WorldIPAddress, Props_WorldRMIPort, new SslRMIClientSocketFactory());
+
+                final Registry registry = LocateRegistry.getRegistry(Props_WorldIPAddress, Props_WorldRMIPort/*, new SslRMIClientSocketFactory()*/);
                 worldRegistry = (WorldRegistry) registry.lookup(Constants.Server_AzureAuthorization);
 
                 cwi = new ChannelWorldInterfaceImpl(this);
@@ -134,18 +142,18 @@ public class ChannelServer {
 
                 // End
                 System.out.println("[Info] Loading tasks..");
-                
+
                 serverExchangeHandler = ServerExchangeHandler.Connect();
 
                 LoadCurrencyPairTables(false);
 
                 tickerTask = new TickerCacheTask(); // init automatically
                 newsTask = new NewsCacheTask();
-                
+
                 if (isEnableSocketStreaming()) {
-                    InitializeClientServer();   
+                    InitializeClientServer();
                 }
-                
+
                 // Shutdown hooks
                 System.out.println("[Info] Registering shutdown hooks");
                 Runtime.getRuntime().addShutdownHook(new Thread(new ShutDownListener()));
@@ -162,67 +170,67 @@ public class ChannelServer {
     }
 
     public final void reconnectWorld(final Throwable e) {
-	if (e != null) {
-	    ServerLog.RegisterForLoggingException(ServerLogType.ReconnectError, e);
-	}
-	try {
-	    wci.isAvailable();
-	} catch (RemoteException ex) {
-	    synchronized (worldReady) {
-		worldReady = false;
-	    }
-	    synchronized (cwi) {
-		synchronized (worldReady) {
-		    if (worldReady) {
-			return;
-		    }
-		}
-		System.out.println("Reconnecting to world server");
-		synchronized (wci) {
-		    isReconnectState = true;
-                    
-		    // completely re-establish the rmi connection
-		    ChannelWorldInterface cwi2 = null;
-		    WorldChannelInterface wci2 = null;
-		    WorldRegistry reg = null;
+        if (e != null) {
+            ServerLog.RegisterForLoggingException(ServerLogType.ReconnectError, e);
+        }
+        try {
+            wci.isAvailable();
+        } catch (RemoteException ex) {
+            synchronized (worldReady) {
+                worldReady = false;
+            }
+            synchronized (cwi) {
+                synchronized (worldReady) {
+                    if (worldReady) {
+                        return;
+                    }
+                }
+                System.out.println("Reconnecting to world server");
+                synchronized (wci) {
+                    isReconnectState = true;
 
-		    boolean success = false;
+                    // completely re-establish the rmi connection
+                    ChannelWorldInterface cwi2 = null;
+                    WorldChannelInterface wci2 = null;
+                    WorldRegistry reg = null;
 
-		    try {
-			// initialProp.getProperty("net.sf.odinms.world.host")
-			final Registry registry = LocateRegistry.getRegistry(Props_WorldIPAddress, Props_WorldRMIPort, new SslRMIClientSocketFactory());
-			reg = (WorldRegistry) registry.lookup(Constants.Server_AzureAuthorization);
-			cwi2 = new ChannelWorldInterfaceImpl(this);
-			wci2 = reg.registerChannelServer("Test123", cwi2, true);
+                    boolean success = false;
 
-			wci2.serverReady();
+                    try {
+                        // initialProp.getProperty("net.sf.odinms.world.host")
+                        final Registry registry = LocateRegistry.getRegistry(Props_WorldIPAddress, Props_WorldRMIPort, new SslRMIClientSocketFactory());
+                        reg = (WorldRegistry) registry.lookup(Constants.Server_AzureAuthorization);
+                        cwi2 = new ChannelWorldInterfaceImpl(this);
+                        wci2 = reg.registerChannelServer(Props_WorldRMIHash, cwi2, true);
 
-			this.finishedShutdown = false;
-			this.isShutdown = false;
+                        wci2.serverReady();
 
-			success = true;
-		    } catch (Exception exs) {
-			System.err.println("Reconnecting failed" + exs);
+                        this.finishedShutdown = false;
+                        this.isShutdown = false;
 
-			ServerLog.RegisterForLoggingException(ServerLogType.ReconnectError, exs);
-		    }
-		    if (success) {
-			worldRegistry = reg;
-			cwi = cwi2;
-			wci = wci2;
+                        success = true;
+                    } catch (Exception exs) {
+                        System.err.println("Reconnecting failed" + exs);
 
-			System.err.println("Reconnecting [Channel] to [World] success");
-		    }
-		    isReconnectState = false;
-		    worldReady = true;
-		}
-	    }
-	    synchronized (worldReady) {
-		worldReady.notifyAll();
-	    }
-	}
+                        ServerLog.RegisterForLoggingException(ServerLogType.ReconnectError, exs);
+                    }
+                    if (success) {
+                        worldRegistry = reg;
+                        cwi = cwi2;
+                        wci = wci2;
+
+                        System.err.println("Reconnecting [Channel] to [World] success");
+                    }
+                    isReconnectState = false;
+                    worldReady = true;
+                }
+            }
+            synchronized (worldReady) {
+                worldReady.notifyAll();
+            }
+        }
     }
-    
+
     public void InitializeClientServer() {
         if (acceptor == null) {
             IoBuffer.setUseDirectBuffer(false);
@@ -309,7 +317,7 @@ public class ChannelServer {
     public boolean isEnableSQLDataAcquisition() {
         return Props_EnableSQLDataAcquisition;
     }
-    
+
     public boolean isEnableSocketStreaming() {
         return Props_EnableSocketStreaming;
     }
@@ -317,25 +325,29 @@ public class ChannelServer {
     public boolean isEnableDebugSessionPrints() {
         return Props_EnableDebugSessionPrints;
     }
-    
+
     public boolean isShutdown() {
         return isShutdown;
     }
-    
+
     public final WorldChannelInterface getWorldInterface() {
-	synchronized (worldReady) {
-	    while (!worldReady) {
-		try {
-		    worldReady.wait();
-		} catch (InterruptedException e) {
-		}
-	    }
-	}
-	return wci;
+        synchronized (worldReady) {
+            while (!worldReady) {
+                try {
+                    worldReady.wait();
+                } catch (InterruptedException e) {
+                }
+            }
+        }
+        return wci;
     }
 
-    public void BroadcastConnectedClients(TradeHistoryBuySellEnum type, String ExchangeCurrencyPair, int tradeid) {
-        // TODO
+    public void broadcastPriceChanges(final TradeHistoryBuySellEnum type, final String ExchangeCurrencyPair, final float price, final float amount, final long date, final int tradeid) {
+        try {
+            wci.broadcastPriceChanges(type, ExchangeCurrencyPair, price, amount, date, tradeid);
+        } catch (RemoteException exp) {
+            ServerLog.RegisterForLoggingException(ServerLogType.RemoteError, exp);
+        }
     }
 
     private final class ShutDownListener implements Runnable {
@@ -343,7 +355,7 @@ public class ChannelServer {
         @Override
         public void run() {
             System.out.println("Shutdown hook task.....");
-            
+
             BacklogCommitTask.BacklogTimerPersistingTask();
             BacklogCommitTask.ImmediateBacklogTimerPersistingTask();
         }

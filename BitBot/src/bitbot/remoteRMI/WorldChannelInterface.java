@@ -1,5 +1,6 @@
 package bitbot.remoteRMI;
 
+import bitbot.cache.tickers.history.TradeHistoryBuySellEnum;
 import bitbot.remoteRMI.world.WorldChannelCommonOperations;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
@@ -19,5 +20,4 @@ public interface WorldChannelInterface extends Remote, WorldChannelCommonOperati
     public boolean isAvailable() throws RemoteException;
 
     public ChannelWorldInterface getChannelInterface(byte channel) throws RemoteException;
-
 }

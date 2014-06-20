@@ -83,9 +83,12 @@ public class TickerHistory_Huobi implements TickerHistory {
                         //System.out.println("[Trades history] Added: " + cal.getTime().toString());
                         ReturnData.merge(price, amount, cal.getTimeInMillis(), 0);
 
-                        ChannelServer.getInstance().BroadcastConnectedClients(
+                        ChannelServer.getInstance().broadcastPriceChanges(
                                 type.equals("买入") ? TradeHistoryBuySellEnum.Buy : TradeHistoryBuySellEnum.Sell, 
                                 CurrencyPair,
+                                price, 
+                                amount, 
+                                cal.getTimeInMillis(),
                                 0);
                         
                         LastPurchaseTime = cal.getTimeInMillis();

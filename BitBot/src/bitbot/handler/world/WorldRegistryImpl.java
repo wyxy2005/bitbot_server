@@ -2,7 +2,11 @@ package bitbot.handler.world;
 
 import bitbot.remoteRMI.ChannelWorldInterface;
 import bitbot.remoteRMI.WorldChannelInterface;
+import bitbot.remoteRMI.encryption.XorClientSocketFactory;
+import bitbot.remoteRMI.encryption.XorServerSocketFactory;
 import bitbot.remoteRMI.world.WorldRegistry;
+import bitbot.server.ServerLog;
+import bitbot.server.ServerLogType;
 import bitbot.util.encryption.SHA256;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
@@ -11,8 +15,6 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
-import javax.rmi.ssl.SslRMIClientSocketFactory;
-import javax.rmi.ssl.SslRMIServerSocketFactory;
 
 /**
  *
@@ -28,7 +30,7 @@ public class WorldRegistryImpl extends UnicastRemoteObject implements WorldRegis
     private static final Map<Byte, WorldChannelInterface> channelServer_wci = new LinkedHashMap();
     
     // Timestamp
-    private static Calendar cal = Calendar.getInstance();
+    private static final Calendar cal = Calendar.getInstance();
 
     // hashes for authentication
     private static final String[] ChannelServerHashes = {
@@ -37,7 +39,7 @@ public class WorldRegistryImpl extends UnicastRemoteObject implements WorldRegis
     };
 
     private WorldRegistryImpl() throws RemoteException {
-        super(0, new SslRMIClientSocketFactory(), new SslRMIServerSocketFactory());
+        super(0, new XorClientSocketFactory(), new XorServerSocketFactory());
     }
 
     public static WorldRegistryImpl getInstance() {
@@ -104,10 +106,10 @@ public class WorldRegistryImpl extends UnicastRemoteObject implements WorldRegis
         /*channelServer.remove(channel);
          for (final LoginWorldInterface wli : loginServer) {
          wli.channelOffline(channel);
-         }
-         if (e != null) {
-         ServerLog.RegisterForLoggingException(ServerLogType.ShutdownError, e);
          }*/
+         if (e != null) {
+             ServerLog.RegisterForLoggingException(ServerLogType.ShutdownError, e);
+         }
         System.out.println("Channel " + channel + " is disconnected/offline.");
     }
 

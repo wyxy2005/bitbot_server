@@ -88,9 +88,12 @@ public class TickerHistory_Kraken implements TickerHistory {
                         //System.out.println(String.format("[Trades history] Added [%s], Price: %f, Sum: %f ", date, price, amount));
                         ReturnData.merge(price, amount, date, 0);
                         
-                        ChannelServer.getInstance().BroadcastConnectedClients(
+                        ChannelServer.getInstance().broadcastPriceChanges(
                                 type.equals("b") ? TradeHistoryBuySellEnum.Buy : TradeHistoryBuySellEnum.Sell, 
                                 CurrencyPair,
+                                price, 
+                                amount, 
+                                date,
                                 0);
                     }
                 }

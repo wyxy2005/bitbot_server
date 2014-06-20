@@ -23,6 +23,7 @@ import bitbot.graph.ExponentialMovingAverageData;
 import bitbot.handler.channel.ChannelServer;
 import bitbot.server.threads.LoggingSaveRunnable;
 import bitbot.server.threads.TimerManager;
+import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Comparator;
@@ -42,6 +43,8 @@ public class TickerCacheTask {
     // MSSQL
     private static final int MSSQL_CacheRefreshTime_Seconds = 60;
 
+    // Acquiring of old data from mssql database
+    private final List<Integer> canAcceptNewInfoFromOtherPeers = new LinkedList(); // string = exchange+currency pair
     private final List<LoggingSaveRunnable> runnable_mssql = new ArrayList();
     private final Map<String, List<TickerItemData>> list_mssql;
 
@@ -61,7 +64,13 @@ public class TickerCacheTask {
 
             // graph fetching from database
             if (ChannelServer.getInstance().isEnableSQLDataAcquisition()) {
-                runnable_mssql.add(TimerManager.register(new TickerCacheTask_MSSql(ExchangeSite, CurrencyPair), MSSQL_CacheRefreshTime_Seconds * 1000, Integer.MAX_VALUE));
+                TickerCacheTask_MSSql tickercache = new TickerCacheTask_MSSql(ExchangeSite, CurrencyPair);
+                LoggingSaveRunnable runnable = TimerManager.register(tickercache, MSSQL_CacheRefreshTime_Seconds * 1000, Integer.MAX_VALUE);
+
+                // set this reference so we are able to cancel this task later when we dont need the database anymore
+                tickercache.setLoggingSaveRunnable(runnable);
+
+                runnable_mssql.add(runnable);
             }
 
             // History
@@ -233,10 +242,10 @@ public class TickerCacheTask {
                 filter((data) -> (data.getServerTime() > ServerTimeFrom)).
                 sorted(TickerItemComparator).
                 iterator();
-        
+
         while (items.hasNext()) {
             TickerItemData item = items.next();
-            
+
             // Check if last added tick is above the threshold 'intervalMinutes'
             if (LastUsedTime + (intervalMinutes * 60) < item.getServerTime()) {
                 while (LastUsedTime + (intervalMinutes * 60) < item.getServerTime()) {
@@ -288,24 +297,24 @@ public class TickerCacheTask {
                 }
                 Volume += item.getVol();
                 VolumeCur += item.getVol_Cur();
-                
+
                 lastPriceSet = item.getOpen();
             }
         }
         // For unmatured chart
         if (high != 0 && low != Float.MAX_VALUE && open != -1 && LastUsedTime != 0 && lastPriceSet != 0) {
-                        // Add to list
-                        list_chart.add(
-                                new TickerItem_CandleBar(
-                                        LastUsedTime + (intervalMinutes * 60),
-                                        (float) lastPriceSet, // last
-                                        (float) high,
-                                        (float) low,
-                                        (float) open,
-                                        Volume,
-                                        VolumeCur)
-                        );
-                        }
+            // Add to list
+            list_chart.add(
+                    new TickerItem_CandleBar(
+                            LastUsedTime + (intervalMinutes * 60),
+                            (float) lastPriceSet, // last
+                            (float) high,
+                            (float) low,
+                            (float) open,
+                            Volume,
+                            VolumeCur)
+            );
+        }
 
         /*while (LastUsedTime + (intervalMinutes * 60) < cTime) {
          TickerItem_CandleBar lastItem = list_BTCe2.get(list_BTCe2.size() - 1);
@@ -397,14 +406,14 @@ public class TickerCacheTask {
          */
         return list_chart;
     }
-    
+
     public Map<String, List<TickerItemData>> getBitcoinPriceIndex(final String ticker, final int backtestHours, int intervalMinutes, long ServerTimeFrom) {
         final Map<String, List<TickerItemData>> listMaps = new HashMap();
-        
+
         list_mssql.entrySet().stream().filter((mapItem) -> (mapItem.getKey().contains(ticker))).forEach((mapItem) -> {
             listMaps.put(mapItem.getKey(), mapItem.getValue());
         });
-        
+
         return listMaps;
     }
 
@@ -462,7 +471,7 @@ public class TickerCacheTask {
     private static final Comparator<Object> TickerItemComparator = (Object obj1, Object obj2) -> {
         TickerItemData data1 = (TickerItemData) obj1;
         TickerItemData data2 = (TickerItemData) obj2;
-        
+
         if (data1.getServerTime() > data2.getServerTime()) {
             return 1;
         } else if (data1.getServerTime() == data2.getServerTime()) {
@@ -471,7 +480,6 @@ public class TickerCacheTask {
         return 0;
     };
 
-    
     public class TickerCacheTask_ExchangeHistory implements Runnable {
 
         private final String CurrencyPair;
@@ -552,13 +560,41 @@ public class TickerCacheTask {
         private final String ExchangeSite;
         private long LastCachedTime = 0;
 
+        // Switching between MSSQL and data from other peers
+        private LoggingSaveRunnable runnable = null;
+        private boolean isDataAcquisitionFromMSSQL_Completed = false; // just for reference, not using it for now
+
         public TickerCacheTask_MSSql(String ExchangeSite, String CacheCurrencyPair) {
             this.CurrencyPair_ = CacheCurrencyPair;
             this.ExchangeSite = ExchangeSite;
         }
 
+        /**
+         * Set this reference so we are able to cancel this task later when we
+         * dont need the database anymore
+         *
+         * @param runnable the LoggingSaveRunnable returned by the Timer task.
+         * @see LoggingSaveRunnable
+         */
+        public void setLoggingSaveRunnable(LoggingSaveRunnable runnable) {
+            this.runnable = runnable;
+        }
+
+        /**
+         * A variable to determine if we still need to cache new items from the
+         * database, otherwise it'll be reliant on the peer server
+         *
+         * @return boolean true/false
+         */
+        public boolean isDataAcquisitionFromMSSQL_Completed() {
+            return isDataAcquisitionFromMSSQL_Completed;
+        }
+
         @Override
         public void run() {
+            if (isDataAcquisitionFromMSSQL_Completed) {
+                return;
+            }
             System.out.println("Caching currency pair from SQLserv: " + ExchangeSite + ":" + CurrencyPair_);
 
             List<TickerItemData> list_newItems = new LinkedList(); // create a new array first and replace later
@@ -568,22 +604,59 @@ public class TickerCacheTask {
             }
             final String ExchangeCurrencyPair = String.format("%s-%s", ExchangeSite, CurrencyPair_);
 
-            if (!list_mssql.containsKey(ExchangeCurrencyPair)) { // First item, no sync needed
-                list_mssql.put(ExchangeCurrencyPair, list_newItems);
+            if (!list_newItems.isEmpty()) { // there's still something coming from the database, continue caching
+                if (!list_mssql.containsKey(ExchangeCurrencyPair)) { // First item, no sync needed
+                    list_mssql.put(ExchangeCurrencyPair, list_newItems);
 
-                list_newItems.stream().filter((data) -> (data.getServerTime() > LastCachedTime)).forEach((data) -> {
-                    LastCachedTime = data.getServerTime();
-                });
-            } else {
-                List<TickerItemData> currentList = list_mssql.get(ExchangeCurrencyPair);
-                list_newItems.stream().filter((data) -> (data.getServerTime() > LastCachedTime)).map((data) -> {
-                    currentList.add(data);
-                    return data;
-                }).forEach((data) -> {
-                    LastCachedTime = data.getServerTime();
-                });
+                    list_newItems.stream().filter((data) -> (data.getServerTime() > LastCachedTime)).forEach((data) -> {
+                        LastCachedTime = data.getServerTime();
+                    });
+                } else {
+                    List<TickerItemData> currentList = list_mssql.get(ExchangeCurrencyPair);
+                    list_newItems.stream().filter((data) -> (data.getServerTime() > LastCachedTime)).map((data) -> {
+                        currentList.add(data);
+                        return data;
+                    }).forEach((data) -> {
+                        LastCachedTime = data.getServerTime();
+                    });
+                }
             }
+            if (list_newItems.size() <= 1 ) { // Are we done caching yet?
+                isDataAcquisitionFromMSSQL_Completed = true;
+                canAcceptNewInfoFromOtherPeers.add(ExchangeCurrencyPair.hashCode());
+                runnable.getSchedule().cancel(false); // cancel this cache task completely.
+            }
+            
             System.out.println("Caching price for " + ExchangeCurrencyPair + " --> " + list_newItems.size());
+        }
+    }
+
+    /**
+     * When receiving new graph data from other peers on other server
+     *
+     * @param ExchangeCurrencyPair The exchange + currency pair: eg: btce-btc_usd
+     * @param server_time the server time in millis 
+     * @param close the closing price
+     * @param high the highest possible price
+     * @param low the lowest possible price
+     * @param open the opening price
+     * @param volume the volume 
+     * @param volume_cur the volume detonated in the primary currency, eg bitcoin instead of USD
+     */
+    public void receivedNewGraphEntry_OtherPeers(String ExchangeCurrencyPair, long server_time, float close, float high, float low, float open, double volume, double volume_cur) {
+        //System.out.println(String.format("[Info] New info from other peers %s [%d], Close: %f, High: %f", ExchangeCurrencyPair, server_time, close, high));
+        
+        for (String s : list_mssql.keySet()) {
+            System.out.println(s);
+        }
+        
+        if (list_mssql.containsKey(ExchangeCurrencyPair) && 
+                canAcceptNewInfoFromOtherPeers.contains(ExchangeCurrencyPair.hashCode())) { // First item, no sync needed
+            List<TickerItemData> currentList = list_mssql.get(ExchangeCurrencyPair);
+
+            currentList.add(new TickerItemData(server_time, close, high, low, open, volume, volume_cur));
+            
+            System.out.println("[Info] Added New info from other peers");
         }
     }
 }

@@ -45,10 +45,9 @@ public class TickerHistory_BTCChina implements TickerHistory {
                 };
                 LinkedList<LinkedHashMap> tradesArray = (LinkedList<LinkedHashMap>) parser.parse(GetResult, containerFactory);
 
-                for (int i = tradesArray.size() - 1; i >= 0; i--)
-                {
+                for (int i = tradesArray.size() - 1; i >= 0; i--) {
                     LinkedHashMap obj = tradesArray.get(i);
-                    
+
                     int tradeid = Integer.parseInt(obj.get("tid").toString());
                     long date = Long.parseLong(obj.get("date").toString()) * 1000;
                     float price = Float.parseFloat(obj.get("price").toString());
@@ -58,13 +57,13 @@ public class TickerHistory_BTCChina implements TickerHistory {
                     // Initialize last purchase time if neccessary
                     if (LastPurchaseTime == 0) {
                         /*Calendar cal_LastPurchaseTime = Calendar.getInstance();
-                        cal_LastPurchaseTime.set(Calendar.YEAR, 1970);
-                        cal_LastPurchaseTime.set(Calendar.MONTH, 0);
-                        cal_LastPurchaseTime.set(Calendar.DATE, 0);
+                         cal_LastPurchaseTime.set(Calendar.YEAR, 1970);
+                         cal_LastPurchaseTime.set(Calendar.MONTH, 0);
+                         cal_LastPurchaseTime.set(Calendar.DATE, 0);
                         
-                        cal_LastPurchaseTime.add(Calendar.HOUR, 8);
-                        cal_LastPurchaseTime.add(Calendar.SECOND, (int) (date / 1000));*/
-                        
+                         cal_LastPurchaseTime.add(Calendar.HOUR, 8);
+                         cal_LastPurchaseTime.add(Calendar.SECOND, (int) (date / 1000));*/
+
                         LastPurchaseTime = date;//cal_LastPurchaseTime.getTimeInMillis(); // set default param
                         ReturnData.setLastPurchaseTime(LastPurchaseTime);
                     }
@@ -72,22 +71,24 @@ public class TickerHistory_BTCChina implements TickerHistory {
                     //http://tutorials.jenkov.com/java-date-time/java-util-timezone.html
                     // Timestamp for trades
                     /*Calendar cal = Calendar.getInstance(); // BTCe time
-                    cal.set(Calendar.YEAR, 1970);
-                    cal.set(Calendar.MONTH, 0);
-                    cal.set(Calendar.DATE, 0);
+                     cal.set(Calendar.YEAR, 1970);
+                     cal.set(Calendar.MONTH, 0);
+                     cal.set(Calendar.DATE, 0);
 
-                    cal.add(Calendar.SECOND, (int) (date / 1000));
+                     cal.add(Calendar.SECOND, (int) (date / 1000));
                     
-                    System.out.println(String.format("[Trades history] Got [%s], Price: %f, Sum: %f ", cal.getTime().toString(), price, amount));*/
-                    
+                     System.out.println(String.format("[Trades history] Got [%s], Price: %f, Sum: %f ", cal.getTime().toString(), price, amount));*/
                     // Assume things are read in ascending order
                     if (date > LastPurchaseTime) {
                         //System.out.println(String.format("[Trades history] Added [%s], Price: %f, Sum: %f ", cal.getTime().toString(), price, amount));
                         ReturnData.merge(price, amount, date, tradeid);
-                        
-                        ChannelServer.getInstance().BroadcastConnectedClients(
-                                TradeHistoryBuySellEnum.Unknown, 
+
+                        ChannelServer.getInstance().broadcastPriceChanges(
+                                TradeHistoryBuySellEnum.Unknown,
                                 CurrencyPair,
+                                price,
+                                amount,
+                                date,
                                 tradeid);
                     }
                 }

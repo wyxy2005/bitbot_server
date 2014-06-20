@@ -20,6 +20,7 @@ public enum ServerLogType {
     ShutdownError	    ("server_error.shutdown", ServerLogGroup.Info),
     ShutdownHookError	    ("server_error.shutdownhook", ServerLogGroup.Info),
     ReconnectError	    ("server_error.reconnect", ServerLogGroup.Info),
+    RemoteError             ("server_error.remoteRMIError", ServerLogGroup.Warning),
     UnhandledScript	    ("server_info.UnhandledScript", ServerLogGroup.Info),
     PacketSpam  	    ("server_info.PacketSpam", ServerLogGroup.Info),
     HistoryCacheTask	    ("server_info.HistoryCacheTask", ServerLogGroup.Warning),

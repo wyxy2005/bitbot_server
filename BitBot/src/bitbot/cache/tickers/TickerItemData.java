@@ -14,6 +14,19 @@ public class TickerItemData implements TickerItem {
     private float high, low, open, close;
     private double vol, vol_cur;
 
+    public TickerItemData(long server_time, float close, float high, float low, float open, double volume, double volume_cur) {
+        this.server_time = server_time;//DateTimeUtil.convertDateTime(Long.parseLong(obj.get("server_time").toString()));
+        this.high = high;
+        this.low = low;
+        this.open = open;
+        this.close = close;
+        this.vol = volume;
+        this.vol_cur = volume_cur;
+
+        //System.out.println("server_time at: " + server_time.toString());
+        //System.out.println("updated at: " + updated.toString());
+    }
+
     public TickerItemData(ResultSet rs) throws SQLException {
         this.server_time = rs.getLong("server_time");//DateTimeUtil.convertDateTime(Long.parseLong(obj.get("server_time").toString()));
         this.high = rs.getFloat("high");
@@ -26,7 +39,7 @@ public class TickerItemData implements TickerItem {
         //System.out.println("server_time at: " + server_time.toString());
         //System.out.println("updated at: " + updated.toString());
     }
-    
+
     public TickerItemData(JSONObject obj) {
         this.server_time = Long.parseLong(obj.get("server_time").toString());//DateTimeUtil.convertDateTime(Long.parseLong(obj.get("server_time").toString()));
         this.high = Float.parseFloat(obj.get("high").toString());
@@ -63,8 +76,8 @@ public class TickerItemData implements TickerItem {
     @Override
     public float getOpen() {
         return open;
-    }    
-    
+    }
+
     @Override
     public float getClose() {
         return close;
@@ -89,7 +102,7 @@ public class TickerItemData implements TickerItem {
     public void setVol_Cur(double value) {
         this.vol_cur = value;
     }
-    
+
     @Override
     public void setHigh(float value) {
         this.high = value;
@@ -104,7 +117,7 @@ public class TickerItemData implements TickerItem {
     public void setOpen(float open) {
         this.open = open;
     }
-    
+
     @Override
     public void setClose(float close) {
         this.close = close;

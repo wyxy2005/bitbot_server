@@ -89,9 +89,12 @@ public class TickerHistory_BitFinex implements TickerHistory {
                         //System.out.println(String.format("[Trades history] Added [%s], Price: %f, Sum: %f ", cal.getTime().toString(), price, amount));
                         ReturnData.merge(price, amount, date, tradeid);
                         
-                        ChannelServer.getInstance().BroadcastConnectedClients(
+                        ChannelServer.getInstance().broadcastPriceChanges(
                                 type.equals("buy") ? TradeHistoryBuySellEnum.Buy : TradeHistoryBuySellEnum.Sell, 
                                 CurrencyPair,
+                                price,
+                                amount,
+                                date,
                                 tradeid);
                     }
                 }

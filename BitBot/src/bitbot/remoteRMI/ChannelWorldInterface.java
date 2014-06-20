@@ -3,8 +3,6 @@ package bitbot.remoteRMI;
 import bitbot.remoteRMI.world.WorldChannelCommonOperations;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
-import java.util.Collection;
-import java.util.List;
 
 /**
  *
@@ -19,5 +17,4 @@ public interface ChannelWorldInterface extends Remote, WorldChannelCommonOperati
     public String getIP() throws RemoteException;
     
     public void shutdown(int exitCode) throws RemoteException;
-
 }

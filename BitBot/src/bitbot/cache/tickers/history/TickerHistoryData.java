@@ -5,6 +5,7 @@ import bitbot.server.ServerLog;
 import bitbot.server.ServerLogType;
 import bitbot.util.mssql.DatabaseConnection;
 import bitbot.util.FileoutputUtil;
+import java.rmi.RemoteException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -79,6 +80,15 @@ public class TickerHistoryData {
             FileoutputUtil.log("//" + tableName + ".txt", outputLog);
         }
 
+        // Broadcast to peers on other servers
+        try {
+            final String ExchangeCurrencyPair = String.format("%s-%s", TmpExchangeSite, TmpcurrencyPair);
+            ChannelServer.getInstance().getWorldInterface().broadcastNewGraphEntry(ExchangeCurrencyPair, LastPurchaseTime / 1000l, LastPrice, High, Low, Open, Volume, Volume_Cur);
+        } catch (RemoteException exp) {
+            ServerLog.RegisterForLoggingException(ServerLogType.RemoteError, exp);
+        }
+        
+        // Commit data to database
         if (!ChannelServer.getInstance().isEnableTickerHistoryDatabaseCommit()) {
             return HistoryDatabaseCommitEnum.Ok;
         }

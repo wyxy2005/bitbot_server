@@ -91,9 +91,12 @@ public class TickerHistory_FybSGSE implements TickerHistory {
                         //System.out.println(String.format("[Trades history] Added [%s], Price: %f, Sum: %f ", cal.getTime().toString(), price, amount));
                         ReturnData.merge(price, amount, date, tradeid);
                         
-                        ChannelServer.getInstance().BroadcastConnectedClients(
+                        ChannelServer.getInstance().broadcastPriceChanges(
                                 TradeHistoryBuySellEnum.Unknown, 
                                 CurrencyPair,
+                                price,
+                                amount,
+                                date,
                                 tradeid);
                     }
                     if (tradeid > ReturnData.getLastTradeId()) {

@@ -16,7 +16,7 @@ import org.json.simple.parser.JSONParser;
  */
 public class TickerHistory_Coinbase implements TickerHistory {
 
-   // private static final TimeZone timeZone = TimeZone.getTimeZone("Etc/GMT+6");
+    // private static final TimeZone timeZone = TimeZone.getTimeZone("Etc/GMT+6");
     @Override
     public TickerHistoryData connectAndParseHistoryResult(String ExchangeCurrencyPair, String CurrencyPair, long LastPurchaseTime, int LastTradeId) {
         String UriSell = "https://coinbase.com/api/v1/prices/sell";
@@ -63,17 +63,21 @@ public class TickerHistory_Coinbase implements TickerHistory {
                 float buy = Float.parseFloat(((LinkedHashMap) buyObj.get("subtotal")).get("amount").toString());
                 float sell = Float.parseFloat(((LinkedHashMap) sellObj.get("subtotal")).get("amount").toString());
 
-                    //http://tutorials.jenkov.com/java-date-time/java-util-timezone.html
+                final long cTime = System.currentTimeMillis();
+
+                //http://tutorials.jenkov.com/java-date-time/java-util-timezone.html
                 // Timestamp for trades
                 Calendar cal = Calendar.getInstance(); // BTCe time
 
                 //System.out.println(String.format("[Trades history] Got [%s], Buy: %f, Sell: %f", cal.getTime().toString(), buy, sell));
+                ReturnData.merge_CoinbaseOrCampBX(buy, sell, cTime);
 
-                ReturnData.merge_CoinbaseOrCampBX(buy, sell, System.currentTimeMillis());
-
-                ChannelServer.getInstance().BroadcastConnectedClients(
+                ChannelServer.getInstance().broadcastPriceChanges(
                         TradeHistoryBuySellEnum.Unknown,
                         CurrencyPair,
+                        buy,
+                        0,
+                        cTime,
                         0);
             } catch (Exception parseExp) {
                 parseExp.printStackTrace();
