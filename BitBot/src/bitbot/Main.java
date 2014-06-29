@@ -34,7 +34,7 @@ public class Main {
                  *           PKIX path building failed: sun.security.provider.certpath.SunCertPathBuilderException:
                  *               unable to find valid certification path to requested target
                  */
-               /* TrustManager[] trustAllCerts = new TrustManager[]{
+                TrustManager[] trustAllCerts = new TrustManager[]{
                     new X509TrustManager() {
                         public java.security.cert.X509Certificate[] getAcceptedIssuers() {
                             return null;
@@ -60,7 +60,7 @@ public class Main {
                     }
                 };
                 // Install the all-trusting host verifier
-                HttpsURLConnection.setDefaultHostnameVerifier(allHostsValid);*/
+                HttpsURLConnection.setDefaultHostnameVerifier(allHostsValid);
                 /*
                  * end of the fix
                  */

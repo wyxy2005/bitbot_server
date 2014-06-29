@@ -42,7 +42,6 @@ public class WorldServer {
                 });
                 System.out.println("[Info] Set SecurityManager as RMISecurityManager");
             }
-                        
             // Init properties
             System.out.println("[Info] Loading server properties..");
 

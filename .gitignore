@@ -30,3 +30,4 @@ BitBot/build/classes/bitbot/handler/channel/ChannelServer.class
 *.class
 *.class
 BitBot/DataLog/huobi_price_btc_cny.txt
+*.class

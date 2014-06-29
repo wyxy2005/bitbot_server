@@ -82,6 +82,7 @@ public class WorldRegistryImpl extends UnicastRemoteObject implements WorldRegis
             if (channelServer.containsKey(channelId) && !isReconnect) {
                 ChannelWorldInterface oldch = channelServer.get(channelId);
                 try {
+                    System.out.println(String.format("[Info] Unregistering existing channel %d.", channelId));
                     oldch.shutdown(0);
                 } catch (RemoteException ce) {
                     // silently ignore as we assume that the server is offline
@@ -92,6 +93,8 @@ public class WorldRegistryImpl extends UnicastRemoteObject implements WorldRegis
             WorldChannelInterface ret = new WorldChannelInterfaceImpl(cb, channelId);
 
             channelServer_wci.put(channelId, ret); // Keep reference.
+            
+            System.out.println(String.format("[Info] Channel %d is online.", channelId));
             return ret;
         }
         throw new RuntimeException("Couldn't find a channel with the given key (" + authKey + ")");
@@ -110,7 +113,7 @@ public class WorldRegistryImpl extends UnicastRemoteObject implements WorldRegis
          if (e != null) {
              ServerLog.RegisterForLoggingException(ServerLogType.ShutdownError, e);
          }
-        System.out.println("Channel " + channel + " is disconnected/offline.");
+        System.out.println("[Info] Channel " + channel + " is disconnected/offline.");
     }
 
     @Override

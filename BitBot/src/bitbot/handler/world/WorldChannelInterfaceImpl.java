@@ -81,14 +81,14 @@ public class WorldChannelInterfaceImpl extends UnicastRemoteObject implements Wo
     @Override
     public void broadcastPriceChanges(TradeHistoryBuySellEnum type, String ExchangeCurrencyPair, float price, float amount, long date, int tradeid) throws RemoteException {
         for (byte i : WorldRegistryImpl.getInstance().getChannelServer()) {
-           // if (i != dbId) { // Don't broadcast back to self
+            if (i != dbId) { // Don't broadcast back to self
                 final ChannelWorldInterface cwi = WorldRegistryImpl.getInstance().getChannel(i);
                 try {
                     cwi.broadcastPriceChanges(type, ExchangeCurrencyPair, price, amount, date, tradeid);
                 } catch (RemoteException e) {
                     WorldRegistryImpl.getInstance().deregisterChannelServer(i, e);
                 }
-          //  }
+            }
         }
     }
     
@@ -96,14 +96,14 @@ public class WorldChannelInterfaceImpl extends UnicastRemoteObject implements Wo
     public void broadcastNewGraphEntry(String ExchangeCurrencyPair, long server_time, float close, float high, float low, float open, double volume, double volume_cur) throws RemoteException {
         for (byte i : WorldRegistryImpl.getInstance().getChannelServer()) {
             
-           // if (i != dbId) { // Don't broadcast back to self
+            if (i != dbId) { // Don't broadcast back to self
                 final ChannelWorldInterface cwi = WorldRegistryImpl.getInstance().getChannel(i);
                 try {
                     cwi.broadcastNewGraphEntry(ExchangeCurrencyPair, server_time, close, high, low, open, volume, volume_cur);
                 } catch (RemoteException e) {
                     WorldRegistryImpl.getInstance().deregisterChannelServer(i, e);
                 }
-           // }
+            }
         }
     }
 }

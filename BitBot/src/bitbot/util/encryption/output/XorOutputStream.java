@@ -30,6 +30,6 @@ public class XorOutputStream extends FilterOutputStream {
     public void write(int b) throws IOException {
         out.write((b ^ pattern) & 0xFF);
         
-        pattern++; // some randomization
+        //pattern++; // some randomization
     }
 }

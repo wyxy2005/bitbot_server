@@ -278,8 +278,8 @@ public class TickerCacheTask {
                     // reset
                     high = 0;
                     low = Float.MAX_VALUE;
-                    open = -1;
                     Volume = 0;
+                    open = item.getClose(); // Next open = current close.
                     VolumeCur = 0;
                     lastPriceSet = 0;
 
@@ -646,17 +646,13 @@ public class TickerCacheTask {
     public void receivedNewGraphEntry_OtherPeers(String ExchangeCurrencyPair, long server_time, float close, float high, float low, float open, double volume, double volume_cur) {
         //System.out.println(String.format("[Info] New info from other peers %s [%d], Close: %f, High: %f", ExchangeCurrencyPair, server_time, close, high));
         
-        for (String s : list_mssql.keySet()) {
-            System.out.println(s);
-        }
-        
         if (list_mssql.containsKey(ExchangeCurrencyPair) && 
                 canAcceptNewInfoFromOtherPeers.contains(ExchangeCurrencyPair.hashCode())) { // First item, no sync needed
             List<TickerItemData> currentList = list_mssql.get(ExchangeCurrencyPair);
 
             currentList.add(new TickerItemData(server_time, close, high, low, open, volume, volume_cur));
             
-            System.out.println("[Info] Added New info from other peers");
+            //System.out.println("[Info] Added New info from other peers");
         }
     }
 }

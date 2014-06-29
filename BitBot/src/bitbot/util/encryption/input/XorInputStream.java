@@ -36,7 +36,7 @@ public class XorInputStream extends FilterInputStream {
         if (b != -1) 
             b = (b ^ pattern) & 0xFF;
 
-        pattern++; // some randomization
+        //pattern++; // some randomization
         
         return b;
     }
@@ -56,7 +56,7 @@ public class XorInputStream extends FilterInputStream {
             byte boff = b[off + i];
             b[off + i] = (byte) ((boff ^ pattern) & 0xFF);
             
-            pattern++; // some randomization
+            //pattern++; // some randomization
         }
         return numBytes;
     }

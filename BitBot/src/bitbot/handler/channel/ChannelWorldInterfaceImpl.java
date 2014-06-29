@@ -52,7 +52,7 @@ public class ChannelWorldInterfaceImpl extends UnicastRemoteObject implements Ch
 
     @Override
     public void broadcastPriceChanges(TradeHistoryBuySellEnum type, String ExchangeCurrencyPair, float price, float amount, long date, int tradeid) throws RemoteException {
-       System.out.println(String.format("[Info] Latest info from other peers %s [%d], Price: %f, Amount: %f", ExchangeCurrencyPair, date, price, amount));
+       //System.out.println(String.format("[Info] Latest info from other peers %s [%d], Price: %f, Amount: %f", ExchangeCurrencyPair, date, price, amount));
     }
 
     @Override

@@ -1,10 +1,7 @@
 function check_price() {
     var date = new Date();
-    var dateStr = date.toISOString().
-        replace(/T/, ' ').      // replace T with a space
-        replace(/\..+/, '');     // delete the dot and everything after
-
-    console.log("Scheduled price check task: " + dateStr);
+    var dateStr = date.toISOString().replace(/T/, ' ').replace(/\..+/, '');
+    //console.log("Scheduled price check task: " + dateStr);
 
     // start
     fetchItem('btc_usd', 'btce');
@@ -34,6 +31,7 @@ function check_price() {
 
     fetchItem('btc_cny', 'btcchina');
     fetchItem('ltc_cny', 'btcchina');
+    fetchItem('ltc_btc', 'btcchina');
 
     fetchItem('btc_usd', 'mtgox');
 
@@ -52,6 +50,8 @@ function check_price() {
     fetchItem('btc_usd', 'bitfinex');
     fetchItem('ltc_usd', 'bitfinex');
     fetchItem('ltc_btc', 'bitfinex');
+    fetchItem('drk_usd', 'bitfinex');
+    fetchItem('drk_btc', 'bitfinex');
 
     fetchItem('btc_usd', 'campbx');
 
@@ -62,6 +62,8 @@ function check_price() {
 
     fetchItem('btc_sgd', 'fybsg');
     fetchItem('btc_sek', 'fybse');
+    
+    //fetchItem('nxt_btc', 'dgex');
 
     function fetchItem(currencypair, source) {
         if (source == 'btce') {
@@ -72,7 +74,10 @@ function check_price() {
                 fetchfromSource(currencypair, source, 'http://maaapersonalppace.azurewebsites.net/httprelay.php?url=' + escape('https://btc-e.com/api/2/' + currencypair + '/ticker'));
             }
         } else if (source == 'btcchina') {
-            fetchfromSource(currencypair, source, currencypair == 'ltc_cny' ? 'https://data.btcchina.com/data/ticker?market=cnyltc' : 'https://data.btcchina.com/data/ticker?market=cnybtc');
+            fetchfromSource(currencypair, source, 
+            currencypair == 'ltc_cny' ? 'https://data.btcchina.com/data/ticker?market=cnyltc' : 
+            currencypair == 'btc_cny' ? 'https://data.btcchina.com/data/ticker?market=cnybtc' :
+            'https://data.btcchina.com/data/ticker?market=btcltc');
         } else if (source == 'mtgox') {
             fetchfromSource(currencypair, source, 'http://data.mtgox.com/api/2/BTCUSD/money/ticker');
         } else if (source == 'okcoin') {
@@ -99,6 +104,8 @@ function check_price() {
             fetchfromSource(currencypair, source, 'https://www.fybsg.com/api/SGD/ticker.json');
         } else if (source == 'fybse') {
             fetchfromSource(currencypair, source, 'https://www.fybse.se/api/SEK/ticker.json');
+        } else if (source == 'dgex') {
+            fetchfromSource(currencypair, source, 'https://dgex.com/API/nxtprice.txt');
         }
     }
 
@@ -157,6 +164,8 @@ function check_price() {
 
                             currentPrice = parseFloat(pairresult.b[0]);
                             average24Hrs = currentPrice / (parseFloat(pairresult.h[0]) + parseFloat(pairresult.l[0]) / 2) * 100 - 100;
+                            break;
+                        case 'dgex':
                             break;
                         default:
                             currentPrice = parseFloat(returnJson.ticker.buy);
@@ -382,8 +391,8 @@ function check_price() {
             //(source == 'btce' && currencypair == 'xpm_btc') ||
             //(source == 'btce' && currencypair == 'ftc_btc') ||
             //(source == 'mtgox' && currencypair == 'btc_usd') ||
-            (source == 'btcchina' && currencypair == 'btc_cny') ||
-            (source == 'btcchina' && currencypair == 'ltc_cny') ||
+            //(source == 'btcchina' && currencypair == 'btc_cny') ||
+            //(source == 'btcchina' && currencypair == 'ltc_cny') ||
             //(source == 'okcoin' && currencypair == 'btc_cny') ||
             //(source == 'okcoin' && currencypair == 'ltc_cny') ||
             //(source == 'bitstamp' && currencypair == 'btc_usd') ||
@@ -393,9 +402,12 @@ function check_price() {
             //(source == 'itbit' && currencypair == 'xbt_sgd') ||
             //(source == 'itbit' && currencypair == 'xbt_eur') ||
             (source == 'kraken' && currencypair == 'xbt_usd') ||
-            (source == 'kraken' && currencypair == 'xbt_eur') ||
-            (source == 'cexio' && currencypair == 'ghs_btc')
+            (source == 'kraken' && currencypair == 'xbt_eur')
+            //(source == 'cexio' && currencypair == 'ghs_btc')
             ) {
+                
+                // Insert only if we've yet to support these exchange to cache at second interval
+                // via an external VPS.
 
             if (source == 'btce') {
                 insertTickerData_btce(returnJson, currencypair, source);
