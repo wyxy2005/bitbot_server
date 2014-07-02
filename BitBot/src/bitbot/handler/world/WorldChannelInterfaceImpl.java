@@ -15,8 +15,8 @@ import java.rmi.server.UnicastRemoteObject;
 public class WorldChannelInterfaceImpl extends UnicastRemoteObject implements WorldChannelInterface {
 
     private static final long serialVersionUID = -5568606556235590482L;
-    private ChannelWorldInterface cb;
-    private int dbId;
+    private final ChannelWorldInterface cb;
+    private final int dbId;
     private boolean ready = false;
 
     public WorldChannelInterfaceImpl(ChannelWorldInterface cb, byte dbId) throws RemoteException {

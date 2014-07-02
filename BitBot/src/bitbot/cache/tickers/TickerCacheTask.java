@@ -621,13 +621,15 @@ public class TickerCacheTask {
                     });
                 }
             }
+            System.out.println("[Info] Caching price for " + ExchangeCurrencyPair + " --> " + list_newItems.size());
+            
             if (list_newItems.size() <= 1 ) { // Are we done caching yet?
                 isDataAcquisitionFromMSSQL_Completed = true;
                 canAcceptNewInfoFromOtherPeers.add(ExchangeCurrencyPair.hashCode());
                 runnable.getSchedule().cancel(false); // cancel this cache task completely.
+                
+                System.out.println("[Info] Stopped caching " + ExchangeCurrencyPair + " data from MSSQL");
             }
-            
-            System.out.println("Caching price for " + ExchangeCurrencyPair + " --> " + list_newItems.size());
         }
     }
 
@@ -644,7 +646,7 @@ public class TickerCacheTask {
      * @param volume_cur the volume detonated in the primary currency, eg bitcoin instead of USD
      */
     public void receivedNewGraphEntry_OtherPeers(String ExchangeCurrencyPair, long server_time, float close, float high, float low, float open, double volume, double volume_cur) {
-        //System.out.println(String.format("[Info] New info from other peers %s [%d], Close: %f, High: %f", ExchangeCurrencyPair, server_time, close, high));
+        System.out.println(String.format("[Info] New info from other peers %s [%d], Close: %f, High: %f", ExchangeCurrencyPair, server_time, close, high));
         
         if (list_mssql.containsKey(ExchangeCurrencyPair) && 
                 canAcceptNewInfoFromOtherPeers.contains(ExchangeCurrencyPair.hashCode())) { // First item, no sync needed

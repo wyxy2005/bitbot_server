@@ -343,11 +343,11 @@ public class ChannelServer {
     }
 
     public void broadcastPriceChanges(final TradeHistoryBuySellEnum type, final String ExchangeCurrencyPair, final float price, final float amount, final long date, final int tradeid) {
-        try {
+    /*    try {
             wci.broadcastPriceChanges(type, ExchangeCurrencyPair, price, amount, date, tradeid);
         } catch (RemoteException exp) {
             ServerLog.RegisterForLoggingException(ServerLogType.RemoteError, exp);
-        }
+        }*/
     }
 
     private final class ShutDownListener implements Runnable {

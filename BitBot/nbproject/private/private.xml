@@ -13,8 +13,6 @@
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
         <group>
             <file>file:/C:/Users/z/Desktop/Server/bitbot_server/BitBot/src/bitbot/handler/world/WorldChannelInterfaceImpl.java</file>
-            <file>file:/C:/Users/z/Desktop/Server/bitbot_server/BitBot/src/bitbot/handler/world/WorldRegistryImpl.java</file>
-            <file>file:/C:/Users/z/Desktop/Server/bitbot_server/BitBot/src/bitbot/cache/tickers/history/TickerHistoryData.java</file>
             <file>file:/C:/Users/z/Desktop/Server/bitbot_server/BitBot/src/bitbot/cache/tickers/TickerCacheTask.java</file>
             <file>file:/C:/Users/z/Desktop/Server/bitbot_server/BitBot/src/bitbot/handler/channel/ChannelServer.java</file>
             <file>file:/C:/Users/z/Desktop/Server/bitbot_server/BitBot/src/bitbot/handler/channel/ChannelWorldInterfaceImpl.java</file>
