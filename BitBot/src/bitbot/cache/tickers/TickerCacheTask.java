@@ -475,9 +475,9 @@ public class TickerCacheTask {
         if (data1.getServerTime() > data2.getServerTime()) {
             return 1;
         } else if (data1.getServerTime() == data2.getServerTime()) {
-            return -1;
+            return 0;
         }
-        return 0;
+        return -1;
     };
 
     public class TickerCacheTask_ExchangeHistory implements Runnable {

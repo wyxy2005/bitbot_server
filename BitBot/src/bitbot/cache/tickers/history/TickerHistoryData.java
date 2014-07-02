@@ -86,6 +86,7 @@ public class TickerHistoryData {
             ChannelServer.getInstance().getWorldInterface().broadcastNewGraphEntry(ExchangeCurrencyPair, LastPurchaseTime / 1000l, LastPrice, High, Low, Open, Volume, Volume_Cur);
         } catch (RemoteException exp) {
             ServerLog.RegisterForLoggingException(ServerLogType.RemoteError, exp);
+            ChannelServer.getInstance().reconnectWorld(exp);
         }
         
         // Commit data to database
