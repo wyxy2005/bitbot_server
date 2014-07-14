@@ -14,6 +14,7 @@ import bitbot.remoteRMI.WorldChannelInterface;
 import bitbot.remoteRMI.world.WorldRegistry;
 import bitbot.server.ServerLog;
 import bitbot.server.ServerLogType;
+import bitbot.util.encryption.SHA256;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -129,7 +130,7 @@ public class ChannelServer {
                 Props_EnableDebugSessionPrints = Boolean.parseBoolean(props.getProperty("server.EnableDebugSessionPrints"));
                 Props_WorldIPAddress = props.getProperty("server.WorldIPAddress");
                 Props_WorldRMIPort = Short.parseShort(props.getProperty("server.WorldRMIPort"));
-                Props_WorldRMIHash = props.getProperty("server.WorldRMIHash");
+                Props_WorldRMIHash = SHA256.sha256(SHA256.sha256(props.getProperty("server.WorldRMIHash")));
 
                 // Establish RMI connection
                 System.out.println(String.format("[Info] Locating world server RMI connection at %s:%d..", Props_WorldIPAddress, Props_WorldRMIPort));

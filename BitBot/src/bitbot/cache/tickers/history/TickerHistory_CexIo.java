@@ -10,12 +10,24 @@ import org.json.simple.parser.ContainerFactory;
 import org.json.simple.parser.JSONParser;
 
 /**
- *https://cex.io/api
+ * https://cex.io/api
+ *
  * @author z
  */
 public class TickerHistory_CexIo implements TickerHistory {
-
    // private static final TimeZone timeZone = TimeZone.getTimeZone("Etc/GMT+6");
+
+    private long lastBroadcastedTime = 0;
+
+    private boolean readyToBroadcastPriceChanges() {
+        final long cTime = System.currentTimeMillis();
+        if (cTime - lastBroadcastedTime > 2000) {
+            lastBroadcastedTime = cTime;
+            return true;
+        }
+        return false;
+    }
+
     @Override
     public TickerHistoryData connectAndParseHistoryResult(String ExchangeCurrencyPair, String CurrencyPair, long LastPurchaseTime, int LastTradeId) {
         String[] CurrencyPairSplit = CurrencyPair.toUpperCase().split("_");
@@ -44,14 +56,14 @@ public class TickerHistory_CexIo implements TickerHistory {
                 };
                 LinkedList<LinkedHashMap> tradesArray = (LinkedList<LinkedHashMap>) parser.parse(GetResult, containerFactory);
 
-                for (int i = tradesArray.size() - 1; i >= 0; i--)
-                {
+                for (int i = tradesArray.size() - 1; i >= 0; i--) {
                     LinkedHashMap obj = tradesArray.get(i);
 
                     int tradeid = Integer.parseInt(obj.get("tid").toString());
                     long date = Integer.parseInt(obj.get("date").toString()) * 1000l;
                     float price = Float.parseFloat(obj.get("price").toString());
                     float amount = Float.parseFloat(obj.get("amount").toString());
+                    TradeHistoryBuySellEnum type = TradeHistoryBuySellEnum.Unknown; // Campbx doesnt' broadcast buy or sell
                     //String type = obj.get("trade_type").toString(); // bid/ask
 
                     // Initialize last purchase time if neccessary
@@ -71,27 +83,27 @@ public class TickerHistory_CexIo implements TickerHistory {
                     //http://tutorials.jenkov.com/java-date-time/java-util-timezone.html
                     // Timestamp for trades
                     /*Calendar cal = Calendar.getInstance(); // BTCe time
-                    cal.set(Calendar.YEAR, 1970);
-                    cal.set(Calendar.MONTH, 0);
-                    cal.set(Calendar.DATE, 0);
+                     cal.set(Calendar.YEAR, 1970);
+                     cal.set(Calendar.MONTH, 0);
+                     cal.set(Calendar.DATE, 0);
 
-                    cal.add(Calendar.HOUR, -4); // BTC-e, time 
-                    cal.add(Calendar.SECOND, (int) (date / 1000));*/
-                    
+                     cal.add(Calendar.HOUR, -4); // BTC-e, time 
+                     cal.add(Calendar.SECOND, (int) (date / 1000));*/
                     //System.out.println(String.format("[Trades history] Got  [%s], Price: %f, Sum: %f ", cal.getTime().toString(), price, amount));
-                            
                     // Assume things are read in ascending order
                     if (date > LastPurchaseTime) {
                         //System.out.println(String.format("[Trades history] Added [%s], Price: %f, Sum: %f ", cal.getTime().toString(), price, amount));
                         ReturnData.merge(price, amount, date, tradeid);
 
-                        ChannelServer.getInstance().broadcastPriceChanges(
-                                TradeHistoryBuySellEnum.Unknown,
-                                CurrencyPair,
-                                price,
-                                amount,
-                                date,
-                                0);
+                        if (readyToBroadcastPriceChanges()) {
+                            ChannelServer.getInstance().broadcastPriceChanges(
+                                    type,
+                                    CurrencyPair,
+                                    price,
+                                    amount,
+                                    date,
+                                    0);
+                        }
                     }
                 }
             } catch (Exception parseExp) {

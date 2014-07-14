@@ -15,8 +15,19 @@ import org.json.simple.parser.JSONParser;
  * @author z
  */
 public class TickerHistory_CampBX implements TickerHistory {
-
     // private static final TimeZone timeZone = TimeZone.getTimeZone("Etc/GMT+6");
+
+    private long lastBroadcastedTime = 0;
+
+    private boolean readyToBroadcastPriceChanges() {
+        final long cTime = System.currentTimeMillis();
+        if (cTime - lastBroadcastedTime > 2000) {
+            lastBroadcastedTime = cTime;
+            return true;
+        }
+        return false;
+    }
+
     @Override
     public TickerHistoryData connectAndParseHistoryResult(String ExchangeCurrencyPair, String CurrencyPair, long LastPurchaseTime, int LastTradeId) {
         String Uri = "http://CampBX.com/api/xticker.php";
@@ -48,7 +59,8 @@ public class TickerHistory_CampBX implements TickerHistory {
                 float lasttrade = Float.parseFloat(Obj.get("Last Trade").toString());
                 float buy = Float.parseFloat(Obj.get("Best Bid").toString());
                 float sell = Float.parseFloat(Obj.get("Best Ask").toString());
-
+                TradeHistoryBuySellEnum type = TradeHistoryBuySellEnum.Unknown; // Campbx doesn't broadcast buy or sell
+                
                 final long cTime = System.currentTimeMillis();
 
                 //http://tutorials.jenkov.com/java-date-time/java-util-timezone.html
@@ -58,13 +70,15 @@ public class TickerHistory_CampBX implements TickerHistory {
                 //System.out.println(String.format("[Trades history] Got [%s], Buy: %f, Sell: %f", cal.getTime().toString(), buy, sell));
                 ReturnData.merge_CoinbaseOrCampBX(buy, sell, cTime);
 
-                ChannelServer.getInstance().broadcastPriceChanges(
-                        TradeHistoryBuySellEnum.Unknown,
-                        CurrencyPair,
-                        lasttrade,
-                        0,
-                        cTime,
-                        0);
+                if (readyToBroadcastPriceChanges()) {
+                    ChannelServer.getInstance().broadcastPriceChanges(
+                            type,
+                            CurrencyPair,
+                            lasttrade,
+                            0,
+                            cTime,
+                            0);
+                }
 
             } catch (Exception parseExp) {
                 parseExp.printStackTrace();

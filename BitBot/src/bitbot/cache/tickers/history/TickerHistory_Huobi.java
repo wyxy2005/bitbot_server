@@ -23,6 +23,17 @@ public class TickerHistory_Huobi implements TickerHistory {
 
     private static final TimeZone timeZone = TimeZone.getTimeZone("Etc/GMT-8");
 
+    private long lastBroadcastedTime = 0;
+
+    private boolean readyToBroadcastPriceChanges() {
+        final long cTime = System.currentTimeMillis();
+        if (cTime - lastBroadcastedTime > 2000) {
+            lastBroadcastedTime = cTime;
+            return true;
+        }
+        return false;
+    }
+
     @Override
     public TickerHistoryData connectAndParseHistoryResult(String ExchangeCurrencyPair, String CurrencyPair, long LastPurchaseTime, int LastTradeId) {
         String Uri = String.format("https://market.huobi.com/staticmarket/detail%s.html", CurrencyPair.contains("btc") ? "" : "_ltc");
@@ -42,16 +53,16 @@ public class TickerHistory_Huobi implements TickerHistory {
 
                 // Container factory for the JSON array to persist the order
                 /*ContainerFactory containerFactory = new ContainerFactory() {
-                    @Override
-                    public List creatArrayContainer() {
-                        return new LinkedList();
-                    }
+                 @Override
+                 public List creatArrayContainer() {
+                 return new LinkedList();
+                 }
 
-                    @Override
-                    public Map createObjectContainer() {
-                        return new LinkedHashMap();
-                    }
-                };*/
+                 @Override
+                 public Map createObjectContainer() {
+                 return new LinkedHashMap();
+                 }
+                 };*/
                 JSONArray tradesArray = (JSONArray) ((JSONObject) parser.parse(GetResult)).get("trades");
 
                 for (Object obj_ : tradesArray) {
@@ -60,7 +71,7 @@ public class TickerHistory_Huobi implements TickerHistory {
                     String[] time = obj.get("time").toString().split(":");
                     float price = Float.parseFloat(obj.get("price").toString());
                     float amount = Float.parseFloat(obj.get("amount").toString());
-                    String type = obj.get("type").toString(); // 卖出, 买入
+                    TradeHistoryBuySellEnum type = obj.get("type").toString().equals("买入") ? TradeHistoryBuySellEnum.Buy : TradeHistoryBuySellEnum.Sell; // 卖出, 买入
 
                     //http://tutorials.jenkov.com/java-date-time/java-util-timezone.html
                     // Timestamp for trades
@@ -83,14 +94,16 @@ public class TickerHistory_Huobi implements TickerHistory {
                         //System.out.println("[Trades history] Added: " + cal.getTime().toString());
                         ReturnData.merge(price, amount, cal.getTimeInMillis(), 0);
 
-                        ChannelServer.getInstance().broadcastPriceChanges(
-                                type.equals("买入") ? TradeHistoryBuySellEnum.Buy : TradeHistoryBuySellEnum.Sell, 
-                                CurrencyPair,
-                                price, 
-                                amount, 
-                                cal.getTimeInMillis(),
-                                0);
-                        
+                        if (readyToBroadcastPriceChanges()) {
+                            ChannelServer.getInstance().broadcastPriceChanges(
+                                    type,
+                                    CurrencyPair,
+                                    price,
+                                    amount,
+                                    cal.getTimeInMillis(),
+                                    0);
+                        }
+
                         LastPurchaseTime = cal.getTimeInMillis();
                     }
                 }

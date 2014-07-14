@@ -34,7 +34,7 @@ public class WorldRegistryImpl extends UnicastRemoteObject implements WorldRegis
 
     // hashes for authentication
     private static final String[] ChannelServerHashes = {
-        "0c6eedb910f9a5b172cb7ffdc75e1663c6dc931a62958d16ebc2e00a043b7413", // channel 1 [For serving of client data] asdas15as1d51as5d4yt89j4657u56o7056034;>:#R>:#@$)@O$23dfg541df
+        "4be294944bab96c621ef35e078390f1ecd20f66af8e5d953b9a0332aa592cd2c", // channel 1 [For serving of client data] asdas15as1d51as5d4yt89j4657u56o7056034;>:#R>:#@$)@O$23dfg541df
         "ccb098bf2e421875c0405c97be4f7f754d20a776a4adbf58fef49d2f5a184d20", // channel 2 [For caching of data from exchange] 348544y51gh5641uy89k451h2d3f1h56451y8t48t345r"#:":
     };
 
@@ -69,11 +69,9 @@ public class WorldRegistryImpl extends UnicastRemoteObject implements WorldRegis
 
     @Override
     public WorldChannelInterface registerChannelServer(String authKey, final ChannelWorldInterface cb, boolean isReconnect) throws RemoteException {
-        authKey = SHA256.sha256(SHA256.sha256(authKey)); // 2 rounds of SHA256
-
         byte channelId = -1;
         for (int i = 0; i < ChannelServerHashes.length; i++) {
-            if (ChannelServerHashes[i].equals(authKey)) {
+            if (ChannelServerHashes[i].equals(authKey)) { // the hash after 2 rounds of SHA256
                 channelId = (byte) i;
             }
         }

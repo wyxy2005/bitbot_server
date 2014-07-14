@@ -17,6 +17,16 @@ import org.json.simple.parser.JSONParser;
 public class TickerHistory_Okcoin implements TickerHistory {
 
    // private static final TimeZone timeZone = TimeZone.getTimeZone("Etc/GMT+6");
+    private long lastBroadcastedTime = 0;
+
+    private boolean readyToBroadcastPriceChanges() {
+        final long cTime = System.currentTimeMillis();
+        if (cTime - lastBroadcastedTime > 2000) {
+            lastBroadcastedTime = cTime;
+            return true;
+        }
+        return false;
+    }
 
     @Override
     public TickerHistoryData connectAndParseHistoryResult(String ExchangeCurrencyPair, String CurrencyPair, long LastPurchaseTime, int LastTradeId) {
@@ -44,55 +54,54 @@ public class TickerHistory_Okcoin implements TickerHistory {
                         return new LinkedHashMap();
                     }
                 };
-                 LinkedList<LinkedHashMap> tradesArray = (LinkedList<LinkedHashMap>) parser.parse(GetResult, containerFactory);
+                LinkedList<LinkedHashMap> tradesArray = (LinkedList<LinkedHashMap>) parser.parse(GetResult, containerFactory);
 
-                for (int i = tradesArray.size() - 1; i > 0; i--)
-                {
+                for (int i = tradesArray.size() - 1; i > 0; i--) {
                     LinkedHashMap obj = tradesArray.get(i);
-                    
+
                     float amount = Float.parseFloat(obj.get("amount").toString());
                     float price = Float.parseFloat(obj.get("price").toString());
                     long date = (long) Double.parseDouble(obj.get("date").toString()) * 1000l;
-                    String type = obj.get("type").toString(); // bid/ask
+                    TradeHistoryBuySellEnum type = obj.get("type").toString().equals("buy") ? TradeHistoryBuySellEnum.Buy : TradeHistoryBuySellEnum.Sell; // buy sell
                     int tid = Integer.parseInt(obj.get("tid").toString());
 
                     // Initialize last purchase time if neccessary
                     if (LastPurchaseTime == 0) {
                         LastPurchaseTime = date; // set default param
                         /*cal_LastPurchaseTime = Calendar.getInstance();
-                        cal_LastPurchaseTime.set(Calendar.YEAR, 1970);
-                        cal_LastPurchaseTime.set(Calendar.MONTH, 0);
-                        cal_LastPurchaseTime.set(Calendar.DATE, 0);
+                         cal_LastPurchaseTime.set(Calendar.YEAR, 1970);
+                         cal_LastPurchaseTime.set(Calendar.MONTH, 0);
+                         cal_LastPurchaseTime.set(Calendar.DATE, 0);
                         
-                        cal_LastPurchaseTime.add(Calendar.HOUR, -4); // BTC-e, time 
-                        cal_LastPurchaseTime.add(Calendar.SECOND, (int) (date / 1000));*/
-                        
+                         cal_LastPurchaseTime.add(Calendar.HOUR, -4); // BTC-e, time 
+                         cal_LastPurchaseTime.add(Calendar.SECOND, (int) (date / 1000));*/
+
                         ReturnData.setLastPurchaseTime(LastPurchaseTime);
                     }
 
                     //http://tutorials.jenkov.com/java-date-time/java-util-timezone.html
                     // Timestamp for trades
                     /*Calendar cal = Calendar.getInstance(); // BTCe time
-                    cal.set(Calendar.YEAR, 1970);
-                    cal.set(Calendar.MONTH, 0);
-                    cal.set(Calendar.DATE, 0);
+                     cal.set(Calendar.YEAR, 1970);
+                     cal.set(Calendar.MONTH, 0);
+                     cal.set(Calendar.DATE, 0);
                     
-                    cal.add(Calendar.SECOND, (int) (date / 1000));*/
-                    
+                     cal.add(Calendar.SECOND, (int) (date / 1000));*/
                     //System.out.println(String.format("[Trades history] Got [%s], Price: %f, Sum: %f ", cal.getTime().toString(), price, amount));
-                    
                     // Assume things are read in ascending order
                     if (date > LastPurchaseTime) {
                         //System.out.println(String.format("[Trades history] Added [%s], Price: %f, Sum: %f ", cal.getTime().toString(), price, amount));
                         ReturnData.merge(price, amount, date, tid);
-                        
-                        ChannelServer.getInstance().broadcastPriceChanges(
-                                type.equals("buy") ? TradeHistoryBuySellEnum.Buy : TradeHistoryBuySellEnum.Sell, 
-                                CurrencyPair,
-                                price, 
-                                amount, 
-                                date,
-                                tid);
+
+                        if (readyToBroadcastPriceChanges()) {
+                            ChannelServer.getInstance().broadcastPriceChanges(
+                                    type,
+                                    CurrencyPair,
+                                    price,
+                                    amount,
+                                    date,
+                                    tid);
+                        }
                     }
                 }
             } catch (Exception parseExp) {

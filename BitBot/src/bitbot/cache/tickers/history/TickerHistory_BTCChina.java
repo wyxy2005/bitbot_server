@@ -17,6 +17,17 @@ import org.json.simple.parser.JSONParser;
 public class TickerHistory_BTCChina implements TickerHistory {
     //private static final TimeZone timeZone = TimeZone.getTimeZone("Etc/GMT-6");
 
+    private long lastBroadcastedTime = 0;
+
+    private boolean readyToBroadcastPriceChanges() {
+        final long cTime = System.currentTimeMillis();
+        if (cTime - lastBroadcastedTime > 2000) {
+            lastBroadcastedTime = cTime;
+            return true;
+        }
+        return false;
+    }
+
     @Override
     public TickerHistoryData connectAndParseHistoryResult(String ExchangeCurrencyPair, String CurrencyPair, long LastPurchaseTime, int LastTradeId) {
         String[] split = CurrencyPair.split("_");
@@ -52,7 +63,7 @@ public class TickerHistory_BTCChina implements TickerHistory {
                     long date = Long.parseLong(obj.get("date").toString()) * 1000;
                     float price = Float.parseFloat(obj.get("price").toString());
                     float amount = Float.parseFloat(obj.get("amount").toString());
-                    //String type = // BTCChina doesn't broadcast buy or sell..
+                    TradeHistoryBuySellEnum type = TradeHistoryBuySellEnum.Unknown; // BTCChina doesn't broadcast buy or sell..
 
                     // Initialize last purchase time if neccessary
                     if (LastPurchaseTime == 0) {
@@ -83,13 +94,15 @@ public class TickerHistory_BTCChina implements TickerHistory {
                         //System.out.println(String.format("[Trades history] Added [%s], Price: %f, Sum: %f ", cal.getTime().toString(), price, amount));
                         ReturnData.merge(price, amount, date, tradeid);
 
-                        ChannelServer.getInstance().broadcastPriceChanges(
-                                TradeHistoryBuySellEnum.Unknown,
-                                CurrencyPair,
-                                price,
-                                amount,
-                                date,
-                                tradeid);
+                        if (readyToBroadcastPriceChanges()) {
+                            ChannelServer.getInstance().broadcastPriceChanges(
+                                    type,
+                                    CurrencyPair,
+                                    price,
+                                    amount,
+                                    date,
+                                    tradeid);
+                        }
                     }
                 }
             } catch (Exception parseExp) {
