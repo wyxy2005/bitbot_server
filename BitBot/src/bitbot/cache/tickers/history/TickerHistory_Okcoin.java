@@ -31,7 +31,7 @@ public class TickerHistory_Okcoin implements TickerHistory {
     @Override
     public TickerHistoryData connectAndParseHistoryResult(String ExchangeCurrencyPair, String CurrencyPair, long LastPurchaseTime, int LastTradeId) {
         //String Uri = String.format("https://www.okcoin.com/api/trades.do?symbol=%s&since=%d", CurrencyPair, LastPurchaseTime);
-        String Uri = String.format("https://www.okcoin.com/api/trades.do?symbol=%s", CurrencyPair);
+        String Uri = String.format("https://www.okcoin.cn/api/trades.do?symbol=%s", CurrencyPair);
         String GetResult = HttpClient.httpsGet(Uri, "");
 
         if (GetResult != null) {
