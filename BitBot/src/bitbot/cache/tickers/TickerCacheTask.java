@@ -277,7 +277,7 @@ public class TickerCacheTask {
                     high = 0;
                     low = Float.MAX_VALUE;
                     Volume = 0;
-                    open = item.getClose() != 0 ? item.getClose() : item.getOpen(); // Next open = current close.
+                    open = item.getClose(); // Next open = current close.
                     VolumeCur = 0;
                     lastPriceSet = 0;
 
