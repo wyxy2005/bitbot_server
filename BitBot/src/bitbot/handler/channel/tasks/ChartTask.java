@@ -1,4 +1,4 @@
- package bitbot.handler.channel.tasks;
+package bitbot.handler.channel.tasks;
 
 import bitbot.handler.channel.ChannelServer;
 import bitbot.server.Constants;
@@ -27,6 +27,7 @@ public class ChartTask implements Runnable {
     private final int depth;
     private final String ExchangeSite;
     private final String currencypair, serverAuthorization;
+    private final String returnFileFormat;
     private final long nonce;
     private final long ServerTimeFrom;
     private final boolean IsIntervalBased;
@@ -77,6 +78,13 @@ public class ChartTask implements Runnable {
             IsIntervalBased = false;
         }
 
+        // Return file format
+        if (query.containsKey("returnFileFormat")) {
+            returnFileFormat = query.get("returnFileFormat");
+        } else {
+            returnFileFormat = "json";
+        }
+
         // checks
         this.serverAuthorization = query.get("serverAuthorization").replace(' ', '+');
 
@@ -100,44 +108,67 @@ public class ChartTask implements Runnable {
                 response.setDate("Last-Modified", time);
 
                 if (isAuthorized) {
-                    JSONArray array = new JSONArray();
-                    
                     if (IsIntervalBased) {
                         List<TickerItem_CandleBar> ret = ChannelServer.getInstance().getTickerTask().getTickerList_Candlestick(currencypair, hours, depth, ExchangeSite, ServerTimeFrom);
- 
-                        ret.stream().map((item) -> {
-                            JSONObject obj = new JSONObject();
-                            obj.put("server_time", item.getServerTime());
-                            obj.put("Open", item.getOpen());
-                            obj.put("Close", item.getClose());
-                            obj.put("High", item.getHigh());
-                            obj.put("Low", item.getLow());
-                            obj.put("Volume", item.getVol());
-                            obj.put("VolumeCur", item.getVol_Cur());
-                            return obj;                            
-                        }).forEach((obj) -> {
-                            array.add(obj);
-                        });
-                        body.println(array.toJSONString());
-                    } else {
-                        List<TickerItem_CandleBar> ret = ChannelServer.getInstance().getTickerTask().getTickerList(currencypair, hours, depth, ExchangeSite, ServerTimeFrom);
 
-                        for (TickerItem_CandleBar item : ret) {
-                            JSONObject obj = new JSONObject();
-                            obj.put("server_time", item.getServerTime());
-                            obj.put("updated", 0);
-                            obj.put("high", item.getHigh());
-                            obj.put("low", item.getLow());
-                            obj.put("avg", 0);
-                            obj.put("buy", item.getOpen());
-                            obj.put("sell", 0);
-                            obj.put("last", 0);
-                            obj.put("vol", item.getVol());
-                            obj.put("vol_cur", item.getVol_Cur());
+                        switch (returnFileFormat) {
+                            case "json": {
+                                JSONArray array = new JSONArray();
 
-                            array.add(obj);
+                                ret.stream().map((item) -> {
+                                    JSONObject obj = new JSONObject();
+                                    obj.put("server_time", item.getServerTime());
+                                    obj.put("Open", item.getOpen());
+                                    obj.put("Close", item.getClose());
+                                    obj.put("High", item.getHigh());
+                                    obj.put("Low", item.getLow());
+                                    obj.put("Volume", item.getVol());
+                                    obj.put("VolumeCur", item.getVol_Cur());
+                                    return obj;
+                                }).forEach((obj) -> {
+                                    array.add(obj);
+                                });
+                                body.println(array.toJSONString());
+                                break;
+                            }
+                            case "csv": {
+                                StringBuilder sb = new StringBuilder();
+
+                                for (TickerItem_CandleBar item : ret) {
+                                    sb.append(item.getServerTime()).append(",");
+                                    sb.append(item.getOpen()).append(",");
+                                    sb.append(item.getClose()).append(",");
+                                    sb.append(item.getHigh()).append(",");
+                                    sb.append(item.getLow()).append(",");
+                                    sb.append(item.getVol()).append(",");
+                                    sb.append(item.getVol_Cur()).append(",");
+                                    
+                                     body.println(sb.toString());
+                                }
+                                break;
+                            }
                         }
-                        body.println(array.toJSONString());
+                    } else {
+                        /*List<TickerItem_CandleBar> ret = ChannelServer.getInstance().getTickerTask().getTickerList(currencypair, hours, depth, ExchangeSite, ServerTimeFrom);
+
+                         for (TickerItem_CandleBar item : ret) {
+                         JSONObject obj = new JSONObject();
+                         obj.put("server_time", item.getServerTime());
+                         obj.put("updated", 0);
+                         obj.put("high", item.getHigh());
+                         obj.put("low", item.getLow());
+                         obj.put("avg", 0);
+                         obj.put("buy", item.getOpen());
+                         obj.put("sell", 0);
+                         obj.put("last", 0);
+                         obj.put("vol", item.getVol());
+                         obj.put("vol_cur", item.getVol_Cur());
+
+                         array.add(obj);
+                         }
+                         body.println(array.toJSONString());*/
+
+                        response.setStatus(Status.NOT_FOUND); // removal of old code
                     }
                 } else {
                     response.setStatus(Status.UNAUTHORIZED);
