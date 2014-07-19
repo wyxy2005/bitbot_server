@@ -104,8 +104,8 @@ public class ChartTask implements Runnable {
                     
                     if (IsIntervalBased) {
                         List<TickerItem_CandleBar> ret = ChannelServer.getInstance().getTickerTask().getTickerList_Candlestick(currencypair, hours, depth, ExchangeSite, ServerTimeFrom);
-
-                        for (TickerItem_CandleBar item : ret) {
+ 
+                        ret.stream().map((item) -> {
                             JSONObject obj = new JSONObject();
                             obj.put("server_time", item.getServerTime());
                             obj.put("Open", item.getOpen());
@@ -114,14 +114,15 @@ public class ChartTask implements Runnable {
                             obj.put("Low", item.getLow());
                             obj.put("Volume", item.getVol());
                             obj.put("VolumeCur", item.getVol_Cur());
-                            
+                            return obj;                            
+                        }).forEach((obj) -> {
                             array.add(obj);
-                        }
+                        });
                         body.println(array.toJSONString());
                     } else {
-                        List<TickerItemData> ret = ChannelServer.getInstance().getTickerTask().getTickerList(currencypair, hours, depth, ExchangeSite, ServerTimeFrom);
+                        List<TickerItem_CandleBar> ret = ChannelServer.getInstance().getTickerTask().getTickerList(currencypair, hours, depth, ExchangeSite, ServerTimeFrom);
 
-                        for (TickerItemData item : ret) {
+                        for (TickerItem_CandleBar item : ret) {
                             JSONObject obj = new JSONObject();
                             obj.put("server_time", item.getServerTime());
                             obj.put("updated", 0);

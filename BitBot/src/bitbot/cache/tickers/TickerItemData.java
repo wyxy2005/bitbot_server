@@ -11,8 +11,8 @@ import org.json.simple.JSONObject;
 public class TickerItemData implements TickerItem {
 
     private final long server_time;
-    private float high, low, open, close;
-    private double vol, vol_cur;
+    private final float high, low, open, close;
+    private final double vol, vol_cur;
 
     public TickerItemData(long server_time, float close, float high, float low, float open, double volume, double volume_cur) {
         this.server_time = server_time;//DateTimeUtil.convertDateTime(Long.parseLong(obj.get("server_time").toString()));
@@ -93,7 +93,7 @@ public class TickerItemData implements TickerItem {
         return vol_cur;
     }
 
-    @Override
+  /*  @Override
     public void setVol(double value) {
         this.vol = value;
     }
@@ -121,5 +121,5 @@ public class TickerItemData implements TickerItem {
     @Override
     public void setClose(float close) {
         this.close = close;
-    }
+    }*/
 }

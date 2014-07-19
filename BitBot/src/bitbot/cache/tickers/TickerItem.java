@@ -26,7 +26,7 @@ public interface TickerItem {
 
     // set
     
-    public void setVol(double value);
+ /*   public void setVol(double value);
 
     public void setVol_Cur(double value);
     
@@ -36,5 +36,5 @@ public interface TickerItem {
 
     public void setOpen(float value);
     
-    public void setClose(float value);
+    public void setClose(float value);*/
 }

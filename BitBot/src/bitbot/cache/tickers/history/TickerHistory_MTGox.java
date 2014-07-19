@@ -1,5 +1,7 @@
 package bitbot.cache.tickers.history;
 
+import bitbot.server.Constants;
+
 /**
  *
  * @author z
@@ -12,7 +14,7 @@ public class TickerHistory_MTGox implements TickerHistory {
 
     private boolean readyToBroadcastPriceChanges() {
         final long cTime = System.currentTimeMillis();
-        if (cTime - lastBroadcastedTime > 2000) {
+        if (cTime - lastBroadcastedTime > Constants.PriceBetweenServerBroadcastDelay) {
             lastBroadcastedTime = cTime;
             return true;
         }

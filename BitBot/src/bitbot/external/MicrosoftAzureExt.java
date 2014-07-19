@@ -28,7 +28,11 @@ import org.json.simple.parser.ParseException;
  */
 public class MicrosoftAzureExt {
 
-    public static boolean btce_Select_Graph_Data(String ExchangeSite, String currencyPair, int depthSelection, int hoursSelection, long start_server_time, List<TickerItemData> list_BTCe2) {
+    /*
+    * Returns the graph data selected from the MSSQL Datababase
+    * @return long (biggest server time), -1 if error
+    */
+    public static long btce_Select_Graph_Data(String ExchangeSite, String currencyPair, int depthSelection, int hoursSelection, long start_server_time, List<TickerItemData> list_BTCe2) {
         // currencyPair = eg: btc_usd
      /*   String parameters = String.format("nonce=%d&currencypair=%s&depth=%d&hours=%d&start_server_time=%d&exchangesite=%s",
          System.currentTimeMillis(), currencyPair, depthSelection, hoursSelection, start_server_time, ExchangeSite);
@@ -48,13 +52,18 @@ public class MicrosoftAzureExt {
 
             rs = ps.executeQuery();
 
+            long biggest_ServerTime = -1;
             if (rs != null) {
                 while (rs.next()) {
                     TickerItemData item = new TickerItemData(rs);
 
                     list_BTCe2.add(item);
+                    
+                    if (item.getServerTime() > biggest_ServerTime) {
+                        biggest_ServerTime = item.getServerTime();
+                    }
                 }
-                return true;
+                return biggest_ServerTime;
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -70,7 +79,7 @@ public class MicrosoftAzureExt {
                 e.printStackTrace();
             }
         }
-        return false;
+        return -1;
     }
 
     public static boolean btce_Select_Graph_Data_AzureMobileAPI(String ExchangeSite, String currencyPair, int depthSelection, int hoursSelection, long start_server_time, ArrayList<TickerItemData> list_BTCe2) {

@@ -1,8 +1,8 @@
 package bitbot.cache.tickers.history;
 
 import bitbot.handler.channel.ChannelServer;
+import bitbot.server.Constants;
 import bitbot.util.HttpClient;
-import java.util.Calendar;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -21,7 +21,7 @@ public class TickerHistory_Okcoin implements TickerHistory {
 
     private boolean readyToBroadcastPriceChanges() {
         final long cTime = System.currentTimeMillis();
-        if (cTime - lastBroadcastedTime > 2000) {
+        if (cTime - lastBroadcastedTime > Constants.PriceBetweenServerBroadcastDelay) {
             lastBroadcastedTime = cTime;
             return true;
         }

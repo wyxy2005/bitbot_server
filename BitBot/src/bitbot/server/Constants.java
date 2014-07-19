@@ -23,5 +23,8 @@ public class Constants {
     public static final short ServerClientVersion = 1;
     public static final String ServerClientMinorPatchVer = "0";
     public static final String CLIENT_KEY = "CLIENT";
+    
+    // server-server
+    public static final long PriceBetweenServerBroadcastDelay = 2000;
 
 }
