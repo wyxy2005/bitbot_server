@@ -31,7 +31,8 @@ public class TickerHistory_BTCChina implements TickerHistory {
     @Override
     public TickerHistoryData connectAndParseHistoryResult(String ExchangeCurrencyPair, String CurrencyPair, long LastPurchaseTime, int LastTradeId) {
         String[] split = CurrencyPair.split("_");
-        String Uri = String.format("https://data.btcchina.com/data/trades?market=%s&since=%d", (split[1] + split[0]).toUpperCase(), LastPurchaseTime / 1000);
+
+        String Uri = String.format("https://data.btcchina.com/data/historydata?market=%s&since=%d", (split[1] + split[0]).toUpperCase(), LastTradeId);
         String GetResult = HttpClient.httpsGet(Uri, "");
 
         if (GetResult != null) {
@@ -63,7 +64,7 @@ public class TickerHistory_BTCChina implements TickerHistory {
                     long date = Long.parseLong(obj.get("date").toString()) * 1000;
                     float price = Float.parseFloat(obj.get("price").toString());
                     float amount = Float.parseFloat(obj.get("amount").toString());
-                    TradeHistoryBuySellEnum type = TradeHistoryBuySellEnum.Unknown; // BTCChina doesn't broadcast buy or sell..
+                    final TradeHistoryBuySellEnum type = obj.get("type") == "buy" ? TradeHistoryBuySellEnum.Buy : TradeHistoryBuySellEnum.Sell;
 
                     // Initialize last purchase time if neccessary
                     if (LastPurchaseTime == 0) {
