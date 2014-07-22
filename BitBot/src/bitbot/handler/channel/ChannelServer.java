@@ -344,10 +344,14 @@ public class ChannelServer {
     }
 
     public void broadcastPriceChanges(final TradeHistoryBuySellEnum type, final String ExchangeCurrencyPair, final float price, final float amount, final long date, final int tradeid) {
-    /*    try {
+       /* try {
             wci.broadcastPriceChanges(type, ExchangeCurrencyPair, price, amount, date, tradeid);
         } catch (RemoteException exp) {
             ServerLog.RegisterForLoggingException(ServerLogType.RemoteError, exp);
+        } catch (NoClassDefFoundError servError) {
+            // world server may have crashed or inactive :(
+            System.out.println("[Warning] World Server may be inacctive or crashed. Please restart.");
+            servError.printStackTrace();
         }*/
     }
 
