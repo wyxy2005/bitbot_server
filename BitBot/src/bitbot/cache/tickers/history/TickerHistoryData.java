@@ -6,6 +6,7 @@ import bitbot.server.ServerLogType;
 import bitbot.util.mssql.DatabaseConnection;
 import bitbot.util.FileoutputUtil;
 import java.rmi.RemoteException;
+import java.rmi.ServerError;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -87,6 +88,10 @@ public class TickerHistoryData {
         } catch (RemoteException exp) {
             ServerLog.RegisterForLoggingException(ServerLogType.RemoteError, exp);
             ChannelServer.getInstance().reconnectWorld(exp);
+        } catch (NoClassDefFoundError servError) {
+            // world server may have crashed or inactive :(
+            System.out.println("[Warning] World Server may be inacctive or crashed. Please restart.");
+            servError.printStackTrace();
         }
         
         // Commit data to database
