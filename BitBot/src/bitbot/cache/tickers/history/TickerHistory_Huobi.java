@@ -88,7 +88,7 @@ public class TickerHistory_Huobi implements TickerHistory {
                     if (cal.getTimeInMillis() > LastPurchaseTime
                             && cal.get(Calendar.MINUTE) == cal_LastPurchaseTime.get(Calendar.MINUTE)) {
                         //System.out.println("[Trades history] Added: " + cal.getTime().toString());
-                        ReturnData.merge(price, amount, cal.getTimeInMillis(), 0);
+                        ReturnData.merge(price, amount, cal.getTimeInMillis(), 0, type);
 
                         if (readyToBroadcastPriceChanges()) {
                             ChannelServer.getInstance().broadcastPriceChanges(

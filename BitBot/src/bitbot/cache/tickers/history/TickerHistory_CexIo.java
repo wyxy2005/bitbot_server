@@ -94,7 +94,7 @@ public class TickerHistory_CexIo implements TickerHistory {
                     // Assume things are read in ascending order
                     if (date > LastPurchaseTime) {
                         //System.out.println(String.format("[Trades history] Added [%s], Price: %f, Sum: %f ", cal.getTime().toString(), price, amount));
-                        ReturnData.merge(price, amount, date, tradeid);
+                        ReturnData.merge(price, amount, date, tradeid, type);
 
                         if (readyToBroadcastPriceChanges()) {
                             ChannelServer.getInstance().broadcastPriceChanges(

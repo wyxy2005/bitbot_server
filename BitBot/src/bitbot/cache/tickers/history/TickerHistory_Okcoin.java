@@ -62,7 +62,7 @@ public class TickerHistory_Okcoin implements TickerHistory {
                     float amount = Float.parseFloat(obj.get("amount").toString());
                     float price = Float.parseFloat(obj.get("price").toString());
                     long date = (long) Double.parseDouble(obj.get("date").toString()) * 1000l;
-                    TradeHistoryBuySellEnum type = obj.get("type").toString().equals("buy") ? TradeHistoryBuySellEnum.Buy : TradeHistoryBuySellEnum.Sell; // buy sell
+                    final TradeHistoryBuySellEnum type = obj.get("type").toString().equals("buy") ? TradeHistoryBuySellEnum.Buy : TradeHistoryBuySellEnum.Sell; // buy sell
                     int tid = Integer.parseInt(obj.get("tid").toString());
 
                     // Initialize last purchase time if neccessary
@@ -91,7 +91,7 @@ public class TickerHistory_Okcoin implements TickerHistory {
                     // Assume things are read in ascending order
                     if (date > LastPurchaseTime) {
                         //System.out.println(String.format("[Trades history] Added [%s], Price: %f, Sum: %f ", cal.getTime().toString(), price, amount));
-                        ReturnData.merge(price, amount, date, tid);
+                        ReturnData.merge(price, amount, date, tid, type);
 
                         if (readyToBroadcastPriceChanges()) {
                             ChannelServer.getInstance().broadcastPriceChanges(

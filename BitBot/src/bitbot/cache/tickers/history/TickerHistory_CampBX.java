@@ -60,7 +60,7 @@ public class TickerHistory_CampBX implements TickerHistory {
                 float lasttrade = Float.parseFloat(Obj.get("Last Trade").toString());
                 float buy = Float.parseFloat(Obj.get("Best Bid").toString());
                 float sell = Float.parseFloat(Obj.get("Best Ask").toString());
-                TradeHistoryBuySellEnum type = TradeHistoryBuySellEnum.Unknown; // Campbx doesn't broadcast buy or sell
+                final TradeHistoryBuySellEnum type = TradeHistoryBuySellEnum.Unknown; // Campbx doesn't broadcast buy or sell
                 
                 final long cTime = System.currentTimeMillis();
 
@@ -69,7 +69,7 @@ public class TickerHistory_CampBX implements TickerHistory {
                 Calendar cal = Calendar.getInstance(); // BTCe time
 
                 //System.out.println(String.format("[Trades history] Got [%s], Buy: %f, Sell: %f", cal.getTime().toString(), buy, sell));
-                ReturnData.merge_CoinbaseOrCampBX(buy, sell, cTime);
+                ReturnData.merge_CoinbaseOrCampBX(buy, sell, cTime, type);
 
                 if (readyToBroadcastPriceChanges()) {
                     ChannelServer.getInstance().broadcastPriceChanges(

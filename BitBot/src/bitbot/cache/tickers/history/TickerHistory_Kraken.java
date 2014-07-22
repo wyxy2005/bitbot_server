@@ -95,7 +95,7 @@ public class TickerHistory_Kraken implements TickerHistory {
                     // Assume things are read in ascending order
                     if (date > LastPurchaseTime) {
                         //System.out.println(String.format("[Trades history] Added [%s], Price: %f, Sum: %f ", date, price, amount));
-                        ReturnData.merge(price, amount, date, 0);
+                        ReturnData.merge(price, amount, date, 0, type);
 
                         if (readyToBroadcastPriceChanges()) {
                             ChannelServer.getInstance().broadcastPriceChanges(

@@ -23,6 +23,8 @@ public class TickerHistoryData {
     private long LastPurchaseTime;
     private int LastTradeId;
 
+    private double TotalBuyVolume = 1, TotalSellVolume = 1;
+
     private boolean isCoinbase_CampBX = false;
 
     private boolean isDatasetReadyForCommit = false; // additional boolean to ensure that future changes won't bug this up.. 
@@ -75,8 +77,8 @@ public class TickerHistoryData {
         if (ChannelServer.getInstance().isEnableDebugSessionPrints()) {
             Calendar cal = Calendar.getInstance();
             cal.setTimeInMillis(LastPurchaseTime);
-            String outputLog = String.format("dd:hh:mm = (%d:%d:%d), Open: %f, Close: %f, High: %f, Low: %f, Volume: %f, VolumeCur: %f",
-                    cal.get(Calendar.DAY_OF_MONTH), cal.get(Calendar.HOUR), cal.get(Calendar.MINUTE), getOpen(), getLastPrice(), getHigh(), getLow(), getVolume(), getVolume_Cur());
+            String outputLog = String.format("[dd:hh:mm = (%d:%d:%d)], Open: %f, Close: %f, High: %f, Low: %f, Volume: %f, VolumeCur: %f, Ratio: %f",
+                    cal.get(Calendar.DAY_OF_MONTH), cal.get(Calendar.HOUR), cal.get(Calendar.MINUTE), getOpen(), getLastPrice(), getHigh(), getLow(), getVolume(), getVolume_Cur(), TotalBuyVolume / TotalSellVolume);
             FileoutputUtil.log("//" + tableName + ".txt", outputLog);
         }
 
@@ -88,7 +90,7 @@ public class TickerHistoryData {
             ServerLog.RegisterForLoggingException(ServerLogType.RemoteError, exp);
             ChannelServer.getInstance().reconnectWorld(exp);
         }
-        
+
         // Commit data to database
         if (!ChannelServer.getInstance().isEnableTickerHistoryDatabaseCommit()) {
             return HistoryDatabaseCommitEnum.Ok;
@@ -97,7 +99,7 @@ public class TickerHistoryData {
         try {
             Connection con = DatabaseConnection.getConnection();
 
-            ps = con.prepareStatement("INSERT INTO bitcoinbot." + tableName + " (\"high\", \"low\", \"vol\", \"vol_cur\", \"open\", \"close\", \"server_time\") VALUES (?,?,?,?,?,?,?);");
+            ps = con.prepareStatement("INSERT INTO bitcoinbot." + tableName + " (\"high\", \"low\", \"vol\", \"vol_cur\", \"open\", \"close\", \"server_time\", \"buysell_ratio\") VALUES (?,?,?,?,?,?,?,?);");
             ps.setFloat(1, High);
             ps.setFloat(2, Low);
             ps.setDouble(3, Volume);
@@ -105,6 +107,7 @@ public class TickerHistoryData {
             ps.setFloat(5, Open);
             ps.setFloat(6, LastPrice);
             ps.setLong(7, (long) (LastPurchaseTime / 1000l));
+            ps.setFloat(8, (float) (TotalBuyVolume / TotalSellVolume)); // ratio
 
             ps.execute();
         } catch (Exception e) {
@@ -136,14 +139,17 @@ public class TickerHistoryData {
         if (!isCoinbase_CampBX && this.Volume_Cur != 1d && this.Volume != 1d) {
             this.Volume_Cur += dataNow.Volume_Cur;
             this.Volume += dataNow.Volume_Cur * dataNow.High;
+            this.TotalBuyVolume += dataNow.TotalBuyVolume;
+            this.TotalSellVolume += dataNow.TotalSellVolume;
         }
         this.LastPurchaseTime = dataNow.LastPurchaseTime;
-        if (dataNow.getLastTradeId() != 0)
+        if (dataNow.getLastTradeId() != 0) {
             this.LastTradeId = dataNow.getLastTradeId();
+        }
         this.LastPrice = dataNow.getLastPrice();
     }
 
-    public void merge(float price, float amount, long LastPurchaseTime, int LastTradeId) {
+    public void merge(float price, float amount, long LastPurchaseTime, int LastTradeId, TradeHistoryBuySellEnum type) {
         if (price > this.High) {
             this.High = price;
         }
@@ -156,13 +162,24 @@ public class TickerHistoryData {
         if (this.Volume_Cur != 1 && this.Volume != 1) {
             this.Volume_Cur += amount;
             this.Volume += amount * High;
+
+            switch (type) {
+                case Buy: {
+                    this.TotalBuyVolume += Volume_Cur;
+                    break;
+                }
+                case Sell: {
+                    this.TotalSellVolume += Volume_Cur;
+                    break;
+                }
+            }
         }
         this.LastPurchaseTime = LastPurchaseTime;
         this.LastTradeId = LastTradeId;
         this.LastPrice = price;
     }
 
-    public void merge_CoinbaseOrCampBX(float buy, float sell, long LastPurchaseTime) {
+    public void merge_CoinbaseOrCampBX(float buy, float sell, long LastPurchaseTime, TradeHistoryBuySellEnum type) {
         if (buy > High) {
             High = buy;
         }
@@ -178,6 +195,8 @@ public class TickerHistoryData {
         // Set volume 1 for exchange without those data feed
         this.Volume = 1;
         this.Volume_Cur = 1;
+        this.TotalBuyVolume = 1;
+        this.TotalBuyVolume = 1;
     }
 
     public void setLastPurchaseTime(long LastPurchaseTime) {
@@ -222,7 +241,7 @@ public class TickerHistoryData {
     public float getLow() {
         return this.Low;
     }
-    
+
     public void setLastTradeId(int LastTradeId) {
         this.LastTradeId = LastTradeId;
     }
@@ -230,7 +249,7 @@ public class TickerHistoryData {
     public int getLastTradeId() {
         return this.LastTradeId;
     }
-    
+
     public void setVolume(double Volume) {
         this.Volume = Volume;
     }

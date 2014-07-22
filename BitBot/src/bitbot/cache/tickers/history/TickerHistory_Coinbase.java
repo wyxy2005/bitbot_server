@@ -74,15 +74,16 @@ public class TickerHistory_Coinbase implements TickerHistory {
 
                 float buy = Float.parseFloat(((LinkedHashMap) buyObj.get("subtotal")).get("amount").toString());
                 float sell = Float.parseFloat(((LinkedHashMap) sellObj.get("subtotal")).get("amount").toString());
-
+                final TradeHistoryBuySellEnum type = TradeHistoryBuySellEnum.Unknown; // Coinbase doesn't broadcast buy or sell
+                
                 final long cTime = System.currentTimeMillis();
 
                 //http://tutorials.jenkov.com/java-date-time/java-util-timezone.html
                 // Timestamp for trades
-                Calendar cal = Calendar.getInstance(); // BTCe time
+                Calendar cal = Calendar.getInstance();
 
                 //System.out.println(String.format("[Trades history] Got [%s], Buy: %f, Sell: %f", cal.getTime().toString(), buy, sell));
-                ReturnData.merge_CoinbaseOrCampBX(buy, sell, cTime);
+                ReturnData.merge_CoinbaseOrCampBX(buy, sell, cTime, type);
 
                 if (readyToBroadcastPriceChanges()) {
                     ChannelServer.getInstance().broadcastPriceChanges(
