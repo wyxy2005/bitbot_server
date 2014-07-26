@@ -1,4 +1,4 @@
-exports.post = function(request, response) {
+exports.post = function (request, response) {
     // Use "request.service" to access features of your mobile service, e.g.:
     //   var tables = request.service.tables;
     //   var push = request.service.push;
@@ -15,6 +15,7 @@ exports.post = function(request, response) {
     var delay_between_notification = parseInt(request.query.delay_between_notification) - 1;
     var increment_percent_daily = parseInt(request.query.increment_percent_daily);
     var platform = escape(request.query.platform);
+    var email = request.query.email;
 
     // Input validation for currency pairs
     var appSettings = require('mobileservice-config').appSettings;
@@ -39,7 +40,8 @@ exports.post = function(request, response) {
         times > 0 && times <= 50 &&
         (delay_between_notification >= 59) &&
         (delay_between_notification <= 36000) &&
-        increment_percent_daily >= 0 && increment_percent_daily <= 20) {
+        increment_percent_daily >= 0 && increment_percent_daily <= 20 &&
+        (email && email !== '' ? validateEmail(email) : true)) {
 
         var tableName = 'push_price';
         var tables = request.service.tables;
@@ -53,64 +55,65 @@ exports.post = function(request, response) {
             exchange_pair: exchange_pair,
             operating_system: platform
         }).read({
-                success: function(results) {
-                    if (results.length != 0) {
-                        // a copy available
-                        updateDatabase(tableName, high, low, times, pushuri, delay_between_notification, hub_registrationid, uniqueid, increment_percent_daily, exchange_pair, platform);
-                    } else {
-                        // insert
-                        pushTable.insert(
-                            {
-                                high: high,
-                                low: low,
-                                times: times,
-                                pushuri: pushuri,
-                                uniqueid: uniqueid,
-                                delay_between_notification: delay_between_notification, // compensate for the fast running script. -1 second
-                                increment_percent_daily: increment_percent_daily,
-                                exchange_pair: exchange_pair,
-                                operating_system: platform,
-                                hub_registrationid: hub_registrationid
-                            }, {
-                                success: function() {
-                                    // insert the transaction
-                                    response.send(statusCodes.OK,
-                                        {
-                                            message: 'ok',
-                                        });
-                                }, error: function(err) {
-                                    response.send(statusCodes.OK,
-                                        {
-                                            message: 'couldnt connect to database server',
-                                        });
-                                    console.log(err);
-                                }
-                            });
+            success: function (results) {
+                if (results.length != 0) {
+                    // a copy available
+                    updateDatabase(tableName, high, low, times, pushuri, delay_between_notification, hub_registrationid, uniqueid, increment_percent_daily, exchange_pair, platform, email);
+                } else {
+                    // insert
+                    pushTable.insert(
+                        {
+                            high: high,
+                            low: low,
+                            times: times,
+                            pushuri: pushuri,
+                            uniqueid: uniqueid,
+                            delay_between_notification: delay_between_notification, // compensate for the fast running script. -1 second
+                            increment_percent_daily: increment_percent_daily,
+                            exchange_pair: exchange_pair,
+                            operating_system: platform,
+                            hub_registrationid: hub_registrationid,
+                            email: !email ? null : email
+                        }, {
+                            success: function () {
+                                // insert the transaction
+                                response.send(statusCodes.OK,
+                                    {
+                                        message: 'ok',
+                                    });
+                            }, error: function (err) {
+                                response.send(statusCodes.OK,
+                                    {
+                                        message: 'couldnt connect to database server',
+                                    });
+                                console.log(err);
+                            }
+                        });
 
-                        response.send(statusCodes.OK,
-                            {
-                                message: 'ok',
-                            });
-                    }
-                }, error: function(err) {
-                    console.log("error checking current db: " + err);
-
-                    response.send(statusCodes.OK, { message: 'Currency pair not supported.' });
+                    response.send(statusCodes.OK,
+                        {
+                            message: 'ok',
+                        });
                 }
-            });
+            }, error: function (err) {
+                console.log("error checking current db: " + err);
+
+                response.send(statusCodes.OK, { message: 'Currency pair not supported.' });
+            }
+        });
     } else {
         response.send(statusCodes.BAD_REQUEST, { message: 'bad guy :(' });
     }
 
-    function updateDatabase(tableName, high, low, times, pushuri, delay_between_notification, hub_registrationid, uniqueid, increment_percent_daily, exchange_pair, platform) {
+    function updateDatabase(tableName, high, low, times, pushuri, delay_between_notification, hub_registrationid, uniqueid, increment_percent_daily, exchange_pair, platform, email) {
         var mssql = request.service.mssql;
-        var query = "UPDATE TOP (1) push_price SET pushuri = ?, high = ?, low = ?, times = ?, delay_between_notification = ?, increment_percent_daily = ?, hub_registrationid = ? WHERE uniqueid = ? AND exchange_pair = ? AND operating_system = ?";
+        var query = "UPDATE TOP (1) push_price SET pushuri = ?, high = ?, low = ?, times = ?, delay_between_notification = ?, increment_percent_daily = ?, hub_registrationid = ?, email = ? WHERE uniqueid = ? AND exchange_pair = ? AND operating_system = ?";
 
         // console.log(query)
 
-        mssql.query(query, [pushuri, high, low, times, delay_between_notification, increment_percent_daily, hub_registrationid, uniqueid, exchange_pair, platform], {
-            success: function(results) {
-            }, error: function(err) {
+        mssql.query(query, [pushuri, high, low, times, delay_between_notification, increment_percent_daily, hub_registrationid, email, uniqueid, exchange_pair, platform], {
+            success: function (results) {
+            }, error: function (err) {
                 console.log("error updating current db: " + err); // ok doesn't really matter'
             }
         }
@@ -119,6 +122,11 @@ exports.post = function(request, response) {
     }
 };
 
-exports.get = function(request, response) {
+exports.get = function (request, response) {
     response.send(statusCodes.OK, { message: 'Hello World!' });
 };
+
+function validateEmail(email) { 
+    var re = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+    return re.test(email);
+} 

@@ -31,7 +31,8 @@ exports.post = function(request, response) {
                  low: 0,
                  times: 0,
                  delay_between_notification: 60,
-                 increment_percent_daily: 0
+                 increment_percent_daily: 0,
+                 email: ''
               });
          return;
      }
@@ -62,7 +63,8 @@ exports.post = function(request, response) {
                                         low: 0,
                                         times: 0,
                                         delay_between_notification: 60,
-                                        increment_percent_daily: 0
+                                        increment_percent_daily: 0,
+                                        email: ''
                                     });
                                  } else {
                                      response.send(statusCodes.OK, 
@@ -72,7 +74,8 @@ exports.post = function(request, response) {
                                         low: item.low,
                                         times: item.times,
                                         delay_between_notification: (item.delay_between_notification + 1),
-                                        increment_percent_daily: item.increment_percent_daily
+                                        increment_percent_daily: item.increment_percent_daily,
+                                        email: item.email
                                     });
                                  }
                              }
@@ -85,7 +88,8 @@ exports.post = function(request, response) {
                                 low: 0,
                                 times: 0,
                                 delay_between_notification: 60,
-                                increment_percent_daily: 0
+                                increment_percent_daily: 0,
+                                email: ''
                             });
                         }
                     }, error: function(err) {
@@ -98,7 +102,8 @@ exports.post = function(request, response) {
                             low: 0,
                             times: 0,
                             delay_between_notification: 60,
-                            increment_percent_daily: 0
+                            increment_percent_daily: 0,
+                            email: ''
                         });
                     }   
                 });
@@ -111,6 +116,7 @@ exports.get = function(request, response) {
         high: 0,
         low: 0,
         times: 0,
-        delay_between_notification: 60
+        delay_between_notification: 60,
+        email: ''
      });
 };

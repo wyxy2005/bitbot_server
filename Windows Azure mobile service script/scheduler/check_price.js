@@ -1,4 +1,7 @@
 function check_price() {
+    var SendGrid = require('sendgrid').SendGrid;
+    var util = require('util');
+    
     var date = new Date();
     var dateStr = date.toISOString().replace(/T/, ' ').replace(/\..+/, '');
     //console.log("Scheduled price check task: " + dateStr);
@@ -63,7 +66,7 @@ function check_price() {
     fetchItem('btc_sgd', 'fybsg');
     fetchItem('btc_sek', 'fybse');
     
-    //fetchItem('nxt_btc', 'dgex');
+    fetchItem('nxt_btc', 'dgex');
 
     function fetchItem(currencypair, source) {
         if (source == 'btce') {
@@ -125,7 +128,7 @@ function check_price() {
             }
         }, function(error, response, body) {
                 if (!error && response.statusCode == 200) {
-                    var returnJson = JSON.parse(body);
+                    var returnJson = source === 'dgex' ? null : JSON.parse(body);
 
                     // acquire data here
                     var currentPrice = 0;
@@ -166,6 +169,8 @@ function check_price() {
                             average24Hrs = currentPrice / (parseFloat(pairresult.h[0]) + parseFloat(pairresult.l[0]) / 2) * 100 - 100;
                             break;
                         case 'dgex':
+                            currentPrice = parseFloat(body);
+                            average24Hrs = 0; // no data available
                             break;
                         default:
                             currentPrice = parseFloat(returnJson.ticker.buy);
@@ -213,6 +218,7 @@ function check_price() {
         var platform = client.operating_system;
         var hub_registrationid = client.hub_registrationid;
         var clientUniqueId = client.uniqueid;
+        var email = client.email;
 
         if (hub_registrationid == null)
             return;
@@ -241,6 +247,13 @@ function check_price() {
             "% - " + currencypairStr + "\r\n\r\nPrice: $" + currentPrice;
 
         var alertMsg_ToastNavigateURI = '/DetailedPricePage.xaml?QuoteDataSource=' + source + '&CurrencyPair=' + currencypair;
+
+        // Sent email
+        if (email != null && email !== '') {
+            //var emailMsg = util.format('<b>%s</b>:<br>Current Price:%d<br>', source, currentPrice);
+            var emailMsg = util.format('Exchange: %s - %s\r\nCurrent Price:%d', source, currencypairStr, currentPrice);
+            sendEmail("Bitbot - " + alertMsg_Toast, email, emailMsg);
+        }
 
         // Start sending
         if (platform == "WindowsPhone8" || platform == "WindowsPhone8.1") {
@@ -338,7 +351,7 @@ function check_price() {
                     }
                 });
         }
-
+       
     }
 
     function updateNotificationCount(sqlTable, pushuri, client, source, currencypair, platform) {
@@ -632,5 +645,25 @@ function check_price() {
                     console.log('Unable to log current currency ticker ' + currencypair + '' + err);
                 }
             });
+    }
+    
+    function sendEmail(subject, toEmail, context) {
+        var sendgrid;
+        if (Math.floor((Math.random() * 1) + 1) == 1) // double the amount of free shit.. lol
+            sendgrid = new SendGrid('azure_e61e429d81c4fef32ec4cbcbc312178b@azure.com', '5Jp4w8eCoFaW18w');       
+        else 
+            sendgrid = new SendGrid('azure_181d59c8dd3b490c0743d275a9ce272b@azure.com', '8SvQzlIZqoxd4EF');    
+        
+        sendgrid.send({
+            to: toEmail,
+            from: 'bitbotlive@outlook.com',
+            subject: subject,
+            text: context
+        }, function(success, message) {
+            // If the email failed to send, log it as an error so we can investigate
+            if (!success) {
+                console.error(message);
+            }
+        });
     }
 }
