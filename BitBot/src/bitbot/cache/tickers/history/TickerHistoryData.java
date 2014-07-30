@@ -6,7 +6,6 @@ import bitbot.server.ServerLogType;
 import bitbot.util.mssql.DatabaseConnection;
 import bitbot.util.FileoutputUtil;
 import java.rmi.RemoteException;
-import java.rmi.ServerError;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
