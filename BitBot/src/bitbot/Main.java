@@ -4,6 +4,7 @@ import bitbot.handler.channel.ChannelServer;
 import bitbot.handler.world.WorldServer;
 import bitbot.server.threads.MultiThreadExecutor;
 import bitbot.server.threads.TimerManager;
+import bitbot.util.BitcoinWisdomReader;
 import bitbot.util.MT4CVSReader;
 import java.security.cert.X509Certificate;
 import javax.net.ssl.HostnameVerifier;
@@ -84,6 +85,16 @@ public class Main {
                  }
                  }
                  }*/
+                break;
+            }
+            case "readBitcoinWisdomData": {
+                if (args.length <= 1) {
+                    System.out.println("Please specify .txt path to json file.");
+                    return;
+                }
+                String txtJsonFile = args[1];
+
+                BitcoinWisdomReader.ReadJsonFile(txtJsonFile);
                 break;
             }
             case "readMT4Data": {

@@ -97,8 +97,7 @@ public class TickerCacheTask {
                     UpdateTime = 30; // volume is still too low to make an impact
                 } else if (ExchangeCurrencyPair.contains("cryptsy")) {
                     history = new TickerHistory_Cryptsy();
-                    UpdateTime = 5;
-                } else if (ExchangeCurrencyPair.contains("mtgox")) {
+                } else if (ExchangeCurrencyPair.contains("mtgox")) { // goxxed
                     history = new TickerHistory_MTGox();
                 }
                 //bitfinex-btc_usd---kraken-xbt_usd---kraken-xbt_eur---cexio-ghs_btc
@@ -263,6 +262,12 @@ public class TickerCacheTask {
                         if (LastUsedTime == 0) {
                             LastUsedTime = item.getServerTime();
                         }
+                        if (Volume == 0) {
+                            Volume = item.getVol();
+                        }
+                        if (VolumeCur == 0) {
+                            VolumeCur = item.getVol_Cur();
+                        }
                         // Add to list
                         list_chart.add(
                                 new TickerItem_CandleBar(
@@ -279,8 +284,8 @@ public class TickerCacheTask {
                     high = 0;
                     low = Float.MAX_VALUE;
                     Volume = 0;
-                    open = item.getClose() != 0 ? item.getClose() : item.getOpen(); // Next open = current close.
                     VolumeCur = 0;
+                    open = item.getClose() != 0 ? item.getClose() : item.getOpen(); // Next open = current close.
                     lastPriceSet = 0;
 
                     if (LastUsedTime == 0) {
