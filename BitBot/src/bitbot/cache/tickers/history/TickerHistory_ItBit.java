@@ -64,7 +64,7 @@ public class TickerHistory_ItBit implements TickerHistory {
 
                     // Initialize last purchase time if neccessary
                     if (LastPurchaseTime == 0) {
-                        LastPurchaseTime = date; // set default param
+                        LastPurchaseTime = date - 1; // set default param
                         /*cal_LastPurchaseTime = Calendar.getInstance();
                          cal_LastPurchaseTime.set(Calendar.YEAR, 1970);
                          cal_LastPurchaseTime.set(Calendar.MONTH, 0);

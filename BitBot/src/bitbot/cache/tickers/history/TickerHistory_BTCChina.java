@@ -3,6 +3,7 @@ package bitbot.cache.tickers.history;
 import bitbot.handler.channel.ChannelServer;
 import bitbot.server.Constants;
 import bitbot.util.HttpClient;
+import java.util.Calendar;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -67,7 +68,7 @@ public class TickerHistory_BTCChina implements TickerHistory {
                     final TradeHistoryBuySellEnum type = obj.get("type") == "buy" ? TradeHistoryBuySellEnum.Buy : TradeHistoryBuySellEnum.Sell;
 
                     // Initialize last purchase time if neccessary
-                    if (LastPurchaseTime == 0) {
+                    if (LastTradeId == 0) {
                         /*Calendar cal_LastPurchaseTime = Calendar.getInstance();
                          cal_LastPurchaseTime.set(Calendar.YEAR, 1970);
                          cal_LastPurchaseTime.set(Calendar.MONTH, 0);
@@ -76,8 +77,11 @@ public class TickerHistory_BTCChina implements TickerHistory {
                          cal_LastPurchaseTime.add(Calendar.HOUR, 8);
                          cal_LastPurchaseTime.add(Calendar.SECOND, (int) (date / 1000));*/
 
-                        LastPurchaseTime = date;//cal_LastPurchaseTime.getTimeInMillis(); // set default param
+                        LastPurchaseTime = date - 1;//cal_LastPurchaseTime.getTimeInMillis(); // set default param
                         ReturnData.setLastPurchaseTime(LastPurchaseTime);
+                        
+                        LastTradeId = tradeid - 1;
+                        ReturnData.setLastTradeId(LastTradeId);
                     }
 
                     //http://tutorials.jenkov.com/java-date-time/java-util-timezone.html
@@ -87,11 +91,11 @@ public class TickerHistory_BTCChina implements TickerHistory {
                      cal.set(Calendar.MONTH, 0);
                      cal.set(Calendar.DATE, 0);
 
-                     cal.add(Calendar.SECOND, (int) (date / 1000));
+                     cal.add(Calendar.SECOND, (int) (date / 1000));*/
                     
-                     System.out.println(String.format("[Trades history] Got [%s], Price: %f, Sum: %f ", cal.getTime().toString(), price, amount));*/
+                    // System.out.println(String.format("[Trades history] Got [%s], Price: %f, Sum: %f ", cal.getTime().toString(), price, amount));
                     // Assume things are read in ascending order
-                    if (date > LastPurchaseTime) {
+                    if (tradeid > LastTradeId) {
                         //System.out.println(String.format("[Trades history] Added [%s], Price: %f, Sum: %f ", cal.getTime().toString(), price, amount));
                         ReturnData.merge(price, amount, date, tradeid, type);
 

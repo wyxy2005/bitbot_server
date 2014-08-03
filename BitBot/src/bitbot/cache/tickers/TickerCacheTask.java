@@ -94,7 +94,7 @@ public class TickerCacheTask {
                     history = new TickerHistory_BitFinex();
                 } else if (ExchangeCurrencyPair.contains("dgex")) {
                     history = new TickerHistory_Dgex();
-                    UpdateTime = 30; // volume is still too low to make an impact
+                    UpdateTime = 15; // volume is still too low to make an impact
                 } else if (ExchangeCurrencyPair.contains("cryptsy")) {
                     history = new TickerHistory_Cryptsy();
                 } else if (ExchangeCurrencyPair.contains("mtgox")) { // goxxed

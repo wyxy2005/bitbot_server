@@ -36,6 +36,8 @@ public class TickerHistory_Cryptsy implements TickerHistory {
         String Uri = String.format("http://pubapi.cryptsy.com/api.php?method=singlemarketdata&marketid=%d", getCryptsyMarketId(CurrencyPair));
         String GetResult = HttpClient.httpGet(Uri, "");
 
+        long newPurchaseDate = LastPurchaseTime;
+        
         if (GetResult != null) {
             TickerHistoryData ReturnData = new TickerHistoryData(LastPurchaseTime, LastTradeId, 0, false);
 
@@ -116,6 +118,9 @@ public class TickerHistory_Cryptsy implements TickerHistory {
                             //System.out.println(String.format("[Trades history] Added [%s], Price: %f, Sum: %f ", cal.getTime().toString(), price, amount));
                             ReturnData.merge(price, amount, cal.getTimeInMillis(), tradeid, type);
 
+                            // Update the biggest purchase time
+                            newPurchaseDate = Math.max(LastPurchaseTime, cal.getTimeInMillis());
+                            
                             if (readyToBroadcastPriceChanges()) {
                                 ChannelServer.getInstance().broadcastPriceChanges(
                                         type,
@@ -133,6 +138,7 @@ public class TickerHistory_Cryptsy implements TickerHistory {
                 //System.out.println(GetResult);
                 //ServerLog.RegisterForLogging(ServerLogType.HistoryCacheTask, parseExp.getMessage());
             }
+            ReturnData.setLastPurchaseTime(newPurchaseDate);
             return ReturnData;
         }
         return null;

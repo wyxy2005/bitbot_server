@@ -70,7 +70,7 @@ public class TickerHistory_Dgex implements TickerHistory {
 
                     // Initialize last purchase time if neccessary
                     if (LastPurchaseTime == 0) {
-                        LastPurchaseTime = date; // set default param
+                        LastPurchaseTime = date - 1; // set default param
                         /*cal_LastPurchaseTime = Calendar.getInstance();
                          cal_LastPurchaseTime.set(Calendar.YEAR, 1970);
                          cal_LastPurchaseTime.set(Calendar.MONTH, 0);
@@ -98,7 +98,7 @@ public class TickerHistory_Dgex implements TickerHistory {
                     if (date > LastPurchaseTime) {
                         //System.out.println(String.format("[Trades history] Added [%s], Price: %f, Sum: %f ", cal.getTime().toString(), price, amount));
                         ReturnData.merge(price, amount, date, tradeid, type);
-
+                        
                         if (readyToBroadcastPriceChanges()) {
                             ChannelServer.getInstance().broadcastPriceChanges(
                                     type,

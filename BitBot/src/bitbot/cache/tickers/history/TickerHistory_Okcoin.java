@@ -18,6 +18,7 @@ public class TickerHistory_Okcoin implements TickerHistory {
 
    // private static final TimeZone timeZone = TimeZone.getTimeZone("Etc/GMT+6");
     private long lastBroadcastedTime = 0;
+    private long newPurchaseDate;
 
     private boolean readyToBroadcastPriceChanges() {
         final long cTime = System.currentTimeMillis();
@@ -67,7 +68,7 @@ public class TickerHistory_Okcoin implements TickerHistory {
 
                     // Initialize last purchase time if neccessary
                     if (LastPurchaseTime == 0) {
-                        LastPurchaseTime = date; // set default param
+                        LastPurchaseTime = date - 1; // set default param
                         /*cal_LastPurchaseTime = Calendar.getInstance();
                          cal_LastPurchaseTime.set(Calendar.YEAR, 1970);
                          cal_LastPurchaseTime.set(Calendar.MONTH, 0);

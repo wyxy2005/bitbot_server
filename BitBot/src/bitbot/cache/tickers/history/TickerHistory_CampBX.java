@@ -70,7 +70,7 @@ public class TickerHistory_CampBX implements TickerHistory {
 
                 //System.out.println(String.format("[Trades history] Got [%s], Buy: %f, Sell: %f", cal.getTime().toString(), buy, sell));
                 ReturnData.merge_CoinbaseOrCampBX(buy, sell, cTime, type);
-
+                
                 if (readyToBroadcastPriceChanges()) {
                     ChannelServer.getInstance().broadcastPriceChanges(
                             type,

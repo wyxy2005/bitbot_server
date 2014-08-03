@@ -39,7 +39,7 @@ public class TickerHistory_FybSGSE implements TickerHistory {
                 LastTradeId != 0 ? "?since=" + LastTradeId : "");
 
         String GetResult = HttpClient.httpsGet(Uri, "");
-
+        
         if (GetResult != null) {
             TickerHistoryData ReturnData = new TickerHistoryData(LastPurchaseTime, LastTradeId, 0, false);
 
@@ -82,7 +82,7 @@ public class TickerHistory_FybSGSE implements TickerHistory {
                          cal_LastPurchaseTime.add(Calendar.HOUR, 8);
                          cal_LastPurchaseTime.add(Calendar.SECOND, (int) (date / 1000));*/
 
-                        LastPurchaseTime = date;//cal_LastPurchaseTime.getTimeInMillis(); // set default param
+                        LastPurchaseTime = date - 1;//cal_LastPurchaseTime.getTimeInMillis(); // set default param
                         ReturnData.setLastPurchaseTime(LastPurchaseTime);
                     }
 

@@ -142,7 +142,7 @@ public class TickerHistoryData {
         }
         if (!isCoinbase_CampBX && this.Volume_Cur != 1d && this.Volume != 1d) {
             this.Volume_Cur += dataNow.Volume_Cur;
-            this.Volume += dataNow.Volume_Cur * dataNow.High;
+            this.Volume += dataNow.Volume;
             this.TotalBuyVolume += dataNow.TotalBuyVolume;
             this.TotalSellVolume += dataNow.TotalSellVolume;
         }
@@ -165,7 +165,7 @@ public class TickerHistoryData {
         }
         if (this.Volume_Cur != 1 && this.Volume != 1) {
             this.Volume_Cur += amount;
-            this.Volume += amount * High;
+            this.Volume += amount * price;
 
             switch (type) {
                 case Buy: {
@@ -178,8 +178,12 @@ public class TickerHistoryData {
                 }
             }
         }
-        this.LastPurchaseTime = LastPurchaseTime;
-        this.LastTradeId = LastTradeId;
+        if (this.LastPurchaseTime < LastPurchaseTime) {
+            this.LastPurchaseTime = LastPurchaseTime;
+        }
+        if (this.LastTradeId < LastTradeId) {
+            this.LastTradeId = LastTradeId;
+        }
         this.LastPrice = price;
     }
 
