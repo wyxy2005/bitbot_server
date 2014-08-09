@@ -4,7 +4,6 @@ import bitbot.cache.tickers.TickerItem_CandleBar;
 import bitbot.handler.channel.ChannelServer;
 import bitbot.server.Constants;
 import bitbot.util.encryption.HMACSHA1;
-import java.io.IOException;
 import java.io.PrintStream;
 import java.util.List;
 import org.json.simple.JSONArray;
@@ -104,6 +103,7 @@ public class ChartTask_Candlestick implements Runnable {
                         obj.put("Low", item.getLow());
                         obj.put("Volume", item.getVol());
                         obj.put("VolumeCur", item.getVol_Cur());
+                        obj.put("Ratio", item.getBuySell_Ratio());
                         return obj;
                     }).forEach((obj) -> {
                         array.add(obj);

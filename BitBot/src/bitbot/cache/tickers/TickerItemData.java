@@ -11,10 +11,10 @@ import org.json.simple.JSONObject;
 public class TickerItemData implements TickerItem {
 
     private final long server_time;
-    private final float high, low, open, close;
+    private final float high, low, open, close, buysell_ratio;
     private final double vol, vol_cur;
 
-    public TickerItemData(long server_time, float close, float high, float low, float open, double volume, double volume_cur) {
+    public TickerItemData(long server_time, float close, float high, float low, float open, double volume, double volume_cur, float buysell_ratio) {
         this.server_time = server_time;//DateTimeUtil.convertDateTime(Long.parseLong(obj.get("server_time").toString()));
         this.high = high;
         this.low = low;
@@ -22,6 +22,7 @@ public class TickerItemData implements TickerItem {
         this.close = close;
         this.vol = volume;
         this.vol_cur = volume_cur;
+        this. buysell_ratio = buysell_ratio;
 
         //System.out.println("server_time at: " + server_time.toString());
         //System.out.println("updated at: " + updated.toString());
@@ -35,11 +36,13 @@ public class TickerItemData implements TickerItem {
         this.close = rs.getFloat("close");
         this.vol = rs.getDouble("vol");
         this.vol_cur = rs.getDouble("vol_cur");
+        this.buysell_ratio = rs.getFloat("buysell_ratio");
 
         //System.out.println("server_time at: " + server_time.toString());
         //System.out.println("updated at: " + updated.toString());
     }
 
+    @Deprecated
     public TickerItemData(JSONObject obj) {
         this.server_time = Long.parseLong(obj.get("server_time").toString());//DateTimeUtil.convertDateTime(Long.parseLong(obj.get("server_time").toString()));
         this.high = Float.parseFloat(obj.get("high").toString());
@@ -48,6 +51,7 @@ public class TickerItemData implements TickerItem {
         this.close = Float.parseFloat(obj.get("close").toString());
         this.vol = Double.parseDouble(obj.get("vol").toString());
         this.vol_cur = Double.parseDouble(obj.get("vol_cur").toString());
+        this.buysell_ratio = Float.parseFloat(obj.get("buysell_ratio").toString());
 
         //System.out.println("server_time at: " + server_time.toString());
         //System.out.println("updated at: " + updated.toString());
@@ -91,6 +95,11 @@ public class TickerItemData implements TickerItem {
     @Override
     public double getVol_Cur() {
         return vol_cur;
+    }
+    
+    @Override
+    public float getBuySell_Ratio() {
+        return buysell_ratio;
     }
 
   /*  @Override

@@ -1,7 +1,5 @@
 package bitbot.cache.tickers.history;
 
-import bitbot.handler.channel.ChannelServer;
-import bitbot.server.Constants;
 import bitbot.util.HttpClient;
 import java.util.Calendar;
 import java.util.Iterator;
@@ -18,17 +16,6 @@ import org.json.simple.parser.JSONParser;
  */
 public class TickerHistory_Cryptsy implements TickerHistory {
     //private static final TimeZone timeZone = TimeZone.getTimeZone("Etc/GMT-6");
-
-    private long lastBroadcastedTime = 0;
-
-    private boolean readyToBroadcastPriceChanges() {
-        final long cTime = System.currentTimeMillis();
-        if (cTime - lastBroadcastedTime > Constants.PriceBetweenServerBroadcastDelay) {
-            lastBroadcastedTime = cTime;
-            return true;
-        }
-        return false;
-    }
 
     @Override
     public TickerHistoryData connectAndParseHistoryResult(String ExchangeCurrencyPair, String CurrencyPair, long LastPurchaseTime, int LastTradeId) {
@@ -120,16 +107,6 @@ public class TickerHistory_Cryptsy implements TickerHistory {
 
                             // Update the biggest purchase time
                             newPurchaseDate = Math.max(LastPurchaseTime, cal.getTimeInMillis());
-                            
-                            if (readyToBroadcastPriceChanges()) {
-                                ChannelServer.getInstance().broadcastPriceChanges(
-                                        type,
-                                        CurrencyPair,
-                                        price,
-                                        amount,
-                                        cal.getTimeInMillis(),
-                                        tradeid);
-                            }
                         }
                     }
                 }

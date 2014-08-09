@@ -47,7 +47,7 @@ public class MicrosoftAzureExt {
         try {
             Connection con = DatabaseConnection.getConnection();
 
-            ps = con.prepareStatement("SELECT TOP " + depthSelection + "  \"high\", \"low\", \"open\", \"close\", \"vol\", \"vol_cur\", \"server_time\" FROM BitCoinBot." + tableName + " WHERE server_time > ? AND __createdAt < dateadd(hh, + " + hoursSelection + ", getdate()) ORDER BY server_time ASC;");
+            ps = con.prepareStatement("SELECT TOP " + depthSelection + "  \"high\", \"low\", \"open\", \"close\", \"vol\", \"vol_cur\", \"server_time\", \"buysell_ratio\" FROM BitCoinBot." + tableName + " WHERE server_time > ? AND __createdAt < dateadd(hh, + " + hoursSelection + ", getdate()) ORDER BY server_time ASC;");
             ps.setLong(1, start_server_time);
 
             rs = ps.executeQuery();
@@ -82,6 +82,7 @@ public class MicrosoftAzureExt {
         return -1;
     }
 
+    @Deprecated
     public static boolean btce_Select_Graph_Data_AzureMobileAPI(String ExchangeSite, String currencyPair, int depthSelection, int hoursSelection, long start_server_time, ArrayList<TickerItemData> list_BTCe2) {
         // currencyPair = eg: btc_usd
         String parameters = String.format("nonce=%d&currencypair=%s&depth=%d&hours=%d&start_server_time=%d&exchangesite=%s",

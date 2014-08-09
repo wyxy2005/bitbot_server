@@ -23,6 +23,8 @@ public interface TickerItem {
 
     public double getVol_Cur();
     
+    public float getBuySell_Ratio();
+    
 
     // set
     

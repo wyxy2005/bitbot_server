@@ -6,6 +6,7 @@ import bitbot.external.MicrosoftAzureExt;
 import bitbot.graph.ExponentialMovingAverage;
 import bitbot.graph.ExponentialMovingAverageData;
 import bitbot.handler.channel.ChannelServer;
+import bitbot.server.Constants;
 import bitbot.server.threads.LoggingSaveRunnable;
 import bitbot.server.threads.TimerManager;
 import java.util.ArrayList;
@@ -34,7 +35,7 @@ public class TickerCacheTask {
 
     // Acquiring of data directly from the trades 
     private final List<LoggingSaveRunnable> runnable_exchangeHistory = new ArrayList();
-    
+
     // Constants, large data set
     private static final int InitialArrayListSize = 200000; // 200k as an estimation
 
@@ -81,11 +82,13 @@ public class TickerCacheTask {
                     UpdateTime = 5;
                 } else if (ExchangeCurrencyPair.contains("fybsg") || ExchangeCurrencyPair.contains("fybse")) {
                     history = new TickerHistory_FybSGSE();
-                    UpdateTime = 30; // volume is still too low to make an impact
-                } else if (ExchangeCurrencyPair.contains("itbit")) { // may need more work
+                    UpdateTime = 15; // volume is still too low to make an impact
+                } else if (ExchangeCurrencyPair.contains("itbit")) // may need more work
+                {
                     history = new TickerHistory_ItBit();
                 } else if (ExchangeCurrencyPair.contains("coinbase")) {
                     history = new TickerHistory_Coinbase();
+                    UpdateTime = 15; // Coinbase is just a broker....
                 } else if (ExchangeCurrencyPair.contains("cexio")) {
                     history = new TickerHistory_CexIo();
                 } else if (ExchangeCurrencyPair.contains("campbx")) {
@@ -97,7 +100,8 @@ public class TickerCacheTask {
                     UpdateTime = 15; // volume is still too low to make an impact
                 } else if (ExchangeCurrencyPair.contains("cryptsy")) {
                     history = new TickerHistory_Cryptsy();
-                } else if (ExchangeCurrencyPair.contains("mtgox")) { // goxxed
+                } else if (ExchangeCurrencyPair.contains("mtgox")) // goxxed
+                {
                     history = new TickerHistory_MTGox();
                 }
                 //bitfinex-btc_usd---kraken-xbt_usd---kraken-xbt_eur---cexio-ghs_btc
@@ -171,15 +175,15 @@ public class TickerCacheTask {
                     }
 
                     list_BTCe2.add(
-                                new TickerItem_CandleBar(
-                                        item.getServerTime(),
-                                        (float) item.getClose() == 0 ? item.getOpen() : item.getClose(),
-                                        (float) high,
-                                        (float) low,
-                                        (float) buy, // dummy data
-                                        Volume,
-                                        VolumeCur)
-                        );
+                            new TickerItem_CandleBar(
+                                    item.getServerTime(),
+                                    (float) item.getClose() == 0 ? item.getOpen() : item.getClose(),
+                                    (float) high,
+                                    (float) low,
+                                    (float) buy, // dummy data
+                                    Volume,
+                                    VolumeCur, 0, false)
+                    );
 
                     // reset
                     high = 0;
@@ -231,6 +235,7 @@ public class TickerCacheTask {
          */
         float high = 0, low = Float.MAX_VALUE, open = -1, lastPriceSet = 0;
         double Volume = 0, VolumeCur = 0;
+        float buysell_ratio_Total = 0, buysellratio_sets = 0;
 
         // No need to lock this thread, if we are creating a new ArrayList off existing.
         // Its a copy :)
@@ -244,7 +249,7 @@ public class TickerCacheTask {
 
         while (items.hasNext()) {
             TickerItemData item = items.next();
-            
+
             // Check if last added tick is above the threshold 'intervalMinutes'
             if (LastUsedTime + (intervalMinutes * 60) < item.getServerTime()) {
                 while (LastUsedTime + (intervalMinutes * 60) < item.getServerTime()) {
@@ -277,8 +282,8 @@ public class TickerCacheTask {
                                         (float) low,
                                         (float) open,
                                         Volume,
-                                        VolumeCur)
-                        );
+                                        VolumeCur,
+                                        buysell_ratio_Total / buysellratio_sets, false));
                     }
                     // reset
                     high = 0;
@@ -287,6 +292,8 @@ public class TickerCacheTask {
                     VolumeCur = 0;
                     open = item.getClose() != 0 ? item.getClose() : item.getOpen(); // Next open = current close.
                     lastPriceSet = 0;
+                    buysellratio_sets = 1;
+                    buysell_ratio_Total = 0;
 
                     if (LastUsedTime == 0) {
                         LastUsedTime = item.getServerTime();
@@ -303,6 +310,9 @@ public class TickerCacheTask {
                 Volume += item.getVol();
                 VolumeCur += item.getVol_Cur();
 
+                buysell_ratio_Total += item.getBuySell_Ratio();
+                buysellratio_sets += 1;
+
                 lastPriceSet = item.getOpen();
             }
         }
@@ -317,7 +327,7 @@ public class TickerCacheTask {
                             (float) low,
                             (float) open,
                             Volume,
-                            VolumeCur)
+                            VolumeCur, 0, true)
             );
         }
 
@@ -426,7 +436,8 @@ public class TickerCacheTask {
      * Returns the summary data of all exchange/pair ticker
      *
      *
-     * @return a map containing the TickerItemData, with the key being exchange_currencyPair
+     * @return a map containing the TickerItemData, with the key being
+     * exchange_currencyPair
      * @see TickerItemData
      */
     public Map<String, TickerItemData> getExchangePriceSummaryData() {
@@ -435,8 +446,7 @@ public class TickerCacheTask {
         list_mssql.entrySet().stream().forEach((mapItem) -> {
             mapPriceSummary.put(mapItem.getKey(), mapItem.getValue().get(mapItem.getValue().size() - 1));
         });
-       
-        
+
         return null;
     }
 
@@ -515,6 +525,17 @@ public class TickerCacheTask {
         private long LastCommitTime;
         private TickerHistoryData HistoryData;
 
+        private long lastBroadcastedTime = 0;
+
+        private boolean readyToBroadcastPriceChanges() {
+        final long cTime = System.currentTimeMillis();
+        if (cTime - lastBroadcastedTime > Constants.PriceBetweenServerBroadcastDelay) {
+            lastBroadcastedTime = cTime;
+            return true;
+        }
+        return false;
+    }
+        
         public TickerCacheTask_ExchangeHistory(String ExchangeSite, String CurrencyPair, String ExchangeCurrencyPair, TickerHistory HistoryConnector) {
             this.CurrencyPair = CurrencyPair;
             this.ExchangeSite = ExchangeSite;
@@ -548,6 +569,14 @@ public class TickerCacheTask {
                         HistoryData = data;
                     }
                     HistoryDatabaseCommitEnum commitResult = HistoryData.tryCommitDatabase(LastCommitTime, ExchangeSite, CurrencyPair);
+                            /*    if (readyToBroadcastPriceChanges()) {
+                                    ChannelServer.getInstance().broadcastPriceChanges(
+                                    CurrencyPair,
+                                    HistoryData.getLastPrice(),
+                                    amount,
+                                    date,
+                                    );
+                                }*/
                     switch (commitResult) {
                         case Ok: {
                             // Output
@@ -637,19 +666,19 @@ public class TickerCacheTask {
                         return data;
                     });
                 }
-                
+
                 // Set max server_time
                 if (biggest_server_time_result > LastCachedTime) {
                     LastCachedTime = biggest_server_time_result;
                 }
             }
             System.out.println("[Info] Caching price for " + ExchangeCurrencyPair + " --> " + list_newItems.size() + ", MaxServerTime:" + LastCachedTime);
-            
-            if (list_newItems.size() <= 1 ) { // Are we done caching yet?
+
+            if (list_newItems.size() <= 1) { // Are we done caching yet?
                 isDataAcquisitionFromMSSQL_Completed = true;
                 canAcceptNewInfoFromOtherPeers.add(ExchangeCurrencyPair.hashCode());
                 runnable.getSchedule().cancel(false); // cancel this cache task completely.
-                
+
                 System.out.println("[Info] Stopped caching " + ExchangeCurrencyPair + " data from MSSQL");
             }
         }
@@ -658,24 +687,26 @@ public class TickerCacheTask {
     /**
      * When receiving new graph data from other peers on other server
      *
-     * @param ExchangeCurrencyPair The exchange + currency pair: eg: btce-btc_usd
-     * @param server_time the server time in millis 
+     * @param ExchangeCurrencyPair The exchange + currency pair: eg:
+     * btce-btc_usd
+     * @param server_time the server time in millis
      * @param close the closing price
      * @param high the highest possible price
      * @param low the lowest possible price
      * @param open the opening price
-     * @param volume the volume 
-     * @param volume_cur the volume detonated in the primary currency, eg bitcoin instead of USD
+     * @param volume the volume
+     * @param volume_cur the volume detonated in the primary currency, eg
+     * bitcoin instead of USD
      */
-    public void receivedNewGraphEntry_OtherPeers(String ExchangeCurrencyPair, long server_time, float close, float high, float low, float open, double volume, double volume_cur) {
+    public void receivedNewGraphEntry_OtherPeers(String ExchangeCurrencyPair, long server_time, float close, float high, float low, float open, double volume, double volume_cur, float buysell_ratio) {
         System.out.println(String.format("[Info] New info from other peers %s [%d], Close: %f, High: %f", ExchangeCurrencyPair, server_time, close, high));
-        
-        if (list_mssql.containsKey(ExchangeCurrencyPair) && 
-                canAcceptNewInfoFromOtherPeers.contains(ExchangeCurrencyPair.hashCode())) { // First item, no sync needed
+
+        if (list_mssql.containsKey(ExchangeCurrencyPair)
+                && canAcceptNewInfoFromOtherPeers.contains(ExchangeCurrencyPair.hashCode())) { // First item, no sync needed
             List<TickerItemData> currentList = list_mssql.get(ExchangeCurrencyPair);
 
-            currentList.add(new TickerItemData(server_time, close, high, low, open, volume, volume_cur));
-            
+            currentList.add(new TickerItemData(server_time, close, high, low, open, volume, volume_cur, buysell_ratio));
+
             //System.out.println("[Info] Added New info from other peers");
         }
     }

@@ -343,16 +343,16 @@ public class ChannelServer {
         return wci;
     }
 
-    public void broadcastPriceChanges(final TradeHistoryBuySellEnum type, final String ExchangeCurrencyPair, final float price, final float amount, final long date, final int tradeid) {
-       /* try {
-            wci.broadcastPriceChanges(type, ExchangeCurrencyPair, price, amount, date, tradeid);
+    public void broadcastPriceChanges(String ExchangeCurrencyPair, float price, float amount, long date, double volume, double volume_cur, float buysell_ratio) {
+        try {
+            wci.broadcastPriceChanges(ExchangeCurrencyPair, price, date, volume, volume_cur, buysell_ratio);
         } catch (RemoteException exp) {
             ServerLog.RegisterForLoggingException(ServerLogType.RemoteError, exp);
         } catch (NoClassDefFoundError servError) {
             // world server may have crashed or inactive :(
             System.out.println("[Warning] World Server may be inacctive or crashed. Please restart.");
             servError.printStackTrace();
-        }*/
+        }
     }
 
     private final class ShutDownListener implements Runnable {

@@ -72,6 +72,10 @@ public class TickerHistoryData {
             return HistoryDatabaseCommitEnum.Time_Not_Ready;
         }
         String tableName = String.format("%s_price_%s", TmpExchangeSite, TmpcurrencyPair);
+        
+        // pre-calculate ratio first
+        final float buysell_ratio = (float) (TotalBuyVolume / TotalSellVolume);
+        // end
 
         // Debug
         if (ChannelServer.getInstance().isEnableDebugSessionPrints()) {
@@ -85,7 +89,7 @@ public class TickerHistoryData {
         // Broadcast to peers on other servers
         try {
             final String ExchangeCurrencyPair = String.format("%s-%s", TmpExchangeSite, TmpcurrencyPair);
-            ChannelServer.getInstance().getWorldInterface().broadcastNewGraphEntry(ExchangeCurrencyPair, LastPurchaseTime / 1000l, LastPrice, High, Low, Open, Volume, Volume_Cur);
+            ChannelServer.getInstance().getWorldInterface().broadcastNewGraphEntry(ExchangeCurrencyPair, LastPurchaseTime / 1000l, LastPrice, High, Low, Open, Volume, Volume_Cur, buysell_ratio);
         } catch (RemoteException exp) {
             ServerLog.RegisterForLoggingException(ServerLogType.RemoteError, exp);
             ChannelServer.getInstance().reconnectWorld(exp);
@@ -111,7 +115,7 @@ public class TickerHistoryData {
             ps.setFloat(5, Open);
             ps.setFloat(6, LastPrice);
             ps.setLong(7, (long) (LastPurchaseTime / 1000l));
-            ps.setFloat(8, (float) (TotalBuyVolume / TotalSellVolume)); // ratio
+            ps.setFloat(8, buysell_ratio); // ratio
 
             ps.execute();
         } catch (Exception e) {

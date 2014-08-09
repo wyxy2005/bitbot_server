@@ -1,7 +1,5 @@
 package bitbot.cache.tickers.history;
 
-import bitbot.handler.channel.ChannelServer;
-import bitbot.server.Constants;
 import bitbot.util.HttpClient;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -18,16 +16,6 @@ import org.json.simple.parser.JSONParser;
 public class TickerHistory_Dgex implements TickerHistory {
 
    // private static final TimeZone timeZone = TimeZone.getTimeZone("Etc/GMT+6");
-    private long lastBroadcastedTime = 0;
-
-    private boolean readyToBroadcastPriceChanges() {
-        final long cTime = System.currentTimeMillis();
-        if (cTime - lastBroadcastedTime > Constants.PriceBetweenServerBroadcastDelay) {
-            lastBroadcastedTime = cTime;
-            return true;
-        }
-        return false;
-    }
 
     @Override
     public TickerHistoryData connectAndParseHistoryResult(String ExchangeCurrencyPair, String CurrencyPair, long LastPurchaseTime, int LastTradeId) {
@@ -98,16 +86,6 @@ public class TickerHistory_Dgex implements TickerHistory {
                     if (date > LastPurchaseTime) {
                         //System.out.println(String.format("[Trades history] Added [%s], Price: %f, Sum: %f ", cal.getTime().toString(), price, amount));
                         ReturnData.merge(price, amount, date, tradeid, type);
-                        
-                        if (readyToBroadcastPriceChanges()) {
-                            ChannelServer.getInstance().broadcastPriceChanges(
-                                    type,
-                                    CurrencyPair,
-                                    price,
-                                    amount,
-                                    date,
-                                    tradeid);
-                        }
                     }
                 }
             } catch (Exception parseExp) {
