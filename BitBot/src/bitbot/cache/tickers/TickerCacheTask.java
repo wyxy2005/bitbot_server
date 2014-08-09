@@ -252,26 +252,45 @@ public class TickerCacheTask {
 
             // Check if last added tick is above the threshold 'intervalMinutes'
             if (LastUsedTime + (intervalMinutes * 60) < item.getServerTime()) {
+                boolean isInstanceValueAdded = false;
+
                 while (LastUsedTime + (intervalMinutes * 60) < item.getServerTime()) {
                     if (item.getServerTime() > startTime) {
                         // If there's not enough data available.. 
-                        if (high == 0) {
-                            high = item.getHigh();
-                        }
-                        if (low == Float.MAX_VALUE) {
-                            low = item.getLow();
-                        }
-                        if (open == -1) {
-                            open = item.getOpen();
-                        }
-                        if (LastUsedTime == 0) {
-                            LastUsedTime = item.getServerTime();
-                        }
-                        if (Volume == 0) {
-                            Volume = item.getVol();
-                        }
-                        if (VolumeCur == 0) {
-                            VolumeCur = item.getVol_Cur();
+
+                        if (!isInstanceValueAdded) {
+                            if (high == 0) {
+                                high = item.getHigh();
+                            }
+                            if (low == Float.MAX_VALUE) {
+                                low = item.getLow();
+                            }
+                            if (open == -1) {
+                                open = item.getOpen();
+                            }
+                            if (LastUsedTime == 0) {
+                                LastUsedTime = item.getServerTime();
+                            }
+                            if (Volume == 0) {
+                                Volume = item.getVol();
+                            }
+                            if (VolumeCur == 0) {
+                                VolumeCur = item.getVol_Cur();
+                            }
+                        } else {
+                            // price = close because there are no trading during this time, so its based on the last closing price
+                            if (high == 0) {
+                                high = item.getClose();
+                            }
+                            if (low == Float.MAX_VALUE) {
+                                low = item.getClose();
+                            }
+                            if (open == -1) {
+                                open = item.getClose();
+                            }
+                            if (LastUsedTime == 0) {
+                                LastUsedTime = item.getServerTime();
+                            }
                         }
                         // Add to list
                         list_chart.add(
@@ -284,6 +303,8 @@ public class TickerCacheTask {
                                         Volume,
                                         VolumeCur,
                                         buysell_ratio_Total / buysellratio_sets, false));
+
+                        isInstanceValueAdded = true;
                     }
                     // reset
                     high = 0;
@@ -528,14 +549,14 @@ public class TickerCacheTask {
         private long lastBroadcastedTime = 0;
 
         private boolean readyToBroadcastPriceChanges() {
-        final long cTime = System.currentTimeMillis();
-        if (cTime - lastBroadcastedTime > Constants.PriceBetweenServerBroadcastDelay) {
-            lastBroadcastedTime = cTime;
-            return true;
+            final long cTime = System.currentTimeMillis();
+            if (cTime - lastBroadcastedTime > Constants.PriceBetweenServerBroadcastDelay) {
+                lastBroadcastedTime = cTime;
+                return true;
+            }
+            return false;
         }
-        return false;
-    }
-        
+
         public TickerCacheTask_ExchangeHistory(String ExchangeSite, String CurrencyPair, String ExchangeCurrencyPair, TickerHistory HistoryConnector) {
             this.CurrencyPair = CurrencyPair;
             this.ExchangeSite = ExchangeSite;
@@ -569,14 +590,14 @@ public class TickerCacheTask {
                         HistoryData = data;
                     }
                     HistoryDatabaseCommitEnum commitResult = HistoryData.tryCommitDatabase(LastCommitTime, ExchangeSite, CurrencyPair);
-                            /*    if (readyToBroadcastPriceChanges()) {
-                                    ChannelServer.getInstance().broadcastPriceChanges(
-                                    CurrencyPair,
-                                    HistoryData.getLastPrice(),
-                                    amount,
-                                    date,
-                                    );
-                                }*/
+                    if (readyToBroadcastPriceChanges()) {
+                        /*    ChannelServer.getInstance().broadcastPriceChanges(
+                         CurrencyPair,
+                         HistoryData.getLastPrice(),
+                         amount,
+                         date,
+                         );*/
+                    }
                     switch (commitResult) {
                         case Ok: {
                             // Output
