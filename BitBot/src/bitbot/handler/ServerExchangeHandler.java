@@ -84,6 +84,10 @@ public class ServerExchangeHandler implements Container {
                     r = new ChartTask_Candlestick(request, response, query);
                     break;
                 }
+                case "BackTest": {
+                    r = new BacktestTask(request, response, query);
+                    break;
+                }
                 case "EMA": {
                     r = new ExponentialMovingAverageTask(request, response, query);
                     break;
