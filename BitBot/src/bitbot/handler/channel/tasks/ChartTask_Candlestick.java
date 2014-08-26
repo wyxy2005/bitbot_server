@@ -27,6 +27,7 @@ public class ChartTask_Candlestick implements Runnable {
     private final String currencypair, serverAuthorization;
     private final long nonce;
     private final long ServerTimeFrom;
+    private final int APIVersion;
 
     private boolean isAuthorized = true;
 
@@ -67,6 +68,13 @@ public class ChartTask_Candlestick implements Runnable {
         // start from..
         this.ServerTimeFrom = Long.parseLong(query.get("ServerTimeFrom"));
 
+        // API Version
+        if (query.containsKey("APIVersion")) {
+            APIVersion = Integer.parseInt(query.get("APIVersion"));
+        } else {
+            APIVersion = 1;
+        }
+
         // checks
         this.serverAuthorization = query.get("serverAuthorization").replace(' ', '+');
 
@@ -94,22 +102,42 @@ public class ChartTask_Candlestick implements Runnable {
 
                     List<TickerItem_CandleBar> ret = ChannelServer.getInstance().getTickerTask().getTickerList_Candlestick(currencypair, hours, interval, ExchangeSite, ServerTimeFrom);
 
-                    ret.stream().map((item) -> {
-                        JSONObject obj = new JSONObject();
-                        obj.put("server_time", item.getServerTime());
-                        obj.put("Open", item.getOpen());
-                        obj.put("Close", item.getClose());
-                        obj.put("High", item.getHigh());
-                        obj.put("Low", item.getLow());
-                        obj.put("Volume", item.getVol());
-                        obj.put("VolumeCur", item.getVol_Cur());
-                        obj.put("Ratio", item.getBuySell_Ratio());
-                        return obj;
-                    }).forEach((obj) -> {
-                        array.add(obj);
-                    });
-                    body.println(array.toJSONString());
-
+                    if (APIVersion == 1) {
+                        ret.stream().map((item) -> {
+                            JSONObject obj = new JSONObject();
+                            obj.put("server_time", item.getServerTime());
+                            obj.put("Open", item.getOpen());
+                            obj.put("Close", item.getClose());
+                            obj.put("High", item.getHigh());
+                            obj.put("Low", item.getLow());
+                            obj.put("Volume", item.getVol());
+                            obj.put("VolumeCur", item.getVol_Cur());
+                            obj.put("Ratio", item.getBuySell_Ratio());
+                            return obj;
+                        }).forEach((obj) -> {
+                            array.add(obj);
+                        });
+                        body.println(array.toJSONString());
+                    } 
+                    else if (APIVersion == 2) { // better optimized for data
+                        ret.stream().map((item) -> {
+                            JSONArray obj_array = new JSONArray();
+                            
+                            obj_array.add(item.getServerTime());
+                            obj_array.add(item.getOpen());
+                            obj_array.add(item.getClose());
+                            obj_array.add(item.getHigh());
+                            obj_array.add(item.getLow());
+                            obj_array.add(item.getVol());
+                            obj_array.add(item.getVol_Cur());
+                            obj_array.add(item.getBuySell_Ratio());
+                            
+                            return obj_array;
+                        }).forEach((obj) -> {
+                            array.add(obj);
+                        });
+                        body.println(array.toJSONString());
+                    }
                 } else {
                     response.setStatus(Status.UNAUTHORIZED);
                 }
