@@ -589,7 +589,7 @@ public class TickerCacheTask {
                     } else {
                         HistoryData = data;
                     }
-                    HistoryDatabaseCommitEnum commitResult = HistoryData.tryCommitDatabase(LastCommitTime, ExchangeSite, CurrencyPair);
+                    HistoryDatabaseCommitEnum commitResult = HistoryData.tryCommitDatabase(LastCommitTime, ExchangeSite, CurrencyPair, ExchangeCurrencyPair);
                     if (readyToBroadcastPriceChanges()) {
                         /*    ChannelServer.getInstance().broadcastPriceChanges(
                          CurrencyPair,

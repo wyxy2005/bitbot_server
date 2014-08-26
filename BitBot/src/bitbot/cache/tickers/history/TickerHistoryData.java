@@ -48,7 +48,7 @@ public class TickerHistoryData {
         }
     }
 
-    public HistoryDatabaseCommitEnum tryCommitDatabase(long LastCommitTime, String ExchangeSite, String currencyPair) {
+    public HistoryDatabaseCommitEnum tryCommitDatabase(long LastCommitTime, String ExchangeSite, String currencyPair, String ExchangeCurrencyPair) {
         //System.out.println("Time diff: " + Math.abs(LastCommitTime - LastPurchaseTime) );
 
         if (Math.abs(LastCommitTime - LastPurchaseTime) > 60000) { // per minute
@@ -60,7 +60,20 @@ public class TickerHistoryData {
                 }
                 isDatasetReadyForCommit = true;
                 BacklogCommitTask.RegisterForImmediateLogging(this);
+
+                // Broadcast to peers on other servers
+                broadcastDataToPeers();
+
+                // Debug
+                if (ChannelServer.getInstance().isEnableDebugSessionPrints()) {
+                    Calendar cal = Calendar.getInstance();
+                    cal.setTimeInMillis(LastPurchaseTime);
+                    String outputLog = String.format("[dd:hh:mm = (%d:%d:%d)], Open: %f, Close: %f, High: %f, Low: %f, Volume: %f, VolumeCur: %f, Ratio: %f",
+                            cal.get(Calendar.DAY_OF_MONTH), cal.get(Calendar.HOUR), cal.get(Calendar.MINUTE), getOpen(), getLastPrice(), getHigh(), getLow(), getVolume(), getVolume_Cur(), TotalBuyVolume / TotalSellVolume);
+                    FileoutputUtil.log("//" + ExchangeCurrencyPair + ".txt", outputLog);
+                }
             }
+
             return HistoryDatabaseCommitEnum.Ok;
         }
         return HistoryDatabaseCommitEnum.Time_Not_Ready;
@@ -71,33 +84,7 @@ public class TickerHistoryData {
         if (!isDatasetReadyForCommit || TmpExchangeSite == null || TmpcurrencyPair == null) {
             return HistoryDatabaseCommitEnum.Time_Not_Ready;
         }
-        String tableName = String.format("%s_price_%s", TmpExchangeSite, TmpcurrencyPair);
-        
-        // pre-calculate ratio first
-        final float buysell_ratio = (float) (TotalBuyVolume / TotalSellVolume);
-        // end
-
-        // Debug
-        if (ChannelServer.getInstance().isEnableDebugSessionPrints()) {
-            Calendar cal = Calendar.getInstance();
-            cal.setTimeInMillis(LastPurchaseTime);
-            String outputLog = String.format("[dd:hh:mm = (%d:%d:%d)], Open: %f, Close: %f, High: %f, Low: %f, Volume: %f, VolumeCur: %f, Ratio: %f",
-                    cal.get(Calendar.DAY_OF_MONTH), cal.get(Calendar.HOUR), cal.get(Calendar.MINUTE), getOpen(), getLastPrice(), getHigh(), getLow(), getVolume(), getVolume_Cur(), TotalBuyVolume / TotalSellVolume);
-            FileoutputUtil.log("//" + tableName + ".txt", outputLog);
-        }
-
-        // Broadcast to peers on other servers
-        try {
-            final String ExchangeCurrencyPair = String.format("%s-%s", TmpExchangeSite, TmpcurrencyPair);
-            ChannelServer.getInstance().getWorldInterface().broadcastNewGraphEntry(ExchangeCurrencyPair, LastPurchaseTime / 1000l, LastPrice, High, Low, Open, Volume, Volume_Cur, buysell_ratio);
-        } catch (RemoteException exp) {
-            ServerLog.RegisterForLoggingException(ServerLogType.RemoteError, exp);
-            ChannelServer.getInstance().reconnectWorld(exp);
-        } catch (NoClassDefFoundError servError) {
-            // world server may have crashed or inactive :(
-            System.out.println("[Warning] World Server may be inacctive or crashed. Please restart.");
-            servError.printStackTrace();
-        }
+        final String tableName = String.format("%s_price_%s", TmpExchangeSite, TmpcurrencyPair);
 
         // Commit data to database
         if (!ChannelServer.getInstance().isEnableTickerHistoryDatabaseCommit()) {
@@ -115,7 +102,7 @@ public class TickerHistoryData {
             ps.setFloat(5, Open);
             ps.setFloat(6, LastPrice);
             ps.setLong(7, (long) (LastPurchaseTime / 1000l));
-            ps.setFloat(8, buysell_ratio); // ratio
+            ps.setFloat(8, getBuySell_Ratio()); // ratio
 
             ps.execute();
         } catch (Exception e) {
@@ -211,12 +198,31 @@ public class TickerHistoryData {
         this.TotalBuyVolume = 1;
     }
 
+    public void broadcastDataToPeers() {
+        // Broadcast to peers on other servers
+        try {
+            final String ExchangeCurrencyPair = String.format("%s-%s", TmpExchangeSite, TmpcurrencyPair);
+            ChannelServer.getInstance().getWorldInterface().broadcastNewGraphEntry(ExchangeCurrencyPair, LastPurchaseTime / 1000l, LastPrice, High, Low, Open, Volume, Volume_Cur, getBuySell_Ratio());
+        } catch (RemoteException exp) {
+            ServerLog.RegisterForLoggingException(ServerLogType.RemoteError, exp);
+            ChannelServer.getInstance().reconnectWorld(exp);
+        } catch (NoClassDefFoundError servError) {
+            // world server may have crashed or inactive :(
+            System.out.println("[Warning] World Server may be inacctive or crashed. Please restart.");
+            servError.printStackTrace();
+        }
+    }
+
     public void setLastPurchaseTime(long LastPurchaseTime) {
         this.LastPurchaseTime = LastPurchaseTime;
     }
 
     public long getLastPurchaseTime() {
         return this.LastPurchaseTime;
+    }
+
+    public float getBuySell_Ratio() {
+        return (float) (TotalBuyVolume / TotalSellVolume);
     }
 
     public void setLastPrice(float LastPrice) {
