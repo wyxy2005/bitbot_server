@@ -64,7 +64,7 @@ public class TickerCacheTask {
 
                 runnable_mssql.add(runnable);
             }
-            
+
             // History
             if (ChannelServer.getInstance().isEnableTickerHistory()) {
                 TickerHistory history = null;
@@ -82,11 +82,13 @@ public class TickerCacheTask {
                 } else if (ExchangeCurrencyPair.contains("kraken")) {
                     history = new TickerHistory_Kraken();
                 } else if (ExchangeCurrencyPair.contains("okcoin")) {
-                    history = new TickerHistory_Okcoin();
-                    UpdateTime = 5;
-                } else if (ExchangeCurrencyPair.contains("okcoininternational")) {
-                    history = new TickerHistory_OkcoinInternational();
-                    UpdateTime = 5; 
+                    if (ExchangeCurrencyPair.contains("okcoininternational")) {
+                        history = new TickerHistory_OkcoinInternational();
+                        UpdateTime = 10;
+                    } else {
+                        history = new TickerHistory_Okcoin();
+                        UpdateTime = 5;
+                    }
                 } else if (ExchangeCurrencyPair.contains("fybsg") || ExchangeCurrencyPair.contains("fybse")) {
                     history = new TickerHistory_FybSGSE();
                     UpdateTime = 15; // volume is still too low to make an impact
@@ -727,7 +729,7 @@ public class TickerCacheTask {
                     // override existing file if any.
                     try (FileOutputStream out = new FileOutputStream(f.getPath() + ExchangeCurrencyPair, false)) {
                         final StringBuilder sb = new StringBuilder();
-                        
+
                         for (TickerItemData data : currentList) {
                             sb.append(data.getClose()).append(',');
                             sb.append(data.getOpen()).append(',');
@@ -740,7 +742,7 @@ public class TickerCacheTask {
                             sb.append("\n");
                         }
                         out.write(sb.toString().getBytes());
-                        
+
                     } catch (IOException ess) {
                         ess.printStackTrace();
                     }
