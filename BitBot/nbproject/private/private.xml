@@ -12,9 +12,10 @@
     </editor-bookmarks>
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
         <group>
-            <file>file:/C:/Users/z/Desktop/Server/bitbot_server/BitBot/src/bitbot/util/BitcoinWisdomReader.java</file>
-            <file>file:/C:/Users/z/Desktop/Server/bitbot_server/BitBot/src/bitbot/handler/channel/tasks/ChartTask_Candlestick.java</file>
-            <file>file:/C:/Users/z/Desktop/Server/bitbot_server/BitBot/src/bitbot/cache/tickers/TickerCacheTask.java</file>
+            <file>file:/C:/Users/z/Desktop/Server/bitbot_server/BitBot/src/bitbot/handler/channel/tasks/BacktestTask.java</file>
+            <file>file:/C:/Users/z/Desktop/Server/bitbot_server/BitBot/src/bitbot/server/scripting/MarketBacktestInteraction.java</file>
+            <file>file:/C:/Users/z/Desktop/Server/bitbot_server/BitBot/src/bitbot/server/scripting/AbstractScriptInteraction.java</file>
+            <file>file:/C:/Users/z/Desktop/Server/bitbot_server/BitBot/src/bitbot/server/scripting_support/MarketBacktestScriptManager.java</file>
         </group>
     </open-files>
 </project-private>

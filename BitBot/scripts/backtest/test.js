@@ -3,23 +3,23 @@
  * Java <> JS scripting guide: http://docs.oracle.com/javase/7/docs/technotes/guides/scripting/programmer_guide/
 */
 
-var period_hour = 4;
-var optInTimePeriod = 20;
-var thresholdup = 30;
-var thresholddown = 5;
+var period_minute = 15;
+var optInTimePeriod = 10;
+var thresholdup = 2;
+var thresholddown = 0;
 
 function initialize() {
-}
-
-function handle() {
+    bt.setInitialPrimaryCurrency(0); // BTC
+    bt.setInitialSecondaryCurrency(10000); // USD
 
     var talib = bt.getTaLibCore();
-    var closingArray = bt.getClosingPriceArray(
-        "btc_usd",
-        (Math.max(5, (period_hour * 60) * 20) / 5),
-        period_hour * 60,
-        "btce",
+    var list_candlestick = bt.getTickerList_Candlestick(
+        "btc_cny",
+        (Math.max(5, (period_minute) * 20) / 5),
+        period_minute,
+        "okcoin",
         0); // String ticker, int backtestHours, int intervalMinutes, String ExchangeSite, long ServerTimeFrom
+    var closingArray = bt.getClosingPriceDoubleArray(list_candlestick);
 
     // startIdx, endIdx, inReal, optInTimePeriod, null, null, outReal
     var ret_outBegIdx = bt.createMInteger();
@@ -29,13 +29,24 @@ function handle() {
 
     // java.lang.System.out.println(ret_outReal[0]);
 
-    var linearRegAngleNow = ret_outReal[ret_outReal.length - 1];
-    if (linearRegAngleNow > thresholdup)
-    {
-        buy(closingArray[closingArray.length - 1], 999); // price, amount,
+    bt.prepareForCompute(list_candlestick, ret_outReal); // computeProfit(List<TickerItem_CandleBar> candlestickInput, double[]... value)
+}
+
+// Runs once for each object in prepareForCompute
+function compute(candlestick, ret_outReal) {
+    var InitialPrimaryCurrency = bt.getInitialPrimaryCurrency();
+    var InitialSecondaryCurrency = bt.getInitialSecondaryCurrency();
+
+    var closingPrice = candlestick.getClose();
+    var linearRegAngle = ret_outReal[0]; // Goes according to the order of the unlimited parameter input from prepareForCompute "double[]... value"
+
+    if (linearRegAngle > thresholdup) {
+        bt.appendDebugMessage("[Buy at " + closingPrice + "] BTC/USD. BTC: " + InitialPrimaryCurrency + ", USD: " + InitialSecondaryCurrency)
+        bt.buyAmount(candlestick, closingPrice, 999); // price, amount,
     }
-    else if (linearRegAngleNow < thresholddown) {
-        sell(closingArray[closingArray.length - 1], 999); // price, amount,
+    else if (linearRegAngle < thresholddown) {
+        bt.appendDebugMessage("[Sell at " + closingPrice + "] BTC/USD. BTC: " + InitialPrimaryCurrency + ", USD: " + InitialSecondaryCurrency);
+        bt.sellAmount(candlestick, closingPrice, 999); // price, amount,
     }
-    // sentEmail("<email>", "title", "content"); // via sentgrid
+    // bt.sentEmail("<email>", "title", "content"); // via sentgrid
 }

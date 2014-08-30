@@ -39,3 +39,5 @@ BitBot/DataLog/huobi_price_btc_cny.txt
 *.class
 /BitBot/scripts/nbproject/private/
 *.class
+*.class
+*.class

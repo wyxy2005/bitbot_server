@@ -40,6 +40,8 @@ function check_price() {
 
     fetchItem('btc_cny', 'okcoin');
     fetchItem('ltc_cny', 'okcoin');
+    fetchItem('btc_usd', 'okcoininternational');
+    fetchItem('ltc_usd', 'okcoininternational');
     //fetchItem('btc_cny', 'huobi');
 
     fetchItem('btc_usd', 'coinbase');
@@ -93,7 +95,9 @@ function check_price() {
         } else if (source == 'mtgox') {
             fetchfromSource(currencypair, source, 'http://data.mtgox.com/api/2/BTCUSD/money/ticker');
         } else if (source == 'okcoin') {
-            fetchfromSource(currencypair, source, 'https://www.okcoin.com/api/ticker.do?symbol=' + currencypair);
+            fetchfromSource(currencypair, source, 'https://www.okcoin.cn/api/ticker.do?symbol=' + currencypair);
+        } else if (source == 'okcoininternational') {
+            fetchfromSource(currencypair, source, 'https://www.okcoin.com/api/ticker.do?symbol=' + currencypair + '&ok=1');
         } else if (source == 'coinbase') {
             fetchfromSource(currencypair, source, 'https://coinbase.com/api/v1/prices/buy');
         } else if (source == 'bitstamp') {

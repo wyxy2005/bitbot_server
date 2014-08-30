@@ -9,6 +9,10 @@ import bitbot.handler.channel.ChannelServer;
 import bitbot.server.Constants;
 import bitbot.server.threads.LoggingSaveRunnable;
 import bitbot.server.threads.TimerManager;
+import static bitbot.util.FileoutputUtil.CurrentReadable_Time;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Comparator;
@@ -33,7 +37,7 @@ public class TickerCacheTask {
     private final List<LoggingSaveRunnable> runnable_mssql = new ArrayList();
     private final Map<String, List<TickerItemData>> list_mssql;
 
-    // Acquiring of data directly from the trades 
+    // Acquiring of data directly from the trades
     private final List<LoggingSaveRunnable> runnable_exchangeHistory = new ArrayList();
 
     // Constants, large data set
@@ -60,7 +64,7 @@ public class TickerCacheTask {
 
                 runnable_mssql.add(runnable);
             }
-
+            
             // History
             if (ChannelServer.getInstance().isEnableTickerHistory()) {
                 TickerHistory history = null;
@@ -80,6 +84,9 @@ public class TickerCacheTask {
                 } else if (ExchangeCurrencyPair.contains("okcoin")) {
                     history = new TickerHistory_Okcoin();
                     UpdateTime = 5;
+                } else if (ExchangeCurrencyPair.contains("okcoininternational")) {
+                    history = new TickerHistory_OkcoinInternational();
+                    UpdateTime = 5; 
                 } else if (ExchangeCurrencyPair.contains("fybsg") || ExchangeCurrencyPair.contains("fybse")) {
                     history = new TickerHistory_FybSGSE();
                     UpdateTime = 15; // volume is still too low to make an impact
@@ -256,7 +263,7 @@ public class TickerCacheTask {
 
                 while (LastUsedTime + (intervalMinutes * 60) < item.getServerTime()) {
                     if (item.getServerTime() > startTime) {
-                        // If there's not enough data available.. 
+                        // If there's not enough data available..
 
                         if (!isInstanceValueAdded) {
                             if (high == 0) {
@@ -377,7 +384,7 @@ public class TickerCacheTask {
          if (LastUsedTime + (intervalMinutes * 60) < item.getServerTime()) {
          while (LastUsedTime + (intervalMinutes * 60) < item.getServerTime()) {
          if (item.getServerTime() > cTime) {
-         // If there's not enough data available.. 
+         // If there's not enough data available..
          if (LastUsedTime == 0) {
          LastUsedTime = item.getServerTime();
          }
@@ -701,6 +708,43 @@ public class TickerCacheTask {
                 runnable.getSchedule().cancel(false); // cancel this cache task completely.
 
                 System.out.println("[Info] Stopped caching " + ExchangeCurrencyPair + " data from MSSQL");
+            }
+        }
+
+        private void commitToFileStorage() {
+            if (isDataAcquisitionFromMSSQL_Completed) {
+                final String ExchangeCurrencyPair = String.format("%s-%s", ExchangeSite, CurrencyPair_);
+
+                if (list_mssql.containsKey(ExchangeCurrencyPair)) {
+                    // Create a new ArrayList to prevent threading issue
+                    List<TickerItemData> currentList = new ArrayList(list_mssql.get(ExchangeCurrencyPair));
+
+                    // Start saving to local file
+                    File f = new File(String.format("CachedPrice%s", System.getProperty("file.separator")));
+                    if (!f.exists()) {
+                        f.mkdirs();
+                    }
+                    // override existing file if any.
+                    try (FileOutputStream out = new FileOutputStream(f.getPath() + ExchangeCurrencyPair, false)) {
+                        final StringBuilder sb = new StringBuilder();
+                        
+                        for (TickerItemData data : currentList) {
+                            sb.append(data.getClose()).append(',');
+                            sb.append(data.getOpen()).append(',');
+                            sb.append(data.getHigh()).append(',');
+                            sb.append(data.getLow()).append(',');
+                            sb.append(data.getRealServerTime()).append(',');
+                            sb.append(data.getServerTime()).append(',');
+                            sb.append(data.getVol()).append(',');
+                            sb.append(data.getVol_Cur()).append(',');
+                            sb.append("\n");
+                        }
+                        out.write(sb.toString().getBytes());
+                        
+                    } catch (IOException ess) {
+                        ess.printStackTrace();
+                    }
+                }
             }
         }
     }
