@@ -36,7 +36,7 @@ function check_price() {
     fetchItem('ltc_cny', 'btcchina');
     fetchItem('ltc_btc', 'btcchina');
 
-    fetchItem('btc_usd', 'mtgox');
+    //fetchItem('btc_usd', 'mtgox');
 
     fetchItem('btc_cny', 'okcoin');
     fetchItem('ltc_cny', 'okcoin');
@@ -68,6 +68,15 @@ function check_price() {
     
     fetchItem('nxt_btc', 'dgex');
 
+    fetchItem('btc_usd', 'cryptsy');
+    fetchItem('doge_usd', 'cryptsy');
+    fetchItem('drk_usd', 'cryptsy');
+    fetchItem('ftc_usd', 'cryptsy');
+    fetchItem('ltc_usd', 'cryptsy');
+    fetchItem('rdd_usd', 'cryptsy');
+    fetchItem('nxt_btc', 'cryptsy');
+    fetchItem('ltc_btc', 'cryptsy');
+    
     function fetchItem(currencypair, source) {
         if (source == 'btce') {
             // reduce traffic on a single IP due to BTCe cloudflare
@@ -109,6 +118,9 @@ function check_price() {
             fetchfromSource(currencypair, source, 'https://www.fybse.se/api/SEK/ticker.json');
         } else if (source == 'dgex') {
             fetchfromSource(currencypair, source, 'https://dgex.com/API/nxtprice.txt');
+        } else if (source == 'cryptsy') {
+            var marketid = GetCryptsyMarketId(currencypair);
+            fetchfromSource(currencypair, source, 'http://pubapi.cryptsy.com/api.php?method=singlemarketdata&marketid=' + marketid);
         }
     }
 
@@ -122,7 +134,7 @@ function check_price() {
             timeout: 12000,
             uri: httpsource,
             followRedirect: true,
-            maxRedirects: 10,
+            maxRedirects: 5,
             headers: {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 6.3; Trident/7.0; rv:11.0) like Gecko'
             }
@@ -161,17 +173,37 @@ function check_price() {
                             currentPrice = parseFloat(returnJson['bid']);
                             average24Hrs = 0; // no data available
                             break;
-                        case 'kraken':
+                        case 'kraken': 
+                        {
                             var pairName2 = "X" + currencypair.replace("_", "Z").toUpperCase();
                             var pairresult = returnJson.result[pairName2];
 
                             currentPrice = parseFloat(pairresult.b[0]);
                             average24Hrs = currentPrice / (parseFloat(pairresult.h[0]) + parseFloat(pairresult.l[0]) / 2) * 100 - 100;
                             break;
+                        }
                         case 'dgex':
                             currentPrice = parseFloat(body);
                             average24Hrs = 0; // no data available
                             break;
+                        case 'cryptsy':
+                        {
+                            var success = parseInt(returnJson['success']);
+                            if (success == 1) 
+                            {
+                                var split = currencypair.split("_");
+                                 
+                                var ret = returnJson['return'];
+                                var market = ret['markets'];
+                                var pairMarket = market[split[0].toUpperCase()];
+                                
+                                currentPrice = parseFloat( pairMarket["lasttradeprice"]);
+                                average24Hrs = 0; // not available
+                            } else {
+                                return;
+                            }
+                            break;
+                        }
                         default:
                             currentPrice = parseFloat(returnJson.ticker.buy);
                             average24Hrs = currentPrice / parseFloat(returnJson.ticker.avg) * 100 - 100;
@@ -666,4 +698,28 @@ function check_price() {
             }
         });
     }
+    
+    function GetCryptsyMarketId(pair)
+        {
+            switch (pair)
+            {
+                case "ltc_usd":
+                    return 1;
+                case "btc_usd":
+                    return 2;
+                case "ltc_btc":
+                    return 3;
+                case "ftc_usd":
+                    return 6;
+                case "nxt_btc":
+                    return 159;
+                case "doge_usd":
+                    return 182;
+                case "drk_usd":
+                    return 213;
+                case "rdd_usd":
+                    return 262;
+            }
+            return -1;
+        }
 }
