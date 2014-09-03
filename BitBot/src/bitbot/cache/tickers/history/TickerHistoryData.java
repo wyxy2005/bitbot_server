@@ -5,6 +5,7 @@ import bitbot.server.ServerLog;
 import bitbot.server.ServerLogType;
 import bitbot.util.mssql.DatabaseConnection;
 import bitbot.util.FileoutputUtil;
+import bitbot.util.mssql.DatabaseTablesConstants;
 import java.rmi.RemoteException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -84,8 +85,6 @@ public class TickerHistoryData {
         if (!isDatasetReadyForCommit || TmpExchangeSite == null || TmpcurrencyPair == null) {
             return HistoryDatabaseCommitEnum.Time_Not_Ready;
         }
-        final String tableName = String.format("%s_price_%s", TmpExchangeSite, TmpcurrencyPair);
-
         // Commit data to database
         if (!ChannelServer.getInstance().isEnableTickerHistoryDatabaseCommit()) {
             return HistoryDatabaseCommitEnum.Ok;
@@ -94,7 +93,8 @@ public class TickerHistoryData {
         try {
             Connection con = DatabaseConnection.getConnection();
 
-            ps = con.prepareStatement("INSERT INTO bitcoinbot." + tableName + " (\"high\", \"low\", \"vol\", \"vol_cur\", \"open\", \"close\", \"server_time\", \"buysell_ratio\") VALUES (?,?,?,?,?,?,?,?);");
+            ps = con.prepareStatement(String.format("INSERT INTO bitcoinbot.%s (\"high\", \"low\", \"vol\", \"vol_cur\", \"open\", \"close\", \"server_time\", \"buysell_ratio\") VALUES (?,?,?,?,?,?,?,?);",
+                    DatabaseTablesConstants.getDatabaseTableName(TmpExchangeSite, TmpcurrencyPair)));
             ps.setFloat(1, High);
             ps.setFloat(2, Low);
             ps.setDouble(3, Volume);

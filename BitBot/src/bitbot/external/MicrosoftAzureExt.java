@@ -3,6 +3,7 @@ package bitbot.external;
 import bitbot.server.Constants;
 import bitbot.util.mssql.DatabaseConnection;
 import bitbot.cache.tickers.TickerItemData;
+import bitbot.util.mssql.DatabaseTablesConstants;
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -40,7 +41,7 @@ public class MicrosoftAzureExt {
          return post("https://bitcoinbot.azure-mobile.net/api/btce_select_graph_data?", parameters, "");
          */
 
-        String tableName = ExchangeSite + "_price_" + currencyPair;
+        String tableName = DatabaseTablesConstants.getDatabaseTableName(ExchangeSite, currencyPair);
 
         PreparedStatement ps = null;
         ResultSet rs = null;

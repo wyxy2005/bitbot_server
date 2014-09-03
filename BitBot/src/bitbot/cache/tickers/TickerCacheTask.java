@@ -1,7 +1,24 @@
 package bitbot.cache.tickers;
 
+import bitbot.cache.tickers.history.HTTP.TickerHistory_MTGox;
+import bitbot.cache.tickers.history.HTTP.TickerHistory_Dgex;
+import bitbot.cache.tickers.history.HTTP.TickerHistory_CexIo;
+import bitbot.cache.tickers.history.HTTP.TickerHistory_ItBit;
+import bitbot.cache.tickers.history.HTTP.TickerHistory_Okcoin;
+import bitbot.cache.tickers.history.HTTP.TickerHistory_BTCe;
+import bitbot.cache.tickers.history.HTTP.TickerHistory_OkcoinInternational;
+import bitbot.cache.tickers.history.HTTP.TickerHistory_Kraken;
+import bitbot.cache.tickers.history.HTTP.TickerHistory_CampBX;
+import bitbot.cache.tickers.history.HTTP.TickerHistory_BTCChina;
+import bitbot.cache.tickers.history.HTTP.TickerHistory_Coinbase;
+import bitbot.cache.tickers.history.HTTP.TickerHistory_BitFinex;
+import bitbot.cache.tickers.history.HTTP.TickerHistory_Huobi;
+import bitbot.cache.tickers.history.HTTP.TickerHistory_FybSGSE;
+import bitbot.cache.tickers.history.HTTP.TickerHistory_Bitstamp;
+import bitbot.cache.tickers.history.HTTP.TickerHistory_Cryptsy;
 import bitbot.cache.tickers.history.HistoryDatabaseCommitEnum;
 import bitbot.cache.tickers.history.*;
+import bitbot.cache.tickers.history.HTTP.TickerHistory_796;
 import bitbot.external.MicrosoftAzureExt;
 import bitbot.graph.ExponentialMovingAverage;
 import bitbot.graph.ExponentialMovingAverageData;
@@ -9,7 +26,6 @@ import bitbot.handler.channel.ChannelServer;
 import bitbot.server.Constants;
 import bitbot.server.threads.LoggingSaveRunnable;
 import bitbot.server.threads.TimerManager;
-import static bitbot.util.FileoutputUtil.CurrentReadable_Time;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -73,14 +89,19 @@ public class TickerCacheTask {
                 if (ExchangeCurrencyPair.contains("huobi")) {
                     history = new TickerHistory_Huobi();
                     UpdateTime = 2;
+                    
                 } else if (ExchangeCurrencyPair.contains("btce")) {
                     history = new TickerHistory_BTCe();
+                    
                 } else if (ExchangeCurrencyPair.contains("btcchina")) {
                     history = new TickerHistory_BTCChina();
+                    
                 } else if (ExchangeCurrencyPair.contains("bitstamp")) {
                     history = new TickerHistory_Bitstamp();
+                    
                 } else if (ExchangeCurrencyPair.contains("kraken")) {
                     history = new TickerHistory_Kraken();
+                    
                 } else if (ExchangeCurrencyPair.contains("okcoin")) {
                     if (ExchangeCurrencyPair.contains("okcoininternational")) {
                         history = new TickerHistory_OkcoinInternational();
@@ -89,28 +110,38 @@ public class TickerCacheTask {
                         history = new TickerHistory_Okcoin();
                         UpdateTime = 5;
                     }
+                    
                 } else if (ExchangeCurrencyPair.contains("fybsg") || ExchangeCurrencyPair.contains("fybse")) {
                     history = new TickerHistory_FybSGSE();
                     UpdateTime = 15; // volume is still too low to make an impact
-                } else if (ExchangeCurrencyPair.contains("itbit")) // may need more work
-                {
+                    
+                } else if (ExchangeCurrencyPair.contains("itbit")) { // may need more work
                     history = new TickerHistory_ItBit();
+                
                 } else if (ExchangeCurrencyPair.contains("coinbase")) {
                     history = new TickerHistory_Coinbase();
                     UpdateTime = 15; // Coinbase is just a broker....
+                
                 } else if (ExchangeCurrencyPair.contains("cexio")) {
                     history = new TickerHistory_CexIo();
+                
                 } else if (ExchangeCurrencyPair.contains("campbx")) {
                     history = new TickerHistory_CampBX();
+                
                 } else if (ExchangeCurrencyPair.contains("bitfinex")) {
                     history = new TickerHistory_BitFinex();
+                    
                 } else if (ExchangeCurrencyPair.contains("dgex")) {
                     history = new TickerHistory_Dgex();
                     UpdateTime = 15; // volume is still too low to make an impact
+                    
                 } else if (ExchangeCurrencyPair.contains("cryptsy")) {
                     history = new TickerHistory_Cryptsy();
-                } else if (ExchangeCurrencyPair.contains("mtgox")) // goxxed
-                {
+                    
+                } else if (ExchangeCurrencyPair.contains("796")) {
+                    history = new TickerHistory_796();
+                    
+                } else if (ExchangeCurrencyPair.contains("mtgox")) { // goxxed
                     history = new TickerHistory_MTGox();
                 }
                 //bitfinex-btc_usd---kraken-xbt_usd---kraken-xbt_eur---cexio-ghs_btc
