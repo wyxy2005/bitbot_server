@@ -3,7 +3,6 @@ package bitbot.util;
 import bitbot.util.mssql.DatabaseConnection;
 import java.io.BufferedReader;
 import java.io.FileReader;
-import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -55,8 +54,8 @@ public class BitcoinWisdomReader {
                 LinkedList arrayData = itr.next();
 
                 long time = Long.parseLong(arrayData.get(0).toString());
-                int unk1 = Integer.parseInt(arrayData.get(1).toString()); // might be data order
-                int unk2 = Integer.parseInt(arrayData.get(2).toString());
+                long unk1 = Long.parseLong(arrayData.get(1).toString()); // might be data order
+                long unk2 = Long.parseLong(arrayData.get(2).toString());
 
                 float open = Float.parseFloat(arrayData.get(3).toString());
                 float close = Float.parseFloat(arrayData.get(4).toString());
@@ -68,14 +67,14 @@ public class BitcoinWisdomReader {
                 Calendar cal = Calendar.getInstance();
                 cal.setTimeInMillis(time * 1000);
 
-                if (beforeDate.after(cal)) {
+              //  if (beforeDate.after(cal)) {
                     System.out.println(String.format("[%s] Open: %f, High: %f, Low: %f, Close: %f, VolumeCur: %f, Volume: %f", cal.getTime().toString(), open, high, low, close, vol_cur, vol));
                     
-                    InsertSQLTable("bitstamp_price_btc_usd", high, low, vol, vol_cur, open, close, time); 
-                } else {
+                    InsertSQLTable("mtgox_price_btc_usd", high, low, vol, vol_cur, open, close, time); 
+              //  } else {
                    // System.out.println(time);
-                    break;
-                }
+              //      break;
+              //  }
             }
         } catch (Exception e) {
             e.printStackTrace();
