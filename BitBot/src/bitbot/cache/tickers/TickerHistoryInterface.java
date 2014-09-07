@@ -1,10 +1,10 @@
-package bitbot.cache.tickers.history;
+package bitbot.cache.tickers;
 
 /**
  *
  * @author z
  */
-public interface TickerHistory {
+public interface TickerHistoryInterface {
     
     public TickerHistoryData connectAndParseHistoryResult(String ExchangeCurrencyPair, String CurrencyPair, long LastPurchaseTime, int LastTradeId);
 }

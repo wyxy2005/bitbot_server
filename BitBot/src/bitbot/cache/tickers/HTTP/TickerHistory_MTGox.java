@@ -1,14 +1,14 @@
-package bitbot.cache.tickers.history.HTTP;
+package bitbot.cache.tickers.HTTP;
 
-import bitbot.cache.tickers.history.TickerHistory;
-import bitbot.cache.tickers.history.TickerHistoryData;
+import bitbot.cache.tickers.TickerHistoryInterface;
+import bitbot.cache.tickers.TickerHistoryData;
 import bitbot.server.Constants;
 
 /**
  *
  * @author z
  */
-public class TickerHistory_MTGox implements TickerHistory {
+public class TickerHistory_MTGox implements TickerHistoryInterface {
 
    // private static final TimeZone timeZone = TimeZone.getTimeZone("Etc/GMT+6");
     

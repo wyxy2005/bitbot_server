@@ -1,8 +1,8 @@
-package bitbot.cache.tickers.history.HTTP;
+package bitbot.cache.tickers.HTTP;
 
-import bitbot.cache.tickers.history.TickerHistory;
-import bitbot.cache.tickers.history.TickerHistoryData;
-import bitbot.cache.tickers.history.TradeHistoryBuySellEnum;
+import bitbot.cache.tickers.TickerHistoryInterface;
+import bitbot.cache.tickers.TickerHistoryData;
+import bitbot.cache.tickers.TradeHistoryBuySellEnum;
 import bitbot.util.HttpClient;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -15,7 +15,7 @@ import org.json.simple.parser.JSONParser;
  *
  * @author twili_000
  */
-public class TickerHistory_Bitstamp implements TickerHistory {
+public class TickerHistory_Bitstamp implements TickerHistoryInterface {
 
     @Override
     public TickerHistoryData connectAndParseHistoryResult(String ExchangeCurrencyPair, String CurrencyPair, long LastPurchaseTime, int LastTradeId) {

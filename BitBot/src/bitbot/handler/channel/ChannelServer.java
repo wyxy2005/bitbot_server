@@ -3,8 +3,10 @@ package bitbot.handler.channel;
 import bitbot.handler.ServerExchangeHandler;
 import bitbot.server.Constants;
 import bitbot.cache.news.NewsCacheTask;
+import bitbot.cache.swaps.BacklogCommitTask_Swaps;
+import bitbot.cache.swaps.SwapsCacheTask;
 import bitbot.cache.tickers.TickerCacheTask;
-import bitbot.cache.tickers.history.BacklogCommitTask;
+import bitbot.cache.tickers.BacklogCommitTask_Tickers;
 import bitbot.handler.ServerClientHandler;
 import bitbot.handler.mina.BlackListFilter;
 import bitbot.handler.mina.MapleCodecFactory;
@@ -17,7 +19,6 @@ import bitbot.util.encryption.SHA256;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -59,14 +60,21 @@ public class ChannelServer {
     private InetSocketAddress InetSocketadd;
 
     private TickerCacheTask tickerTask = null;
+    private SwapsCacheTask swapTask = null;
     private NewsCacheTask newsTask = null;
 
     // Properties
     private static Properties props = null;
     private static boolean Props_EnforceCloudFlareNetwork = false,
+            
             Props_EnableTickerHistoryDatabaseCommit = false,
             Props_EnableTickerHistory = false,
             Props_EnableSQLDataAcquisition = false,
+            
+            Props_EnableSwapsDatabaseCommit = false,
+            Props_EnableSwaps = false,
+            Props_EnableSwapsSQLDataAcquisition = false,
+            
             Props_EnableSocketStreaming = false,
             Props_EnableDebugSessionPrints = false;
     private static String Props_SocketIPAddress = "127.0.0.1",
@@ -77,6 +85,7 @@ public class ChannelServer {
 
     // Etc
     private final List<String> CachingCurrencyPair = new ArrayList();
+    private final List<String> CachingSwapCurrencyPair = new ArrayList();
 
     private ChannelServer() {
 
@@ -120,9 +129,15 @@ public class ChannelServer {
                     }
                 }
                 Props_EnforceCloudFlareNetwork = Boolean.parseBoolean(props.getProperty("server.EnforceCloudFlareNetwork"));
+                
                 Props_EnableTickerHistory = Boolean.parseBoolean(props.getProperty("server.EnableTickerHistory"));
                 Props_EnableTickerHistoryDatabaseCommit = Boolean.parseBoolean(props.getProperty("server.EnableTickerHistoryDatabaseCommit"));
                 Props_EnableSQLDataAcquisition = Boolean.parseBoolean(props.getProperty("server.EnableSQLDataAcquisition"));
+                
+                Props_EnableSwapsDatabaseCommit = Boolean.parseBoolean(props.getProperty("server.EnableSwapsDatabaseCommit"));
+                Props_EnableSwaps = Boolean.parseBoolean(props.getProperty("server.EnableSwaps"));
+                Props_EnableSwapsSQLDataAcquisition = Boolean.parseBoolean(props.getProperty("server.EnableSwapsSQLDataAcquisition"));
+                
                 Props_SocketIPAddress = props.getProperty("server.SocketIPAddress");
                 Props_SocketPort = Short.parseShort(props.getProperty("server.SocketPort"));
                 Props_EnableSocketStreaming = Boolean.parseBoolean(props.getProperty("server.EnableSocketStreaming"));
@@ -149,6 +164,7 @@ public class ChannelServer {
 
                 tickerTask = new TickerCacheTask(); // init automatically
                 newsTask = new NewsCacheTask();
+                swapTask = new SwapsCacheTask();
 
                 if (isEnableSocketStreaming()) {
                     InitializeClientServer();
@@ -261,15 +277,13 @@ public class ChannelServer {
             return;
         }
 
+        // Currency pairs
         File f = new File(Constants.CurrencyPairFile);
         if (!f.exists()) {
             try {
                 f.createNewFile();
-                try (FileWriter Writer = new FileWriter(Constants.CurrencyPairFile, false)) {
-                    Writer.append(Constants.DefaultCurrencyPair);
-                }
             } catch (IOException ioe) {
-                System.out.println(ioe.toString() + " Error accessing file system to create Blocked IP list.");
+                System.out.println(ioe.toString() + " Error accessing file system to read currency pairs");
             }
         }
         try (FileReader Reader = new FileReader(Constants.CurrencyPairFile)) {
@@ -286,12 +300,43 @@ public class ChannelServer {
                 }
             }
         } catch (IOException e) {
-            System.out.println(e.toString() + " Error accessing Blocked IP list.");
+            System.out.println(e.toString() + " Error accessing file system to read currency pairs");
         }
+        
+        // Swap currency pairs
+        File f2 = new File(Constants.CurrencyPairSwapsFile);
+        if (!f2.exists()) {
+            try {
+                f2.createNewFile();
+            } catch (IOException ioe) {
+                System.out.println(ioe.toString() + " Error accessing file system to read swap currency pairs");
+            }
+        }
+        try (FileReader Reader = new FileReader(Constants.CurrencyPairSwapsFile)) {
+            try (BufferedReader bufReader = new BufferedReader(Reader)) {
+                String str = bufReader.readLine();
+
+                if (str != null) {
+                    String[] SourcePairs = str.split("---");
+                    CachingSwapCurrencyPair.clear();
+
+                    for (String SourcePair : SourcePairs) {
+                        CachingSwapCurrencyPair.add(SourcePair);
+                    }
+                }
+            }
+        } catch (IOException e) {
+            System.out.println(e.toString() + " Error accessing file system to read swap currency pairs");
+        }
+        
     }
 
     public List<String> getCachingCurrencyPair() {
         return CachingCurrencyPair;
+    }
+    
+    public List<String> getCachingSwapCurrencies() {
+        return CachingSwapCurrencyPair;
     }
 
     public TickerCacheTask getTickerTask() {
@@ -300,6 +345,10 @@ public class ChannelServer {
 
     public NewsCacheTask getNewsTask() {
         return newsTask;
+    }
+    
+    public SwapsCacheTask getSwapsTask() {
+        return swapTask;
     }
 
     public boolean isEnforceCloudFlareNetwork() {
@@ -316,6 +365,18 @@ public class ChannelServer {
 
     public boolean isEnableSQLDataAcquisition() {
         return Props_EnableSQLDataAcquisition;
+    }
+    
+    public boolean isEnableEnableSwapsDatabaseCommit() {
+        return Props_EnableSwapsDatabaseCommit;
+    }
+
+    public boolean isEnableEnableSwaps() {
+        return Props_EnableSwaps;
+    }
+
+    public boolean isEnableSwapsSQLDataAcquisition() {
+        return Props_EnableSwapsSQLDataAcquisition;
     }
 
     public boolean isEnableSocketStreaming() {
@@ -342,9 +403,21 @@ public class ChannelServer {
         return wci;
     }
 
-    public void broadcastPriceChanges(String ExchangeCurrencyPair, float price, float amount, long date, double volume, double volume_cur, float buysell_ratio) {
+    public void broadcastPriceChanges(String ExchangeCurrencyPair, long server_time, float close, float high, float low, float open, double volume, double volume_cur, float buysell_ratio, float last) {
         try {
-            wci.broadcastPriceChanges(ExchangeCurrencyPair, price, date, volume, volume_cur, buysell_ratio);
+            wci.broadcastPriceChanges(ExchangeCurrencyPair, server_time, close, high, low, open, volume, volume_cur, buysell_ratio, last);
+        } catch (RemoteException exp) {
+            ServerLog.RegisterForLoggingException(ServerLogType.RemoteError, exp);
+        } catch (NoClassDefFoundError servError) {
+            // world server may have crashed or inactive :(
+            System.out.println("[Warning] World Server may be inacctive or crashed. Please restart.");
+            servError.printStackTrace();
+        }
+    }
+    
+    public void broadcastSwapData(String ExchangeCurrency, float rate, float spot_price, double amount_lent, int timestamp) {
+        try {
+            wci.broadcastSwapData(ExchangeCurrency, rate, spot_price, amount_lent, timestamp);
         } catch (RemoteException exp) {
             ServerLog.RegisterForLoggingException(ServerLogType.RemoteError, exp);
         } catch (NoClassDefFoundError servError) {
@@ -360,8 +433,11 @@ public class ChannelServer {
         public void run() {
             System.out.println("Shutdown hook task.....");
 
-            BacklogCommitTask.BacklogTimerPersistingTask();
-            BacklogCommitTask.ImmediateBacklogTimerPersistingTask();
+            BacklogCommitTask_Tickers.BacklogTimerPersistingTask();
+            BacklogCommitTask_Tickers.ImmediateBacklogTimerPersistingTask();
+            
+            BacklogCommitTask_Swaps.BacklogTimerPersistingTask();
+            BacklogCommitTask_Swaps.ImmediateBacklogTimerPersistingTask();
         }
     }
 }

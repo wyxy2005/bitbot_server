@@ -1,4 +1,4 @@
-package bitbot.cache.tickers.history;
+package bitbot.cache.tickers;
 
 import bitbot.handler.channel.ChannelServer;
 import bitbot.server.ServerLog;
@@ -60,7 +60,7 @@ public class TickerHistoryData {
                     TmpcurrencyPair = currencyPair;
                 }
                 isDatasetReadyForCommit = true;
-                BacklogCommitTask.RegisterForImmediateLogging(this);
+                BacklogCommitTask_Tickers.RegisterForImmediateLogging(this);
 
                 // Broadcast to peers on other servers
                 broadcastDataToPeers();

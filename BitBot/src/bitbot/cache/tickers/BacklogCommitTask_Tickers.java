@@ -1,4 +1,4 @@
-package bitbot.cache.tickers.history;
+package bitbot.cache.tickers;
 
 import bitbot.server.threads.LoggingSaveRunnable;
 import bitbot.server.threads.MultiThreadExecutor;
@@ -13,7 +13,7 @@ import java.util.concurrent.locks.ReentrantLock;
  *
  * @author z
  */
-public class BacklogCommitTask {
+public class BacklogCommitTask_Tickers {
 
     private static final List<TickerHistoryData> Cache_Backlog = new ArrayList();
     private static final Lock mutex = new ReentrantLock();
@@ -24,7 +24,7 @@ public class BacklogCommitTask {
     private static LoggingSaveRunnable ImmediateSchedule = null; // find something to do with this reference
 
     static {
-        System.out.println("Loading HistoryBacklog :::");
+        System.out.println("Loading BacklogCommitTask_Tickers :::");
 
         schedule = TimerManager.register(new BacklogTimerTask(), 1000 * 60 * 5, Integer.MAX_VALUE); // 5 minutes
 

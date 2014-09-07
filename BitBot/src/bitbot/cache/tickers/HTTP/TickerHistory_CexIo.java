@@ -1,8 +1,8 @@
-package bitbot.cache.tickers.history.HTTP;
+package bitbot.cache.tickers.HTTP;
 
-import bitbot.cache.tickers.history.TickerHistory;
-import bitbot.cache.tickers.history.TickerHistoryData;
-import bitbot.cache.tickers.history.TradeHistoryBuySellEnum;
+import bitbot.cache.tickers.TickerHistoryInterface;
+import bitbot.cache.tickers.TickerHistoryData;
+import bitbot.cache.tickers.TradeHistoryBuySellEnum;
 import bitbot.util.HttpClient;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -12,18 +12,19 @@ import org.json.simple.parser.ContainerFactory;
 import org.json.simple.parser.JSONParser;
 
 /**
+ * https://cex.io/api
  *
- * @author twili_000
+ * @author z
  */
-public class TickerHistory_Kraken implements TickerHistory {
-
+public class TickerHistory_CexIo implements TickerHistoryInterface {
    // private static final TimeZone timeZone = TimeZone.getTimeZone("Etc/GMT+6");
 
     @Override
     public TickerHistoryData connectAndParseHistoryResult(String ExchangeCurrencyPair, String CurrencyPair, long LastPurchaseTime, int LastTradeId) {
-        String Uri = String.format("https://api.kraken.com/0/public/Trades?pair=%s", CurrencyPair.replace("_", "").toUpperCase());
+        String[] CurrencyPairSplit = CurrencyPair.toUpperCase().split("_");
+        String Uri = String.format("https://cex.io/api/trade_history/%s/%s", CurrencyPairSplit[0], CurrencyPairSplit[1]);
         String GetResult = HttpClient.httpsGet(Uri, "");
-        
+
         if (GetResult != null) {
             TickerHistoryData ReturnData = new TickerHistoryData(LastPurchaseTime, LastTradeId, 0, false);
 
@@ -44,23 +45,21 @@ public class TickerHistory_Kraken implements TickerHistory {
                         return new LinkedHashMap();
                     }
                 };
-                String pairName2 = "X" + CurrencyPair.replace("_", "Z").toUpperCase();
+                LinkedList<LinkedHashMap> tradesArray = (LinkedList<LinkedHashMap>) parser.parse(GetResult, containerFactory);
 
-                LinkedHashMap tradesMainObj = (LinkedHashMap) parser.parse(GetResult, containerFactory);
-                LinkedList<LinkedList> resultMainObj = (LinkedList) ((LinkedHashMap) tradesMainObj.get("result")).get(pairName2);
+                for (int i = tradesArray.size() - 1; i >= 0; i--) {
+                    LinkedHashMap obj = tradesArray.get(i);
 
-                for (int i = resultMainObj.size() - 1; i >= 0; i--) {
-                    LinkedList obj = resultMainObj.get(i);
-
-                    float price = Float.parseFloat(obj.get(0).toString());
-                    float amount = Float.parseFloat(obj.get(1).toString());
-                    long date = (long) Double.parseDouble(obj.get(2).toString()) * 1000l;
-                    TradeHistoryBuySellEnum type = obj.get(3).toString().equals("b") ? TradeHistoryBuySellEnum.Buy : TradeHistoryBuySellEnum.Sell; // buy sell
-                    //String unk = obj.get(4).toString(); // Not sure what this is... returns 'l'
+                    int tradeid = Integer.parseInt(obj.get("tid").toString());
+                    long date = Integer.parseInt(obj.get("date").toString()) * 1000l;
+                    float price = Float.parseFloat(obj.get("price").toString());
+                    float amount = Float.parseFloat(obj.get("amount").toString());
+                    TradeHistoryBuySellEnum type = TradeHistoryBuySellEnum.Unknown; // Campbx doesnt' broadcast buy or sell
+                    //String type = obj.get("trade_type").toString(); // bid/ask
 
                     // Initialize last purchase time if neccessary
                     if (LastPurchaseTime == 0) {
-                        LastPurchaseTime = date; // set default param
+                        LastPurchaseTime = date - 1; // set default param
                         /*cal_LastPurchaseTime = Calendar.getInstance();
                          cal_LastPurchaseTime.set(Calendar.YEAR, 1970);
                          cal_LastPurchaseTime.set(Calendar.MONTH, 0);
@@ -78,19 +77,18 @@ public class TickerHistory_Kraken implements TickerHistory {
                      cal.set(Calendar.YEAR, 1970);
                      cal.set(Calendar.MONTH, 0);
                      cal.set(Calendar.DATE, 0);
-                    
+
                      cal.add(Calendar.HOUR, -4); // BTC-e, time 
-                     cal.add(Calendar.SECOND, (int) (date / 1000));
-                    
-                     //System.out.println(String.format("[Trades history] Got [%s], Price: %f, Sum: %f ", cal.getTime().toString(), price, amount));*/
+                     cal.add(Calendar.SECOND, (int) (date / 1000));*/
+                    //System.out.println(String.format("[Trades history] Got  [%s], Price: %f, Sum: %f ", cal.getTime().toString(), price, amount));
                     // Assume things are read in ascending order
                     if (date > LastPurchaseTime) {
-                        //System.out.println(String.format("[Trades history] Added [%s], Price: %f, Sum: %f ", date, price, amount));
-                        ReturnData.merge(price, amount, date, 0, type);
+                        //System.out.println(String.format("[Trades history] Added [%s], Price: %f, Sum: %f ", cal.getTime().toString(), price, amount));
+                        ReturnData.merge(price, amount, date, tradeid, type);
                     }
                 }
             } catch (Exception parseExp) {
-                parseExp.printStackTrace();
+                //parseExp.printStackTrace();
                 //System.out.println(GetResult);
                 //ServerLog.RegisterForLogging(ServerLogType.HistoryCacheTask, parseExp.getMessage());
             }

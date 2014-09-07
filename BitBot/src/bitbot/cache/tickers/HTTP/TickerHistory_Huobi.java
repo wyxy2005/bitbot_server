@@ -1,8 +1,8 @@
-package bitbot.cache.tickers.history.HTTP;
+package bitbot.cache.tickers.HTTP;
 
-import bitbot.cache.tickers.history.TickerHistory;
-import bitbot.cache.tickers.history.TickerHistoryData;
-import bitbot.cache.tickers.history.TradeHistoryBuySellEnum;
+import bitbot.cache.tickers.TickerHistoryInterface;
+import bitbot.cache.tickers.TickerHistoryData;
+import bitbot.cache.tickers.TradeHistoryBuySellEnum;
 import bitbot.util.HttpClient;
 import java.util.Calendar;
 import java.util.TimeZone;
@@ -16,7 +16,7 @@ import org.json.simple.parser.JSONParser;
  *
  * @author z
  */
-public class TickerHistory_Huobi implements TickerHistory {
+public class TickerHistory_Huobi implements TickerHistoryInterface {
 
     private static final TimeZone timeZone = TimeZone.getTimeZone("Etc/GMT-8");
 

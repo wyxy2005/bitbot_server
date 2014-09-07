@@ -1,6 +1,6 @@
 package bitbot.remoteRMI;
 
-import bitbot.cache.tickers.history.TradeHistoryBuySellEnum;
+import bitbot.cache.tickers.TickerItemData;
 import bitbot.remoteRMI.world.WorldChannelCommonOperations;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
@@ -20,4 +20,26 @@ public interface WorldChannelInterface extends Remote, WorldChannelCommonOperati
     public boolean isAvailable() throws RemoteException;
 
     public ChannelWorldInterface getChannelInterface(byte channel) throws RemoteException;
+    
+    /**
+     * Returns the instant spot price of the Exchange, currencypair that's indexed on the 
+     * world server
+     * 
+     * @param  ExchangeCurrencyPair
+     *         A {@code String}
+     * @throws RemoteException
+     * @return price 0 if unavailable.
+     */
+    public float getInstantSpotPrice(String ExchangeCurrencyPair) throws RemoteException;
+    
+    /**
+     * Returns the instant spot price of the Exchange, currencypair that's indexed on the 
+     * world server
+     * 
+     * @param  ExchangeCurrencyPair
+     *         A {@code String}
+     * @throws RemoteException
+     * @return TickerItemData null if unavailable
+     */
+    public TickerItemData getInstantSpotMinuteTicker(String ExchangeCurrencyPair) throws RemoteException;
 }

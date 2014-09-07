@@ -1,6 +1,6 @@
 package bitbot.handler.channel;
 
-import bitbot.cache.tickers.history.TradeHistoryBuySellEnum;
+import bitbot.cache.tickers.TradeHistoryBuySellEnum;
 import bitbot.remoteRMI.ChannelWorldInterface;
 import bitbot.remoteRMI.encryption.XorClientSocketFactory;
 import bitbot.remoteRMI.encryption.XorServerSocketFactory;
@@ -51,12 +51,17 @@ public class ChannelWorldInterfaceImpl extends UnicastRemoteObject implements Ch
     }
 
     @Override
-    public void broadcastPriceChanges(String ExchangeCurrencyPair, float price, long date, double volume, double volume_cur, float buysell_ratio) throws RemoteException {
+    public void broadcastPriceChanges(String ExchangeCurrencyPair, long server_time, float close, float high, float low, float open, double volume, double volume_cur, float buysell_ratio, float last) throws RemoteException {
        //System.out.println(String.format("[Info] Latest info from other peers %s [%d], Price: %f, Amount: %f", ExchangeCurrencyPair, date, price, amount));
     }
 
     @Override
     public void broadcastNewGraphEntry(String ExchangeCurrencyPair, long server_time, float close, float high, float low, float open, double volume, double volume_cur, float buysell_ratio) throws RemoteException {
         server.getTickerTask().receivedNewGraphEntry_OtherPeers(ExchangeCurrencyPair, server_time, close, high, low, open, volume, volume_cur, buysell_ratio);
+    }
+    
+    @Override
+    public void broadcastSwapData(String ExchangeCurrency, float rate, float spot_price, double amount_lent, int timestamp) {
+        server.getSwapsTask().receivedNewGraphEntry_OtherPeers(ExchangeCurrency, rate, spot_price, amount_lent, timestamp);
     }
 }

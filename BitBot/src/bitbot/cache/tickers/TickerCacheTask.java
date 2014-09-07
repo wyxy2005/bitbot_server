@@ -1,24 +1,22 @@
 package bitbot.cache.tickers;
 
-import bitbot.cache.tickers.history.HTTP.TickerHistory_MTGox;
-import bitbot.cache.tickers.history.HTTP.TickerHistory_Dgex;
-import bitbot.cache.tickers.history.HTTP.TickerHistory_CexIo;
-import bitbot.cache.tickers.history.HTTP.TickerHistory_ItBit;
-import bitbot.cache.tickers.history.HTTP.TickerHistory_Okcoin;
-import bitbot.cache.tickers.history.HTTP.TickerHistory_BTCe;
-import bitbot.cache.tickers.history.HTTP.TickerHistory_OkcoinInternational;
-import bitbot.cache.tickers.history.HTTP.TickerHistory_Kraken;
-import bitbot.cache.tickers.history.HTTP.TickerHistory_CampBX;
-import bitbot.cache.tickers.history.HTTP.TickerHistory_BTCChina;
-import bitbot.cache.tickers.history.HTTP.TickerHistory_Coinbase;
-import bitbot.cache.tickers.history.HTTP.TickerHistory_BitFinex;
-import bitbot.cache.tickers.history.HTTP.TickerHistory_Huobi;
-import bitbot.cache.tickers.history.HTTP.TickerHistory_FybSGSE;
-import bitbot.cache.tickers.history.HTTP.TickerHistory_Bitstamp;
-import bitbot.cache.tickers.history.HTTP.TickerHistory_Cryptsy;
-import bitbot.cache.tickers.history.HistoryDatabaseCommitEnum;
-import bitbot.cache.tickers.history.*;
-import bitbot.cache.tickers.history.HTTP.TickerHistory_796;
+import bitbot.cache.tickers.HTTP.TickerHistory_MTGox;
+import bitbot.cache.tickers.HTTP.TickerHistory_Dgex;
+import bitbot.cache.tickers.HTTP.TickerHistory_CexIo;
+import bitbot.cache.tickers.HTTP.TickerHistory_ItBit;
+import bitbot.cache.tickers.HTTP.TickerHistory_Okcoin;
+import bitbot.cache.tickers.HTTP.TickerHistory_BTCe;
+import bitbot.cache.tickers.HTTP.TickerHistory_OkcoinInternational;
+import bitbot.cache.tickers.HTTP.TickerHistory_Kraken;
+import bitbot.cache.tickers.HTTP.TickerHistory_CampBX;
+import bitbot.cache.tickers.HTTP.TickerHistory_BTCChina;
+import bitbot.cache.tickers.HTTP.TickerHistory_Coinbase;
+import bitbot.cache.tickers.HTTP.TickerHistory_BitFinex;
+import bitbot.cache.tickers.HTTP.TickerHistory_Huobi;
+import bitbot.cache.tickers.HTTP.TickerHistory_FybSGSE;
+import bitbot.cache.tickers.HTTP.TickerHistory_Bitstamp;
+import bitbot.cache.tickers.HTTP.TickerHistory_Cryptsy;
+import bitbot.cache.tickers.HTTP.TickerHistory_796;
 import bitbot.external.MicrosoftAzureExt;
 import bitbot.graph.ExponentialMovingAverage;
 import bitbot.graph.ExponentialMovingAverageData;
@@ -56,9 +54,6 @@ public class TickerCacheTask {
     // Acquiring of data directly from the trades
     private final List<LoggingSaveRunnable> runnable_exchangeHistory = new ArrayList();
 
-    // Constants, large data set
-    private static final int InitialArrayListSize = 200000; // 200k as an estimation
-
     public TickerCacheTask() {
         this.list_mssql = new LinkedHashMap<>();
         StartScheduleTask();
@@ -83,7 +78,7 @@ public class TickerCacheTask {
 
             // History
             if (ChannelServer.getInstance().isEnableTickerHistory()) {
-                TickerHistory history = null;
+                TickerHistoryInterface history = null;
                 int UpdateTime = 10;
 
                 if (ExchangeCurrencyPair.contains("huobi")) {
@@ -275,7 +270,7 @@ public class TickerCacheTask {
          */
         float high = 0, low = Float.MAX_VALUE, open = -1, lastPriceSet = 0;
         double Volume = 0, VolumeCur = 0;
-        float buysell_ratio_Total = 0, buysellratio_sets = 0;
+        float buysell_ratio_Total = 0, buysellratio_sets = 1;
 
         // No need to lock this thread, if we are creating a new ArrayList off existing.
         // Its a copy :)
@@ -297,7 +292,6 @@ public class TickerCacheTask {
                 while (LastUsedTime + (intervalMinutes * 60) < item.getServerTime()) {
                     if (item.getServerTime() > startTime) {
                         // If there's not enough data available..
-
                         if (!isInstanceValueAdded) {
                             if (high == 0) {
                                 high = item.getHigh();
@@ -317,6 +311,7 @@ public class TickerCacheTask {
                             if (VolumeCur == 0) {
                                 VolumeCur = item.getVol_Cur();
                             }
+                            // TODO: Fix buy/sell ratio here
                         } else {
                             // price = close because there are no trading during this time, so its based on the last closing price
                             if (high == 0) {
@@ -342,7 +337,7 @@ public class TickerCacheTask {
                                         (float) open,
                                         Volume,
                                         VolumeCur,
-                                        buysell_ratio_Total / buysellratio_sets, false));
+                                        (buysell_ratio_Total == 0 ? 1 : buysell_ratio_Total) / buysellratio_sets, false)); // TODO: Fix buy/sell ratio here, 0 / something > 1 returns null on JSON result
 
                         isInstanceValueAdded = true;
                     }
@@ -372,7 +367,7 @@ public class TickerCacheTask {
                 VolumeCur += item.getVol_Cur();
 
                 buysell_ratio_Total += item.getBuySell_Ratio();
-                buysellratio_sets += 1;
+                buysellratio_sets ++;
 
                 lastPriceSet = item.getOpen();
             }
@@ -580,7 +575,7 @@ public class TickerCacheTask {
         private final String ExchangeSite;
         private final String ExchangeCurrencyPair;
 
-        private final TickerHistory HistoryConnector;
+        private final TickerHistoryInterface HistoryConnector;
 
         private boolean IsLoading;
         private long LastCommitTime;
@@ -597,7 +592,7 @@ public class TickerCacheTask {
             return false;
         }
 
-        public TickerCacheTask_ExchangeHistory(String ExchangeSite, String CurrencyPair, String ExchangeCurrencyPair, TickerHistory HistoryConnector) {
+        public TickerCacheTask_ExchangeHistory(String ExchangeSite, String CurrencyPair, String ExchangeCurrencyPair, TickerHistoryInterface HistoryConnector) {
             this.CurrencyPair = CurrencyPair;
             this.ExchangeSite = ExchangeSite;
             this.ExchangeCurrencyPair = ExchangeCurrencyPair;
@@ -613,10 +608,10 @@ public class TickerCacheTask {
                 return; // don't want to lock this thread anyway, if one is delayed so be it.
             }
             IsLoading = true;
-
+            
+            System.out.println(String.format("[TH] Updating price: %s", ExchangeCurrencyPair));
+ 
             try {
-                System.out.println(String.format("[TH] Updating price: %s", ExchangeCurrencyPair));
-
                 TickerHistoryData data = HistoryConnector.connectAndParseHistoryResult(
                         ExchangeCurrencyPair,
                         CurrencyPair,
@@ -630,14 +625,17 @@ public class TickerCacheTask {
                         HistoryData = data;
                     }
                     HistoryDatabaseCommitEnum commitResult = HistoryData.tryCommitDatabase(LastCommitTime, ExchangeSite, CurrencyPair, ExchangeCurrencyPair);
-                    if (readyToBroadcastPriceChanges()) {
-                        /*    ChannelServer.getInstance().broadcastPriceChanges(
-                         CurrencyPair,
-                         HistoryData.getLastPrice(),
-                         amount,
-                         date,
-                         );*/
+                    
+                    // Broadcast this piece of data to world server 
+                    if (HistoryData.getLastPrice() != 0 && readyToBroadcastPriceChanges()) {
+                        ChannelServer.getInstance().broadcastPriceChanges(
+                                ExchangeCurrencyPair, HistoryData.getLastPurchaseTime(), 
+                                HistoryData.getLastPrice(), // using last price as close since this isnt known yet
+                                HistoryData.getHigh(), HistoryData.getLow(), HistoryData.getOpen(),
+                                HistoryData.getVolume(), HistoryData.getVolume_Cur(), HistoryData.getBuySell_Ratio(), HistoryData.getLastPrice()
+                         );
                     }
+                    
                     switch (commitResult) {
                         case Ok: {
                             // Output
@@ -710,8 +708,8 @@ public class TickerCacheTask {
             }
             System.out.println("Caching currency pair from SQLserv: " + ExchangeSite + ":" + CurrencyPair_);
 
-            List<TickerItemData> list_newItems = new ArrayList(InitialArrayListSize); // create a new array first and replace later
-            long biggest_server_time_result = MicrosoftAzureExt.btce_Select_Graph_Data(ExchangeSite, CurrencyPair_, 999999, 24, LastCachedTime, list_newItems);
+            List<TickerItemData> list_newItems = new ArrayList(); // create a new array first and replace later
+            long biggest_server_time_result = MicrosoftAzureExt.selectGraphData(ExchangeSite, CurrencyPair_, 999999, 24, LastCachedTime, list_newItems);
             if (biggest_server_time_result == -1) {
                 return; // temporary network issue or unavailable
             }

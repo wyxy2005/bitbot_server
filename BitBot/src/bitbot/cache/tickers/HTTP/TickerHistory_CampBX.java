@@ -1,8 +1,8 @@
-package bitbot.cache.tickers.history.HTTP;
+package bitbot.cache.tickers.HTTP;
 
-import bitbot.cache.tickers.history.TickerHistory;
-import bitbot.cache.tickers.history.TickerHistoryData;
-import bitbot.cache.tickers.history.TradeHistoryBuySellEnum;
+import bitbot.cache.tickers.TickerHistoryInterface;
+import bitbot.cache.tickers.TickerHistoryData;
+import bitbot.cache.tickers.TradeHistoryBuySellEnum;
 import bitbot.util.HttpClient;
 import java.util.Calendar;
 import java.util.LinkedHashMap;
@@ -16,18 +16,14 @@ import org.json.simple.parser.JSONParser;
  *
  * @author z
  */
-public class TickerHistory_Coinbase implements TickerHistory {
+public class TickerHistory_CampBX implements TickerHistoryInterface {
     // private static final TimeZone timeZone = TimeZone.getTimeZone("Etc/GMT+6");
-
     @Override
     public TickerHistoryData connectAndParseHistoryResult(String ExchangeCurrencyPair, String CurrencyPair, long LastPurchaseTime, int LastTradeId) {
-        String UriSell = "https://coinbase.com/api/v1/prices/sell";
-        String SellResult = HttpClient.httpsGet(UriSell, "");
+        String Uri = "http://CampBX.com/api/xticker.php";
+        String Result = HttpClient.httpGet(Uri, "");
 
-        String UriBuy = "https://coinbase.com/api/v1/prices/buy";
-        String BuyResult = HttpClient.httpsGet(UriBuy, "");
-
-        if (SellResult != null && BuyResult != null) {
+        if (Result != null) {
             TickerHistoryData ReturnData = new TickerHistoryData(LastPurchaseTime, LastTradeId, 0, true);
 
             JSONParser parser = new JSONParser(); // Init parser
@@ -47,33 +43,23 @@ public class TickerHistory_Coinbase implements TickerHistory {
                         return new LinkedHashMap();
                     }
                 };
-                ContainerFactory containerFactorySell = new ContainerFactory() {
-                    @Override
-                    public List creatArrayContainer() {
-                        return new LinkedList();
-                    }
 
-                    @Override
-                    public Map createObjectContainer() {
-                        return new LinkedHashMap();
-                    }
-                };
+                LinkedHashMap Obj = (LinkedHashMap) parser.parse(Result, containerFactoryBuy);
 
-                LinkedHashMap buyObj = (LinkedHashMap) parser.parse(BuyResult, containerFactoryBuy);
-                LinkedHashMap sellObj = (LinkedHashMap) parser.parse(SellResult, containerFactorySell);
-
-                float buy = Float.parseFloat(((LinkedHashMap) buyObj.get("subtotal")).get("amount").toString());
-                float sell = Float.parseFloat(((LinkedHashMap) sellObj.get("subtotal")).get("amount").toString());
-                final TradeHistoryBuySellEnum type = TradeHistoryBuySellEnum.Unknown; // Coinbase doesn't broadcast buy or sell
+                float lasttrade = Float.parseFloat(Obj.get("Last Trade").toString());
+                float buy = Float.parseFloat(Obj.get("Best Bid").toString());
+                float sell = Float.parseFloat(Obj.get("Best Ask").toString());
+                final TradeHistoryBuySellEnum type = TradeHistoryBuySellEnum.Unknown; // Campbx doesn't broadcast buy or sell
                 
                 final long cTime = System.currentTimeMillis();
 
                 //http://tutorials.jenkov.com/java-date-time/java-util-timezone.html
                 // Timestamp for trades
-                Calendar cal = Calendar.getInstance();
+                Calendar cal = Calendar.getInstance(); // BTCe time
 
                 //System.out.println(String.format("[Trades history] Got [%s], Buy: %f, Sell: %f", cal.getTime().toString(), buy, sell));
                 ReturnData.merge_CoinbaseOrCampBX(buy, sell, cTime, type);
+
             } catch (Exception parseExp) {
                 parseExp.printStackTrace();
                 //System.out.println(GetResult);

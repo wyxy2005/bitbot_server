@@ -1,5 +1,6 @@
 package bitbot.external;
 
+import bitbot.cache.swaps.SwapsItemData;
 import bitbot.server.Constants;
 import bitbot.util.mssql.DatabaseConnection;
 import bitbot.cache.tickers.TickerItemData;
@@ -29,11 +30,11 @@ import org.json.simple.parser.ParseException;
  */
 public class MicrosoftAzureExt {
 
-    /*
+    /*   
     * Returns the graph data selected from the MSSQL Datababase
     * @return long (biggest server time), -1 if error
     */
-    public static long btce_Select_Graph_Data(String ExchangeSite, String currencyPair, int depthSelection, int hoursSelection, long start_server_time, List<TickerItemData> list_BTCe2) {
+    public static long selectGraphData(String ExchangeSite, String currencyPair, int depthSelection, int hoursSelection, long start_server_time, List<TickerItemData> list_BTCe2) {
         // currencyPair = eg: btc_usd
      /*   String parameters = String.format("nonce=%d&currencypair=%s&depth=%d&hours=%d&start_server_time=%d&exchangesite=%s",
          System.currentTimeMillis(), currencyPair, depthSelection, hoursSelection, start_server_time, ExchangeSite);
@@ -83,6 +84,60 @@ public class MicrosoftAzureExt {
         return -1;
     }
 
+    /*   
+    * Returns the swaps data selected from the MSSQL Datababase
+    * @return long (biggest server time), -1 if error
+    */
+    public static long selectSwapsData(String ExchangeSite, String currency, int depthSelection, int hoursSelection, long start_server_time, List<SwapsItemData> list_items) {
+        // currencyPair = eg: btc_usd
+     /*   String parameters = String.format("nonce=%d&currencypair=%s&depth=%d&hours=%d&start_server_time=%d&exchangesite=%s",
+         System.currentTimeMillis(), currencyPair, depthSelection, hoursSelection, start_server_time, ExchangeSite);
+
+         return post("https://bitcoinbot.azure-mobile.net/api/btce_select_graph_data?", parameters, "");
+         */
+
+        String tableName = String.format("%s_swaps_%s", ExchangeSite, currency);
+
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+        try {
+            Connection con = DatabaseConnection.getConnection();
+
+            ps = con.prepareStatement("SELECT TOP " + depthSelection + "  \"rate\", \"amount_lent\", \"timestamp\", \"spot_price\" FROM BitCoinBot." + tableName + " WHERE timestamp > ? AND __createdAt < dateadd(hh, + " + hoursSelection + ", getdate()) ORDER BY timestamp ASC;");
+            ps.setLong(1, start_server_time);
+
+            rs = ps.executeQuery();
+
+            long biggest_ServerTime = -1;
+            if (rs != null) {
+                while (rs.next()) {
+                    SwapsItemData item = new SwapsItemData(rs);
+
+                    list_items.add(item);
+                    
+                    if (item.getTimestamp() > biggest_ServerTime) {
+                        biggest_ServerTime = item.getTimestamp();
+                    }
+                }
+                return biggest_ServerTime;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                if (ps != null) {
+                    ps.close();
+                }
+                if (rs != null) {
+                    rs.close();
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+        return -1;
+    }
+    
     @Deprecated
     public static boolean btce_Select_Graph_Data_AzureMobileAPI(String ExchangeSite, String currencyPair, int depthSelection, int hoursSelection, long start_server_time, ArrayList<TickerItemData> list_BTCe2) {
         // currencyPair = eg: btc_usd

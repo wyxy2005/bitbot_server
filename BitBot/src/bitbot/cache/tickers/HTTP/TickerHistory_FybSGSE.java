@@ -1,10 +1,9 @@
-package bitbot.cache.tickers.history.HTTP;
+package bitbot.cache.tickers.HTTP;
 
-import bitbot.cache.tickers.history.TickerHistory;
-import bitbot.cache.tickers.history.TickerHistoryData;
-import bitbot.cache.tickers.history.TradeHistoryBuySellEnum;
+import bitbot.cache.tickers.TickerHistoryInterface;
+import bitbot.cache.tickers.TickerHistoryData;
+import bitbot.cache.tickers.TradeHistoryBuySellEnum;
 import bitbot.util.HttpClient;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -14,18 +13,23 @@ import org.json.simple.parser.JSONParser;
 
 /**
  *
- * @author twili_000
+ * @author z
  */
-public class TickerHistory_Dgex implements TickerHistory {
-
-   // private static final TimeZone timeZone = TimeZone.getTimeZone("Etc/GMT+6");
+public class TickerHistory_FybSGSE implements TickerHistoryInterface {
 
     @Override
     public TickerHistoryData connectAndParseHistoryResult(String ExchangeCurrencyPair, String CurrencyPair, long LastPurchaseTime, int LastTradeId) {
-        //String Uri = "https://dgex.com/API/trades.json";
-        String Uri = "https://dgex.com/API/trades3h.json";
-        String GetResult = HttpClient.httpsGet(Uri, "");
+        String[] split = CurrencyPair.split("_");
 
+        boolean IsFybSG = CurrencyPair.contains("sgd");
+        String Uri = String.format("https://www.fyb%s.%s/api/%s/trades.json%s",
+                IsFybSG ? "sg" : "se",
+                IsFybSG ? "com" : "se",
+                split[1].toUpperCase(),
+                LastTradeId != 0 ? "?since=" + LastTradeId : "");
+
+        String GetResult = HttpClient.httpsGet(Uri, "");
+        
         if (GetResult != null) {
             TickerHistoryData ReturnData = new TickerHistoryData(LastPurchaseTime, LastTradeId, 0, false);
 
@@ -46,30 +50,29 @@ public class TickerHistory_Dgex implements TickerHistory {
                         return new LinkedHashMap();
                     }
                 };
-                LinkedList<LinkedHashMap> tradesArray = (LinkedList<LinkedHashMap>) ((LinkedHashMap) parser.parse(GetResult, containerFactory)).get("ticker");
+                LinkedList<LinkedHashMap> tradesArray = (LinkedList<LinkedHashMap>) parser.parse(GetResult, containerFactory);
 
-                Iterator<LinkedHashMap> itr = tradesArray.iterator();
-                while (itr.hasNext()) { // Loop through things in proper sequence
-                    LinkedHashMap obj = itr.next();
+                for (int i = tradesArray.size() - 1; i >= 0; i--) {
+                    LinkedHashMap obj = tradesArray.get(i);
 
-                    int tradeid = 0;
-                    long date = Integer.parseInt(obj.get("timestamp").toString()) * 1000l;
-                    float price = Float.parseFloat(obj.get("unitprice").toString());
-                    float amount = Float.parseFloat(obj.get("units").toString());
-                    TradeHistoryBuySellEnum type = TradeHistoryBuySellEnum.Unknown; // dgex doesn't broadcast buy or sell
-                    //String type = obj.get("trade_type").toString(); // bid/ask
+                    int tradeid = Integer.parseInt(obj.get("tid").toString());
+                    long date = Long.parseLong(obj.get("date").toString()) * 1000;
+                    float price = Float.parseFloat(obj.get("price").toString());
+                    float amount = Float.parseFloat(obj.get("amount").toString());
+                    TradeHistoryBuySellEnum type = TradeHistoryBuySellEnum.Unknown;
+                    //String type = // FybSGSE doesn't broadcast buy or sell..
 
                     // Initialize last purchase time if neccessary
                     if (LastPurchaseTime == 0) {
-                        LastPurchaseTime = date - 1; // set default param
-                        /*cal_LastPurchaseTime = Calendar.getInstance();
+                        /*Calendar cal_LastPurchaseTime = Calendar.getInstance();
                          cal_LastPurchaseTime.set(Calendar.YEAR, 1970);
                          cal_LastPurchaseTime.set(Calendar.MONTH, 0);
                          cal_LastPurchaseTime.set(Calendar.DATE, 0);
                         
-                         cal_LastPurchaseTime.add(Calendar.HOUR, -4); // BTC-e, time 
+                         cal_LastPurchaseTime.add(Calendar.HOUR, 8);
                          cal_LastPurchaseTime.add(Calendar.SECOND, (int) (date / 1000));*/
 
+                        LastPurchaseTime = date - 1;//cal_LastPurchaseTime.getTimeInMillis(); // set default param
                         ReturnData.setLastPurchaseTime(LastPurchaseTime);
                     }
 
@@ -79,16 +82,16 @@ public class TickerHistory_Dgex implements TickerHistory {
                      cal.set(Calendar.YEAR, 1970);
                      cal.set(Calendar.MONTH, 0);
                      cal.set(Calendar.DATE, 0);
-                    
-                     cal.add(Calendar.HOUR, -4); // BTC-e, time 
-                     cal.add(Calendar.SECOND, (int) (date / 1000));
-                    
-                     System.out.println(String.format("[Trades history] Got  [%s], Price: %f, Sum: %f ", cal.getTime().toString(), price, amount));
-                     */
+
+                     cal.add(Calendar.SECOND, (int) (date / 1000));*/
+                    //System.out.println(String.format("[Trades history] Got [%s], Price: %f, Sum: %f ", cal.getTime().toString(), price, amount));
                     // Assume things are read in ascending order
                     if (date > LastPurchaseTime) {
                         //System.out.println(String.format("[Trades history] Added [%s], Price: %f, Sum: %f ", cal.getTime().toString(), price, amount));
                         ReturnData.merge(price, amount, date, tradeid, type);
+                    }
+                    if (tradeid > ReturnData.getLastTradeId()) {
+                        ReturnData.setLastTradeId(tradeid);
                     }
                 }
             } catch (Exception parseExp) {

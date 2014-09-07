@@ -7,7 +7,6 @@ import bitbot.remoteRMI.encryption.XorServerSocketFactory;
 import bitbot.remoteRMI.world.WorldRegistry;
 import bitbot.server.ServerLog;
 import bitbot.server.ServerLogType;
-import bitbot.util.encryption.SHA256;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.Calendar;

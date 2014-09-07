@@ -23,6 +23,7 @@ public enum ServerLogType {
     RemoteError             ("server_error.remoteRMIError", ServerLogGroup.Warning),
     UnhandledScript	    ("server_info.UnhandledScript", ServerLogGroup.Info),
     PacketSpam  	    ("server_info.PacketSpam", ServerLogGroup.Info),
+    SwapTask                ("server_info.SwapTask", ServerLogGroup.Warning),
     HistoryCacheTask	    ("server_info.HistoryCacheTask", ServerLogGroup.Warning),
     HistoryCacheTask_DB	    ("server_info.HistoryCacheTask_Database", ServerLogGroup.Warning),
     ;

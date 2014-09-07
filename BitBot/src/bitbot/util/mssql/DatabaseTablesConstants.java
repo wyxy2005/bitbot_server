@@ -29,4 +29,20 @@ public class DatabaseTablesConstants {
         
         return tableName;
     }
+    
+        /**
+     * Returns the database table name 
+     *
+     * @param  TmpExchangeSite
+     *         {@code String} The exchange site
+     * @param Tmpcurrency
+     *         {@code String} The exchange pair
+     * 
+     * @return String the output
+     */
+    public static String getSwapsDatabaseName(String TmpExchangeSite, String Tmpcurrency) {
+        final String tableName = String.format("%s_swaps_%s", TmpExchangeSite, Tmpcurrency);
+        
+        return tableName;
+    }
 }

@@ -102,8 +102,8 @@ public class ServerExchangeHandler implements Container {
     }
 
     public static ServerExchangeHandler Connect() throws Exception {
-        System.out.println("Starting HTTP server at port " + SocketPort);
-        System.out.println("Starting HTTPs server at port " + SocketPort_HTTPs);
+        System.out.println("[Info] Starting HTTP server at port " + SocketPort);
+        System.out.println("[Info] Starting HTTPs server at port " + SocketPort_HTTPs);
 
         ServerExchangeHandler serverhandler = new ServerExchangeHandler();
         serverhandler.container = serverhandler;

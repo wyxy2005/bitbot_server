@@ -1,10 +1,9 @@
-package bitbot.cache.tickers.history.HTTP;
+package bitbot.cache.tickers.HTTP;
 
-import bitbot.cache.tickers.history.TickerHistory;
-import bitbot.cache.tickers.history.TickerHistoryData;
-import bitbot.cache.tickers.history.TradeHistoryBuySellEnum;
+import bitbot.cache.tickers.TickerHistoryInterface;
+import bitbot.cache.tickers.TickerHistoryData;
+import bitbot.cache.tickers.TradeHistoryBuySellEnum;
 import bitbot.util.HttpClient;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -14,15 +13,15 @@ import org.json.simple.parser.JSONParser;
 
 /**
  *
- * @author twili_000
+ * @author z
  */
-public class TickerHistory_BTCe implements TickerHistory {
+public class TickerHistory_BitFinex implements TickerHistoryInterface {
 
-   // private static final TimeZone timeZone = TimeZone.getTimeZone("Etc/GMT+6");
+    // private static final TimeZone timeZone = TimeZone.getTimeZone("Etc/GMT+6");
 
     @Override
     public TickerHistoryData connectAndParseHistoryResult(String ExchangeCurrencyPair, String CurrencyPair, long LastPurchaseTime, int LastTradeId) {
-        String Uri = String.format("https://btc-e.com/api/2/%s/trades", CurrencyPair);
+        String Uri = String.format("https://api.bitfinex.com/v1/trades/%s?timestamp=%d&limit_trades=%d", CurrencyPair.replace("_", ""), (LastPurchaseTime / 1000) + 1, 200);
         String GetResult = HttpClient.httpsGet(Uri, "");
 
         if (GetResult != null) {
@@ -47,15 +46,19 @@ public class TickerHistory_BTCe implements TickerHistory {
                 };
                 LinkedList<LinkedHashMap> tradesArray = (LinkedList<LinkedHashMap>) parser.parse(GetResult, containerFactory);
 
-                Iterator<LinkedHashMap> itr = tradesArray.iterator();
-                while (itr.hasNext()) { // Loop through things in proper sequence
-                    LinkedHashMap obj = itr.next();
-
+                for (LinkedHashMap obj : tradesArray) {
                     int tradeid = Integer.parseInt(obj.get("tid").toString());
-                    long date = Integer.parseInt(obj.get("date").toString()) * 1000l;
+                    long date = Integer.parseInt(obj.get("timestamp").toString()) * 1000l;
                     float price = Float.parseFloat(obj.get("price").toString());
                     float amount = Float.parseFloat(obj.get("amount").toString());
-                    TradeHistoryBuySellEnum type = obj.get("trade_type").toString().equals("bid") ? TradeHistoryBuySellEnum.Buy : TradeHistoryBuySellEnum.Sell; // bid ask
+                    TradeHistoryBuySellEnum type = obj.get("type").toString().equals("buy") ? TradeHistoryBuySellEnum.Buy : TradeHistoryBuySellEnum.Sell; // buy sell
+                    
+                    /*tid (integer)
+                     timestamp (time)
+                     price (price)
+                     amount (decimal)
+                     exchange (string)
+                     type (string) "sell" or "buy" (can be "" if undetermined)*/
 
                     // Initialize last purchase time if neccessary
                     if (LastPurchaseTime == 0) {
@@ -73,15 +76,15 @@ public class TickerHistory_BTCe implements TickerHistory {
 
                     //http://tutorials.jenkov.com/java-date-time/java-util-timezone.html
                     // Timestamp for trades
-                  /*  Calendar cal = Calendar.getInstance(); // BTCe time
+                    /*Calendar cal = Calendar.getInstance(); // BTCe time
                      cal.set(Calendar.YEAR, 1970);
                      cal.set(Calendar.MONTH, 0);
                      cal.set(Calendar.DATE, 0);
                     
                      cal.add(Calendar.HOUR, -4); // BTC-e, time 
-                     cal.add(Calendar.SECOND, (int) (date / 1000));*/
+                     cal.add(Calendar.SECOND, (int) (date / 1000));
                     
-                     //System.out.println(String.format("[Trades history] Got  [%s], Price: %f, Sum: %f ", cal.getTime().toString(), price, amount));
+                     System.out.println(String.format("[Trades history] Got  [%s], Price: %f, Sum: %f ", cal.getTime().toString(), price, amount));*/
                     // Assume things are read in ascending order
                     if (date > LastPurchaseTime) {
                         //System.out.println(String.format("[Trades history] Added [%s], Price: %f, Sum: %f ", cal.getTime().toString(), price, amount));

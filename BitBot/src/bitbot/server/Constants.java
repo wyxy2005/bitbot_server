@@ -16,8 +16,8 @@ public class Constants {
     /// etc
     
     public static final String CurrencyPairFile = "CurrencyPairs.properties";
-    public static final String DefaultCurrencyPair = "btce-btc_usd---btce-ltc_usd---btce-ftc_btc---btce-xpm_btc---btce-trc_btc---btce-nvc_usd---btce-ppc_usd---btce-nmc_usd---btcchina-btc_cny---mtgox-btc_usd";
-    
+    public static final String CurrencyPairSwapsFile = "CurrencyPairs_swaps.properties";
+
     // server-client
     public static final boolean enableUnhandledPacketLogging = false;
     public static final short ServerClientVersion = 1;
