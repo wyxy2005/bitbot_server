@@ -45,8 +45,11 @@ public class Swaps_Bitfinex implements SwapsInterface {
                 for (LinkedHashMap obj : lendingArray) {
                     float rate = Float.parseFloat(obj.get("rate").toString());
                     double amount_lent = Double.parseDouble(obj.get("amount_lent").toString());
-                    int timestamp = Integer.parseInt(obj.get("timestamp").toString());
+                    int lastupdated_timestamp = Integer.parseInt(obj.get("timestamp").toString());
 
+                    // Use our own timestamp since we dont want last updated but the time when this is inserted to db
+                    int timestamp = (int) (System.currentTimeMillis() / 1000); 
+                    
                     float spot_price = 0;
                     switch (Currency) { // only get spot price when its not currency, else default value is 1
                         case "btc":
