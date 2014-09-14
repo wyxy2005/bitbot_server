@@ -7,7 +7,10 @@ import bitbot.server.ServerLog;
 import bitbot.server.ServerLogType;
 import bitbot.server.threads.LoggingSaveRunnable;
 import bitbot.server.threads.TimerManager;
+import bitbot.util.Pair;
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -88,6 +91,97 @@ public class SwapsCacheTask {
             }
         }
     }
+    
+    public List<List<SwapsItemData>> getSwapsData(String Exchange, String currencies, long ServerTimeFrom, final int backtestHours, int intervalMinutes) {
+        final List<List<SwapsItemData>> list_chart = new ArrayList(); // create a new array first
+
+        // currencies seperated by '-'
+        String[] currenciesArray = currencies.split("-");
+        
+        for (String currency : currenciesArray) {
+            final String dataSet = String.format("%s-%s", Exchange, currency);
+            
+             // Is the data set available?
+            if (!list_mssql.containsKey(dataSet)) {
+                return list_chart;
+            }
+            
+            final Iterator<SwapsItemData> items_swapsDataset = list_mssql.get(dataSet).stream().
+                filter((data) -> (data.getTimestamp() > ServerTimeFrom)).
+                sorted(TickerItemComparator).
+                iterator();
+            
+            list_chart.add(new ArrayList<>());
+            
+             getSwapsDataInternal(items_swapsDataset, backtestHours, intervalMinutes, list_chart.get(list_chart.size() - 1));
+        }
+        return list_chart;
+    }
+    
+    private void getSwapsDataInternal(Iterator<SwapsItemData> items_swapsDataset, final int backtestHours, int intervalMinutes, List<SwapsItemData> outputData) {
+        // Timestamp
+        final long cTime = (System.currentTimeMillis() / 1000l);
+        final long startTime = cTime - (60l * 60l * backtestHours);
+        long LastUsedTime = 0;
+        
+        float rate = 0, spot_price = 0;
+        double amount_lent = 0;
+        
+        while (items_swapsDataset.hasNext()) {
+            SwapsItemData item = items_swapsDataset.next();
+
+            // Check if last added tick is above the threshold 'intervalMinutes'
+            if (LastUsedTime + (intervalMinutes * 60) < item.getTimestamp()) {
+                while (LastUsedTime + (intervalMinutes * 60) < item.getTimestamp()) {
+                    
+                    if (item.getTimestamp() > startTime) {
+                        rate = item.getRate();
+                        spot_price = item.getSpotPrice();
+                        amount_lent = item.getAmountLent();
+                            
+                        // Add to list
+                        outputData.add(
+                                new SwapsItemData(
+                                        rate,
+                                        spot_price,
+                                        amount_lent,
+                                        (int) (LastUsedTime + (intervalMinutes * 60))));
+                    }
+                    // Reset
+                    rate = 0;
+                    spot_price = 0;
+                    amount_lent = 0;
+                    
+                    if (LastUsedTime == 0) {
+                        LastUsedTime = item.getTimestamp();
+                    }
+                    LastUsedTime += (intervalMinutes * 60);
+                }
+            }
+        }
+        // For unmatured chart
+        if (rate != 0 && spot_price != 0 && amount_lent != 0) {
+            // Add to list
+            outputData.add(
+                    new SwapsItemData(
+                            rate,
+                            spot_price,
+                            amount_lent,
+                            (int) (LastUsedTime + (intervalMinutes * 60))));
+        }
+    }
+    
+    private static final Comparator<Object> TickerItemComparator = (Object obj1, Object obj2) -> {
+        SwapsItemData data1 = (SwapsItemData) obj1;
+        SwapsItemData data2 = (SwapsItemData) obj2;
+
+        if (data1.getTimestamp() > data2.getTimestamp()) {
+            return 1;
+        } else if (data1.getTimestamp() == data2.getTimestamp()) {
+            return 0;
+        }
+        return -1;
+    };
     
     public void receivedNewGraphEntry_OtherPeers(String ExchangeCurrency, float rate, float spot_price, double amount_lent, int timestamp) {
         System.out.println(String.format("[Info] New swap info from other peers %s [%d], Rate: %f, spot_price: %f, amount_lent: %f, timestamp: %d", ExchangeCurrency, timestamp, rate, spot_price, amount_lent, timestamp));

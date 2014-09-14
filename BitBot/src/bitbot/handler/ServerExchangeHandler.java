@@ -92,6 +92,10 @@ public class ServerExchangeHandler implements Container {
                     r = new ExponentialMovingAverageTask(request, response, query);
                     break;
                 }
+                case "Swaps": {
+                    r = new SwapTask(request, response, query);
+                    break;
+                }
                 default: {
                     r = new EchoClientTask(request, response);
                     break;

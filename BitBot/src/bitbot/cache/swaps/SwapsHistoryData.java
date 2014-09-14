@@ -6,6 +6,7 @@ import bitbot.server.ServerLog;
 import bitbot.server.ServerLogType;
 import bitbot.util.mssql.DatabaseConnection;
 import bitbot.util.mssql.DatabaseTablesConstants;
+import java.rmi.RemoteException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -32,6 +33,9 @@ public class SwapsHistoryData {
     }
     
     public HistoryDatabaseCommitEnum commitDatabase() {
+        // Broadcast to peerd
+        broadcastDataToPeers();
+        
         // Commit data to database
         if (!ChannelServer.getInstance().isEnableEnableSwapsDatabaseCommit()) {
             return HistoryDatabaseCommitEnum.Ok;
@@ -62,6 +66,20 @@ public class SwapsHistoryData {
             }
         }
         return HistoryDatabaseCommitEnum.Ok;
+    }
+    
+    public void broadcastDataToPeers() {
+        // Broadcast to peers on other servers
+        try {
+            ChannelServer.getInstance().getWorldInterface().broadcastSwapData(ExchangeCurrency, rate, spot_price, amount_lent, timestamp);
+        } catch (RemoteException exp) {
+            ServerLog.RegisterForLoggingException(ServerLogType.RemoteError, exp);
+            ChannelServer.getInstance().reconnectWorld(exp);
+        } catch (NoClassDefFoundError servError) {
+            // world server may have crashed or inactive :(
+            System.out.println("[Warning] World Server may be inacctive or crashed. Please restart.");
+            servError.printStackTrace();
+        }
     }
     
     public int getTimestamp() {

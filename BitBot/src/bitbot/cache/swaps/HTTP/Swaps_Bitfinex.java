@@ -1,9 +1,7 @@
 package bitbot.cache.swaps.HTTP;
 
-import bitbot.cache.swaps.BacklogCommitTask_Swaps;
 import bitbot.cache.swaps.SwapsHistoryData;
 import bitbot.cache.swaps.SwapsInterface;
-import bitbot.cache.swaps.SwapsItemData;
 import bitbot.handler.channel.ChannelServer;
 import bitbot.util.HttpClient;
 import java.rmi.RemoteException;
