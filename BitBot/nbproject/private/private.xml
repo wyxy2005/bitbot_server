@@ -14,11 +14,10 @@
         <group>
             <file>file:/C:/Users/z/Desktop/Server/bitbot_server/BitBot/src/bitbot/cache/swaps/SwapsCacheTask.java</file>
             <file>file:/C:/Users/z/Desktop/Server/bitbot_server/BitBot/src/bitbot/handler/channel/tasks/BacktestTask.java</file>
-            <file>file:/C:/Users/z/Desktop/Server/bitbot_server/BitBot/src/bitbot/handler/channel/tasks/SwapTask.java</file>
             <file>file:/C:/Users/z/Desktop/Server/bitbot_server/BitBot/src/bitbot/server/scripting/MarketBacktestInteraction.java</file>
             <file>file:/C:/Users/z/Desktop/Server/bitbot_server/BitBot/src/bitbot/server/scripting/AbstractScriptInteraction.java</file>
+            <file>file:/C:/Users/z/Desktop/Server/bitbot_server/BitBot/src/bitbot/handler/channel/tasks/ChartTask_Candlestick.java</file>
             <file>file:/C:/Users/z/Desktop/Server/bitbot_server/BitBot/src/bitbot/server/scripting_support/MarketBacktestScriptManager.java</file>
-            <file>file:/C:/Users/z/Desktop/Server/bitbot_server/BitBot/src/bitbot/handler/channel/ChannelServer.java</file>
         </group>
     </open-files>
 </project-private>

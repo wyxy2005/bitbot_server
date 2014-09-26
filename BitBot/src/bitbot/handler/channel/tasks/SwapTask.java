@@ -104,33 +104,36 @@ public class SwapTask implements Runnable {
 
                     List<List<SwapsItemData>> ret = ChannelServer.getInstance().getSwapsTask().getSwapsData(Exchange, currencies, ServerTimeFrom, hours, interval);
 
-                    if (APIVersion == 1) {
-                        int arrayPrintCount = 1;
+                    switch (APIVersion) {
+                        case 1: {
+                            int arrayPrintCount = 1;
 
-                        for (List<SwapsItemData> swap : ret) {
-                            JSONArray array1 = new JSONArray();
+                            for (List<SwapsItemData> swap : ret) {
+                                JSONArray array1 = new JSONArray();
 
-                            swap.stream().map((item) -> {
-                                JSONArray obj_array = new JSONArray();
+                                swap.stream().map((item) -> {
+                                    JSONArray obj_array = new JSONArray();
 
-                                obj_array.add(item.getTimestamp());
-                                obj_array.add(item.getSpotPrice());
-                                obj_array.add(item.getRate());
-                                obj_array.add(item.getAmountLent());
+                                    obj_array.add(item.getTimestamp());
+                                    obj_array.add(item.getSpotPrice());
+                                    obj_array.add(item.getRate());
+                                    obj_array.add(item.getAmountLent());
 
-                                return obj_array;
-                            }).forEach((json_array_Obj) -> {
-                                array1.add(json_array_Obj);
-                            });
-                            
-                            // print to jsonObject
-                            obj.put("cur" + arrayPrintCount, array1);
+                                    return obj_array;
+                                }).forEach((json_array_Obj) -> {
+                                    array1.add(json_array_Obj);
+                                });
 
-                            arrayPrintCount++;
+                                // print to jsonObject
+                                obj.put("cur" + arrayPrintCount, array1);
+
+                                arrayPrintCount++;
+                            }
+
+                            // Output
+                            body.println(obj.toJSONString());
+                            break;
                         }
-
-                        // Output
-                        body.println(obj.toJSONString());
                     }
                 } else {
                     response.setStatus(Status.UNAUTHORIZED);
