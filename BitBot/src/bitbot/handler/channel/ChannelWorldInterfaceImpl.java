@@ -1,6 +1,5 @@
 package bitbot.handler.channel;
 
-import bitbot.cache.tickers.TradeHistoryBuySellEnum;
 import bitbot.remoteRMI.ChannelWorldInterface;
 import bitbot.remoteRMI.encryption.XorClientSocketFactory;
 import bitbot.remoteRMI.encryption.XorServerSocketFactory;

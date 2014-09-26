@@ -1,7 +1,7 @@
 package bitbot.cache.swaps;
 
 import bitbot.cache.swaps.HTTP.Swaps_Bitfinex;
-import bitbot.external.MicrosoftAzureExt;
+import bitbot.external.MicrosoftAzureDatabaseExt;
 import bitbot.handler.channel.ChannelServer;
 import bitbot.server.ServerLog;
 import bitbot.server.ServerLogType;
@@ -283,7 +283,7 @@ public class SwapsCacheTask {
             System.out.println("[Info] Caching swaps from SQLserv: " + ExchangeSite + ":" + Currency);
 
             List<SwapsItemData> list_newItems = new ArrayList(); // create a new array first and replace later
-            long biggest_server_time_result = MicrosoftAzureExt.selectSwapsData(ExchangeSite, Currency, 999999, 24, LastCachedTime, list_newItems);
+            long biggest_server_time_result = MicrosoftAzureDatabaseExt.selectSwapsData(ExchangeSite, Currency, 999999, 24, LastCachedTime, list_newItems);
             if (biggest_server_time_result == -1) {
                 return; // temporary network issue or unavailable
             }

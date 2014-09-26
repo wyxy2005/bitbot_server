@@ -17,7 +17,7 @@ import bitbot.cache.tickers.HTTP.TickerHistory_FybSGSE;
 import bitbot.cache.tickers.HTTP.TickerHistory_Bitstamp;
 import bitbot.cache.tickers.HTTP.TickerHistory_Cryptsy;
 import bitbot.cache.tickers.HTTP.TickerHistory_796;
-import bitbot.external.MicrosoftAzureExt;
+import bitbot.external.MicrosoftAzureDatabaseExt;
 import bitbot.graph.ExponentialMovingAverage;
 import bitbot.graph.ExponentialMovingAverageData;
 import bitbot.handler.channel.ChannelServer;
@@ -709,7 +709,7 @@ public class TickerCacheTask {
             System.out.println("Caching currency pair from SQLserv: " + ExchangeSite + ":" + CurrencyPair_);
 
             List<TickerItemData> list_newItems = new ArrayList(); // create a new array first and replace later
-            long biggest_server_time_result = MicrosoftAzureExt.selectGraphData(ExchangeSite, CurrencyPair_, 999999, 24, LastCachedTime, list_newItems);
+            long biggest_server_time_result = MicrosoftAzureDatabaseExt.selectGraphData(ExchangeSite, CurrencyPair_, 999999, 24, LastCachedTime, list_newItems);
             if (biggest_server_time_result == -1) {
                 return; // temporary network issue or unavailable
             }

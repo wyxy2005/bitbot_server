@@ -1,6 +1,6 @@
 package bitbot.handler.channel;
 
-import bitbot.handler.ServerExchangeHandler;
+import bitbot.handler.ServerHTTPExchangeHandler;
 import bitbot.server.Constants;
 import bitbot.cache.news.NewsCacheTask;
 import bitbot.cache.swaps.BacklogCommitTask_Swaps;
@@ -53,7 +53,7 @@ public class ChannelServer {
             finishedShutdown = false,
             isReconnectState = false;
 
-    private ServerExchangeHandler serverExchangeHandler = null;
+    private ServerHTTPExchangeHandler serverExchangeHandler = null;
 
     private ServerClientHandler serverClientHandler = null;
     private SocketAcceptor acceptor;
@@ -158,7 +158,7 @@ public class ChannelServer {
                 // End
                 System.out.println("[Info] Loading tasks..");
 
-                serverExchangeHandler = ServerExchangeHandler.Connect();
+                serverExchangeHandler = ServerHTTPExchangeHandler.Connect();
 
                 LoadCurrencyPairTables(false);
 
