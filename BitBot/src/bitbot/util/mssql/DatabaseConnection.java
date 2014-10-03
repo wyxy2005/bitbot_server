@@ -27,11 +27,11 @@ public class DatabaseConnection {
     private static final Map<Long, ConWrapper> connections = new HashMap();
 
     static {
-        String encrypted = "amRiYzpzcWxzZXJ2ZXI6Ly9mam95bnA0bG51LmRhdGFiYXNlLndpbmRvd3MubmV0OjE0MzM7ZGF0YWJhc2U9Qml0Q29pbkFUcHFBQ1hBdTtlbmNyeXB0PXRydWU7aG9zdE5hbWVJbkNlcnRpZmljYXRlPSouZGF0YWJhc2Uud2luZG93cy5uZXQ7bG9naW5UaW1lb3V0PTMwMDs=";
+        String encrypted = "amRiYzpzcWxzZXJ2ZXI6Ly9mam95bnA0bG51LmRhdGFiYXNlLndpbmRvd3MubmV0OjE0MzM7ZGF0YWJhc2U9Qml0Q29pbkFUcHFBQ1hBdTtlbmNyeXB0PXRydWU7aG9zdE5hbWVJbkNlcnRpZmljYXRlPSouZGF0YWJhc2Uud2luZG93cy5uZXQ7bG9naW5UaW1lb3V0PTMwMDtzb2NrZXRUaW1lb3V0PTYwOw==";
         String encrypted_u = "c2ZfMzRtZG9sc3NhZDk0NW0=";
         String encrypted_p = "MzEyZGZkNGY1OjpAJGRnZ2dmZzQ1NDU1NDY=";
         
-        //System.out.println(Base64.encodeBytes("jdbc:sqlserver://fjoynp4lnu.database.windows.net:1433;database=BitCoinATpqACXAu;encrypt=true;hostNameInCertificate=*.database.windows.net;loginTimeout=30;".getBytes()));
+        //System.out.println(Base64.encodeBytes("jdbc:sqlserver://fjoynp4lnu.database.windows.net:1433;database=BitCoinATpqACXAu;encrypt=true;hostNameInCertificate=*.database.windows.net;loginTimeout=300;socketTimeout=60;".getBytes()));
 
         //DecryptedDatabaseStrings = "jdbc:jtds:sqlserver://fjoynp4lnu.database.windows.net:1433;DatabaseName=BitCoinATpqACXAu;useNTLMv2=true;useJCIFS=true;tcpNoDelay=true;instance=SQLEXPRESS;ssl=require";
             //DecryptedDatabaseStrings = "jdbc:sqlserver://fjoynp4lnu.database.windows.net:1433;database=BitCoinATpqACXAu;encrypt=true;hostNameInCertificate=*.database.windows.net;loginTimeout=300;";
