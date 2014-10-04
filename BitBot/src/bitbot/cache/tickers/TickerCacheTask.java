@@ -629,7 +629,8 @@ public class TickerCacheTask {
                     // Broadcast this piece of data to world server 
                     if (HistoryData.getLastPrice() != 0 && readyToBroadcastPriceChanges()) {
                         ChannelServer.getInstance().broadcastPriceChanges(
-                                ExchangeCurrencyPair, HistoryData.getLastPurchaseTime(), 
+                                ExchangeCurrencyPair, 
+                                HistoryData.getLastPurchaseTime() / 1000l, 
                                 HistoryData.getLastPrice(), // using last price as close since this isnt known yet
                                 HistoryData.getHigh(), HistoryData.getLow(), HistoryData.getOpen(),
                                 HistoryData.getVolume(), HistoryData.getVolume_Cur(), HistoryData.getBuySell_Ratio(), HistoryData.getLastPrice()
