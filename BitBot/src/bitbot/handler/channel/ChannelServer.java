@@ -8,8 +8,7 @@ import bitbot.cache.swaps.SwapsCacheTask;
 import bitbot.cache.tickers.TickerCacheTask;
 import bitbot.cache.tickers.BacklogCommitTask_Tickers;
 import bitbot.handler.ServerClientHandler;
-import bitbot.handler.mina.BlackListFilter;
-import bitbot.handler.mina.MapleCodecFactory;
+import bitbot.handler.ServerSocketExchangeHandler;
 import bitbot.remoteRMI.ChannelWorldInterface;
 import bitbot.remoteRMI.WorldChannelInterface;
 import bitbot.remoteRMI.world.WorldRegistry;
@@ -20,7 +19,6 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.rmi.RMISecurityManager;
 import java.rmi.RemoteException;
@@ -30,12 +28,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 import javax.rmi.ssl.SslRMIClientSocketFactory;
-import org.apache.mina.core.buffer.IoBuffer;
-import org.apache.mina.core.buffer.SimpleBufferAllocator;
-import org.apache.mina.core.session.IdleStatus;
-import org.apache.mina.filter.codec.ProtocolCodecFilter;
 import org.apache.mina.transport.socket.SocketAcceptor;
-import org.apache.mina.transport.socket.nio.NioSocketAcceptor;
 
 /**
  *
@@ -55,13 +48,14 @@ public class ChannelServer {
 
     private ServerHTTPExchangeHandler serverExchangeHandler = null;
 
-    private ServerClientHandler serverClientHandler = null;
     private SocketAcceptor acceptor;
     private InetSocketAddress InetSocketadd;
 
     private TickerCacheTask tickerTask = null;
     private SwapsCacheTask swapTask = null;
     private NewsCacheTask newsTask = null;
+    
+    private ServerSocketExchangeHandler serverSocketExchangeHandler = null;
 
     // Properties
     private static Properties props = null;
@@ -79,6 +73,7 @@ public class ChannelServer {
             Props_EnableDebugSessionPrints = false;
     private static String Props_SocketIPAddress = "127.0.0.1",
             Props_WorldIPAddress = "127.0.0.1",
+            Props_SelfIPAddress = "127.0.0.1",
             Props_WorldRMIHash = "";
     private static short Props_SocketPort = 8082,
             Props_WorldRMIPort = 5454;
@@ -139,6 +134,7 @@ public class ChannelServer {
                 Props_EnableSwapsSQLDataAcquisition = Boolean.parseBoolean(props.getProperty("server.EnableSwapsSQLDataAcquisition"));
                 
                 Props_SocketIPAddress = props.getProperty("server.SocketIPAddress");
+                Props_SelfIPAddress = props.getProperty("server.SelfIPAddress");
                 Props_SocketPort = Short.parseShort(props.getProperty("server.SocketPort"));
                 Props_EnableSocketStreaming = Boolean.parseBoolean(props.getProperty("server.EnableSocketStreaming"));
                 Props_EnableDebugSessionPrints = Boolean.parseBoolean(props.getProperty("server.EnableDebugSessionPrints"));
@@ -157,7 +153,6 @@ public class ChannelServer {
 
                 // End
                 System.out.println("[Info] Loading tasks..");
-
                 serverExchangeHandler = ServerHTTPExchangeHandler.Connect();
 
                 LoadCurrencyPairTables(false);
@@ -165,9 +160,10 @@ public class ChannelServer {
                 tickerTask = new TickerCacheTask(); // init automatically
                 newsTask = new NewsCacheTask();
                 swapTask = new SwapsCacheTask();
-
+                
                 if (isEnableSocketStreaming()) {
-                    InitializeClientServer();
+                    System.out.println("[Info] Loading sockets..");
+                    serverSocketExchangeHandler = ServerSocketExchangeHandler.connect(Props_SelfIPAddress);
                 }
 
                 // Shutdown hooks
@@ -247,31 +243,6 @@ public class ChannelServer {
         }
     }
 
-    public void InitializeClientServer() {
-        if (acceptor == null) {
-            IoBuffer.setUseDirectBuffer(false);
-            IoBuffer.setAllocator(new SimpleBufferAllocator());
-
-            acceptor = new NioSocketAcceptor(Runtime.getRuntime().availableProcessors() * 4);
-            acceptor.setReuseAddress(true);
-            acceptor.getSessionConfig().setIdleTime(IdleStatus.BOTH_IDLE, 10);
-            acceptor.getSessionConfig().setTcpNoDelay(true);
-            acceptor.getFilterChain().addFirst("blacklist", new BlackListFilter());
-            acceptor.getFilterChain().addLast("codec", new ProtocolCodecFilter(new MapleCodecFactory())); // decrypt last
-
-            try {
-                serverClientHandler = new ServerClientHandler();
-                InetSocketadd = new InetSocketAddress(InetAddress.getByName(Props_SocketIPAddress), Props_SocketPort);
-                acceptor.setHandler(serverClientHandler);
-                acceptor.bind(InetSocketadd);
-
-                System.out.println(String.format("[Socket] Listening on %s:%d", Props_SocketIPAddress, Props_SocketPort));
-            } catch (IOException e) {
-                System.out.println(String.format("[Socket] Failed to listen on %s%d", Props_SocketIPAddress, Props_SocketPort));
-            }
-        }
-    }
-
     public void LoadCurrencyPairTables(boolean reload) {
         if (!CachingCurrencyPair.isEmpty() && !reload) {
             return;
@@ -337,6 +308,10 @@ public class ChannelServer {
     
     public List<String> getCachingSwapCurrencies() {
         return CachingSwapCurrencyPair;
+    }
+    
+    public ServerSocketExchangeHandler getServerSocketExchangeHandler() {
+        return serverSocketExchangeHandler;
     }
 
     public TickerCacheTask getTickerTask() {

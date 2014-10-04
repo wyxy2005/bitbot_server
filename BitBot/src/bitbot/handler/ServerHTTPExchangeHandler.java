@@ -2,6 +2,7 @@ package bitbot.handler;
 
 import bitbot.handler.channel.ChannelServer;
 import bitbot.handler.channel.tasks.*;
+import bitbot.server.Constants;
 import bitbot.server.threads.MultiThreadExecutor;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -28,8 +29,6 @@ import org.simpleframework.transport.connect.SocketConnection;
  */
 public class ServerHTTPExchangeHandler implements Container {
 
-    private static final int SocketPort = 8080;
-    private static final int SocketPort_HTTPs = 8081;
     private Server server = null;
     private Container container = null;
 
@@ -106,9 +105,8 @@ public class ServerHTTPExchangeHandler implements Container {
     }
 
     public static ServerHTTPExchangeHandler Connect() throws Exception {
-        System.out.println("[Info] Starting HTTP server at port " + SocketPort);
-        System.out.println("[Info] Starting HTTPs server at port " + SocketPort_HTTPs);
-
+        System.out.println("[Info] Establishing server HTTP/HTTPS container");
+        
         ServerHTTPExchangeHandler serverhandler = new ServerHTTPExchangeHandler();
         serverhandler.container = serverhandler;
         serverhandler.server = new ContainerServer(serverhandler.container);
@@ -118,11 +116,15 @@ public class ServerHTTPExchangeHandler implements Container {
         Connection connection = new SocketConnection(server);
         
         // Init HTTP 
-        SocketAddress address = new InetSocketAddress(SocketPort);
+        System.out.println("[Info] Starting HTTP server at port " + Constants.SocketPort);
+        
+        SocketAddress address = new InetSocketAddress(Constants.SocketPort);
         connection.connect(address);
         
         // Init HTTPs
-        SocketAddress address_secure = new InetSocketAddress(SocketPort_HTTPs);
+        System.out.println("[Info] Starting HTTPs server at port " + Constants.SocketPort_HTTPs);
+        
+        SocketAddress address_secure = new InetSocketAddress(Constants.SocketPort_HTTPs);
         connection.connect(address_secure, GenerateKeyStore());
         
         return serverhandler;

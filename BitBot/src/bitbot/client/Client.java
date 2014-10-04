@@ -36,6 +36,12 @@ public class Client implements Serializable {
     public long LastCapturedTimeMillis_500MSThreshold;
     public int PacketSpamCountWithinHalfSecond = 0;
 
+    public Client(IoSession session) {
+        this.session = session;
+        this.LastCapturedTimeMillis = System.currentTimeMillis();
+        this.LastCapturedTimeMillis_500MSThreshold = this.LastCapturedTimeMillis;
+    }
+    
     public Client(AESOFB send, AESOFB receive, IoSession session) {
         this.send = send;
         this.receive = receive;
@@ -97,19 +103,15 @@ public class Client implements Serializable {
         pongcount++;
         session.write(LoginPacket.getPing()); // sending Ping request
 
-        idleTask = TimerManager.schedule(new Runnable() {
-
-            @Override
-            public void run() {
-                try {
-                    if (lastPong - then < 0) {
-                        if (session.isConnected()) {
-                            closeSession();
-                        }
+        idleTask = TimerManager.schedule(() -> {
+            try {
+                if (lastPong - then < 0) {
+                    if (session.isConnected()) {
+                        closeSession();
                     }
-                } catch (NullPointerException e) {
-                    // client already gone
                 }
+            } catch (NullPointerException e) {
+                // client already gone
             }
         }, 15000); // note: idletime gets added to this too
     }
