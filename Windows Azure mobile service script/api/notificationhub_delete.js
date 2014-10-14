@@ -23,17 +23,15 @@ exports.post = function(request, response) {
      }
      
     if (verifiedCurrencyPair) {
-         var tableName = exchangesite + '_' + currencypair;
-         
          var tables = request.service.tables;
          var pushTable = tables.getTable('push_price');
 
-        updateDatabase(tableName, uniqueid, exchangesite, currencypair, platform);
+        updateDatabase(uniqueid, exchangesite, currencypair, platform);
     }
     response.send(statusCodes.OK, { message : 'ok' });
    
    
-   function updateDatabase(tableName, uniqueid, exchangesite, currencypair, platform) {
+   function updateDatabase(uniqueid, exchangesite, currencypair, platform) {
         var mssql = request.service.mssql;
         var query = "DELETE TOP (1) FROM push_price WHERE uniqueid = ? and exchange_pair = ? AND operating_system = ?";
 
