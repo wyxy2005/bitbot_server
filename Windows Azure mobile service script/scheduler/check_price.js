@@ -1,7 +1,7 @@
 function check_price() {
     var SendGrid = require('sendgrid').SendGrid;
     var util = require('util');
-    
+
     var date = new Date();
     var dateStr = date.toISOString().replace(/T/, ' ').replace(/\..+/, '');
     //console.log("Scheduled price check task: " + dateStr);
@@ -43,6 +43,7 @@ function check_price() {
     fetchItem('btc_usd', 'okcoininternational');
     fetchItem('ltc_usd', 'okcoininternational');
     //fetchItem('btc_cny', 'huobi');
+    //fetchItem('ltc_cny', 'huobi');
 
     fetchItem('btc_usd', 'coinbase');
 
@@ -67,7 +68,7 @@ function check_price() {
 
     fetchItem('btc_sgd', 'fybsg');
     fetchItem('btc_sek', 'fybse');
-    
+
     fetchItem('nxt_btc', 'dgex');
 
     fetchItem('btc_usd', 'cryptsy');
@@ -78,7 +79,10 @@ function check_price() {
     fetchItem('rdd_usd', 'cryptsy');
     fetchItem('nxt_btc', 'cryptsy');
     fetchItem('ltc_btc', 'cryptsy');
-    
+
+    fetchItem('btc Futures_usd', '_796');
+    fetchItem('ltc Futures_usd', '_796');
+
     function fetchItem(currencypair, source) {
         if (source == 'btce') {
             // reduce traffic on a single IP due to BTCe cloudflare
@@ -88,10 +92,10 @@ function check_price() {
                 fetchfromSource(currencypair, source, 'http://maaapersonalppace.azurewebsites.net/httprelay.php?url=' + escape('https://btc-e.com/api/2/' + currencypair + '/ticker'));
             }
         } else if (source == 'btcchina') {
-            fetchfromSource(currencypair, source, 
-            currencypair == 'ltc_cny' ? 'https://data.btcchina.com/data/ticker?market=cnyltc' : 
-            currencypair == 'btc_cny' ? 'https://data.btcchina.com/data/ticker?market=cnybtc' :
-            'https://data.btcchina.com/data/ticker?market=btcltc');
+            fetchfromSource(currencypair, source,
+                currencypair == 'ltc_cny' ? 'https://data.btcchina.com/data/ticker?market=cnyltc' :
+                currencypair == 'btc_cny' ? 'https://data.btcchina.com/data/ticker?market=cnybtc' :
+                'https://data.btcchina.com/data/ticker?market=btcltc');
         } else if (source == 'mtgox') {
             fetchfromSource(currencypair, source, 'http://data.mtgox.com/api/2/BTCUSD/money/ticker');
         } else if (source == 'okcoin') {
@@ -108,11 +112,28 @@ function check_price() {
             var symbol = currencypair.toUpperCase().replace('_', "");
             fetchfromSource(currencypair, source, 'https://api.kraken.com/0/public/Ticker?pair=' + symbol);
         } else if (source == 'huobi') {
-            fetchfromSource(currencypair, source, '');
+            switch (currencypair) {
+                case 'btc':
+                    {
+                        fetchfromSource(currencypair, source, 'http://market.huobi.com/staticmarket/kline001.html');
+                        break;
+                    }
+                case 'ltc':
+                    {
+                        fetchfromSource(currencypair, source, 'http://market.huobi.com/staticmarket/kline_ltc001.html');
+                        break;
+                    }
+            }
+        } else if (source == '_796') {
+            if (currencypair.indexOf('btc') > -1) {
+                fetchfromSource(currencypair, source, 'http://api.796.com/v3/futures/ticker.html?type=weekly');
+            } else {
+                fetchfromSource(currencypair, source, 'http://api.796.com/v3/futures/ticker.html?type=ltc');
+            }
         } else if (source == 'campbx') {
             fetchfromSource(currencypair, source, 'http://CampBX.com/api/xticker.php')
         } else if (source == 'bitfinex') {
-             var symbol = currencypair.replace('_', "");
+            var symbol = currencypair.replace('_', "");
             fetchfromSource(currencypair, source, 'https://api.bitfinex.com/v1/ticker/' + symbol);
         } else if (source == 'cexio') {
             fetchfromSource(currencypair, source, 'https://cex.io/api/ticker/GHS/BTC');
@@ -177,37 +198,44 @@ function check_price() {
                             currentPrice = parseFloat(returnJson['bid']);
                             average24Hrs = 0; // no data available
                             break;
-                        case 'kraken': 
-                        {
-                            var pairName2 = "X" + currencypair.replace("_", "Z").toUpperCase();
-                            var pairresult = returnJson.result[pairName2];
+                        case 'kraken':
+                            {
+                                var pairName2 = "X" + currencypair.replace("_", "Z").toUpperCase();
+                                var pairresult = returnJson.result[pairName2];
 
-                            currentPrice = parseFloat(pairresult.b[0]);
-                            average24Hrs = currentPrice / (parseFloat(pairresult.h[0]) + parseFloat(pairresult.l[0]) / 2) * 100 - 100;
-                            break;
-                        }
+                                currentPrice = parseFloat(pairresult.b[0]);
+                                average24Hrs = currentPrice / (parseFloat(pairresult.h[0]) + parseFloat(pairresult.l[0]) / 2) * 100 - 100;
+                                break;
+                            }
                         case 'dgex':
                             currentPrice = parseFloat(body);
                             average24Hrs = 0; // no data available
                             break;
-                        case 'cryptsy':
-                        {
-                            var success = parseInt(returnJson['success']);
-                            if (success == 1) 
+                        case '_796':
                             {
-                                var split = currencypair.split("_");
-                                 
-                                var ret = returnJson['return'];
-                                var market = ret['markets'];
-                                var pairMarket = market[split[0].toUpperCase()];
+                                var tickerJson = returnJson.ticker;
                                 
-                                currentPrice = parseFloat( pairMarket["lasttradeprice"]);
-                                average24Hrs = 0; // not available
-                            } else {
-                                return;
+                                currentPrice = parseFloat(tickerJson.last);
+                                 average24Hrs = currentPrice / ((parseFloat(tickerJson.high) + parseFloat(tickerJson.low)) / 2) * 100 - 100;
+                                break;
                             }
-                            break;
-                        }
+                        case 'cryptsy':
+                            {
+                                var success = parseInt(returnJson['success']);
+                                if (success == 1) {
+                                    var split = currencypair.split("_");
+
+                                    var ret = returnJson['return'];
+                                    var market = ret['markets'];
+                                    var pairMarket = market[split[0].toUpperCase()];
+
+                                    currentPrice = parseFloat(pairMarket["lasttradeprice"]);
+                                    average24Hrs = 0; // not available
+                                } else {
+                                    return;
+                                }
+                                break;
+                            }
                         default:
                             currentPrice = parseFloat(returnJson.ticker.buy);
                             average24Hrs = currentPrice / parseFloat(returnJson.ticker.avg) * 100 - 100;
@@ -387,7 +415,7 @@ function check_price() {
                     }
                 });
         }
-       
+
     }
 
     function updateNotificationCount(sqlTable, pushuri, client, source, currencypair, platform) {
@@ -452,11 +480,11 @@ function check_price() {
             //(source == 'itbit' && currencypair == 'xbt_eur') ||
             (source == 'kraken' && currencypair == 'xbt_usd') ||
             (source == 'kraken' && currencypair == 'xbt_eur')
-            //(source == 'cexio' && currencypair == 'ghs_btc')
+        //(source == 'cexio' && currencypair == 'ghs_btc')
             ) {
-                
-                // Insert only if we've yet to support these exchange to cache at second interval
-                // via an external VPS.
+
+            // Insert only if we've yet to support these exchange to cache at second interval
+            // via an external VPS.
 
             if (source == 'btce') {
                 insertTickerData_btce(returnJson, currencypair, source);
@@ -682,48 +710,46 @@ function check_price() {
                 }
             });
     }
-    
+
     function sendEmail(subject, toEmail, context) {
         var sendgrid;
         if (Math.floor((Math.random() * 1) + 1) == 1) // double the amount of free shit.. lol
-            sendgrid = new SendGrid('azure_e61e429d81c4fef32ec4cbcbc312178b@azure.com', '5Jp4w8eCoFaW18w');       
-        else 
-            sendgrid = new SendGrid('azure_181d59c8dd3b490c0743d275a9ce272b@azure.com', '8SvQzlIZqoxd4EF');    
-        
+            sendgrid = new SendGrid('azure_e61e429d81c4fef32ec4cbcbc312178b@azure.com', '5Jp4w8eCoFaW18w');
+        else
+            sendgrid = new SendGrid('azure_181d59c8dd3b490c0743d275a9ce272b@azure.com', '8SvQzlIZqoxd4EF');
+
         sendgrid.send({
             to: toEmail,
             from: 'bitbotlive@outlook.com',
             subject: subject,
             text: context
         }, function(success, message) {
-            // If the email failed to send, log it as an error so we can investigate
-            if (!success) {
-                console.error(message);
-            }
-        });
+                // If the email failed to send, log it as an error so we can investigate
+                if (!success) {
+                    console.error(message);
+                }
+            });
     }
-    
-    function GetCryptsyMarketId(pair)
-        {
-            switch (pair)
-            {
-                case "ltc_usd":
-                    return 1;
-                case "btc_usd":
-                    return 2;
-                case "ltc_btc":
-                    return 3;
-                case "ftc_usd":
-                    return 6;
-                case "nxt_btc":
-                    return 159;
-                case "doge_usd":
-                    return 182;
-                case "drk_usd":
-                    return 213;
-                case "rdd_usd":
-                    return 262;
-            }
-            return -1;
+
+    function GetCryptsyMarketId(pair) {
+        switch (pair) {
+            case "ltc_usd":
+                return 1;
+            case "btc_usd":
+                return 2;
+            case "ltc_btc":
+                return 3;
+            case "ftc_usd":
+                return 6;
+            case "nxt_btc":
+                return 159;
+            case "doge_usd":
+                return 182;
+            case "drk_usd":
+                return 213;
+            case "rdd_usd":
+                return 262;
         }
+        return -1;
+    }
 }
