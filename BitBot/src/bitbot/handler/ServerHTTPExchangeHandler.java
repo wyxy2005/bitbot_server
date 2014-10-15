@@ -121,6 +121,11 @@ public class ServerHTTPExchangeHandler implements Container {
         SocketAddress address = new InetSocketAddress(Constants.SocketPort);
         connection.connect(address);
         
+        System.out.println("[Info] Starting HTTP Legacy server at port " + Constants.SocketPortLegacy);
+        
+        SocketAddress addressL = new InetSocketAddress(Constants.SocketPortLegacy);
+        connection.connect(addressL);
+        
         // Init HTTPs
         System.out.println("[Info] Starting HTTPs server at port " + Constants.SocketPort_HTTPs);
         

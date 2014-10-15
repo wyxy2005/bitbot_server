@@ -6,6 +6,7 @@ import bitbot.server.threads.MultiThreadExecutor;
 import bitbot.server.threads.TimerManager;
 import bitbot.util.BitcoinWisdomReader;
 import bitbot.util.MT4CVSReader;
+import bitbot.util.encryption.CustomXorEncryption;
 import java.security.cert.X509Certificate;
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
@@ -105,6 +106,11 @@ public class Main {
                 String CVSFile = args[1];
 
                 MT4CVSReader.ReadCVSFile(CVSFile);
+                break;
+            }
+            default: {
+                System.out.println(CustomXorEncryption.custom_xor_encrypt("test", 1015561));
+                break;
             }
         }
     }

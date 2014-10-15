@@ -734,7 +734,7 @@ public class TickerCacheTask {
             }
             System.out.println("[Info] Caching price for " + ExchangeCurrencyPair + " --> " + list_newItems.size() + ", MaxServerTime:" + LastCachedTime);
 
-            if (list_newItems.size() <= 1) { // Are we done caching yet?
+            if (list_newItems.size() <= 5) { // Are we done caching yet?
                 isDataAcquisitionFromMSSQL_Completed = true;
                 canAcceptNewInfoFromOtherPeers.add(ExchangeCurrencyPair.hashCode());
                 runnable.getSchedule().cancel(false); // cancel this cache task completely.

@@ -1,10 +1,9 @@
 package bitbot.handler.channel.tasks;
 
 import bitbot.cache.swaps.SwapsItemData;
-import bitbot.cache.tickers.TickerItem_CandleBar;
 import bitbot.handler.channel.ChannelServer;
 import bitbot.server.Constants;
-import bitbot.util.Pair;
+import bitbot.util.encryption.CustomXorEncryption;
 import bitbot.util.encryption.HMACSHA1;
 import java.io.PrintStream;
 import java.util.List;
@@ -132,6 +131,37 @@ public class SwapTask implements Runnable {
 
                             // Output
                             body.println(obj.toJSONString());
+                            break;
+                        }
+                        case 2: { // encrypted return data
+                            int arrayPrintCount = 1;
+
+                            for (List<SwapsItemData> swap : ret) {
+                                JSONArray array1 = new JSONArray();
+
+                                swap.stream().map((item) -> {
+                                    JSONArray obj_array = new JSONArray();
+
+                                    obj_array.add(item.getTimestamp());
+                                    obj_array.add(item.getSpotPrice());
+                                    obj_array.add(item.getRate());
+                                    obj_array.add(item.getAmountLent());
+
+                                    return obj_array;
+                                }).forEach((json_array_Obj) -> {
+                                    array1.add(json_array_Obj);
+                                });
+
+                                // print to jsonObject
+                                obj.put("cur" + arrayPrintCount, array1);
+
+                                arrayPrintCount++;
+                            }
+
+                            // Output
+                            body.print(
+                                    CustomXorEncryption.custom_xor_encrypt(obj.toJSONString(), nonce)
+                            );
                             break;
                         }
                     }

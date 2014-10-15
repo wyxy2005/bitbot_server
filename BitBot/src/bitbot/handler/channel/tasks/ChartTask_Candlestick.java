@@ -3,6 +3,7 @@ package bitbot.handler.channel.tasks;
 import bitbot.cache.tickers.TickerItem_CandleBar;
 import bitbot.handler.channel.ChannelServer;
 import bitbot.server.Constants;
+import bitbot.util.encryption.CustomXorEncryption;
 import bitbot.util.encryption.HMACSHA1;
 import java.io.PrintStream;
 import java.util.List;
@@ -143,10 +144,28 @@ public class ChartTask_Candlestick implements Runnable {
                             body.println(array.toJSONString());
                             break;
                         }
-                        case 3: { // returns an additional total buy/sell ratio data
-                            JSONObject obj = new JSONObject();
+                        case 3: { // encrypted
+                            JSONArray array = new JSONArray();
                             
-                            
+                            ret.stream().map((item) -> {
+                                JSONArray obj_array = new JSONArray();
+
+                                obj_array.add(item.getServerTime());
+                                obj_array.add(item.getOpen());
+                                obj_array.add(item.getClose());
+                                obj_array.add(item.getHigh());
+                                obj_array.add(item.getLow());
+                                obj_array.add(item.getVol());
+                                obj_array.add(item.getVol_Cur());
+                                obj_array.add(item.getBuySell_Ratio());
+
+                                return obj_array;
+                            }).forEach((obj) -> {
+                                array.add(obj);
+                            });
+                            body.print(
+                                    CustomXorEncryption.custom_xor_encrypt(array.toJSONString(), nonce)
+                            );
                             break;
                         }
                     }

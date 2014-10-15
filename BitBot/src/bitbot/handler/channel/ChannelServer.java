@@ -71,11 +71,11 @@ public class ChannelServer {
             
             Props_EnableSocketStreaming = false,
             Props_EnableDebugSessionPrints = false;
-    private static String Props_SocketIPAddress = "127.0.0.1",
+    private static String
             Props_WorldIPAddress = "127.0.0.1",
             Props_SelfIPAddress = "127.0.0.1",
             Props_WorldRMIHash = "";
-    private static short Props_SocketPort = 8082,
+    private static short
             Props_WorldRMIPort = 5454;
 
     // Etc
@@ -132,10 +132,8 @@ public class ChannelServer {
                 Props_EnableSwapsDatabaseCommit = Boolean.parseBoolean(props.getProperty("server.EnableSwapsDatabaseCommit"));
                 Props_EnableSwaps = Boolean.parseBoolean(props.getProperty("server.EnableSwaps"));
                 Props_EnableSwapsSQLDataAcquisition = Boolean.parseBoolean(props.getProperty("server.EnableSwapsSQLDataAcquisition"));
-                
-                Props_SocketIPAddress = props.getProperty("server.SocketIPAddress");
+
                 Props_SelfIPAddress = props.getProperty("server.SelfIPAddress");
-                Props_SocketPort = Short.parseShort(props.getProperty("server.SocketPort"));
                 Props_EnableSocketStreaming = Boolean.parseBoolean(props.getProperty("server.EnableSocketStreaming"));
                 Props_EnableDebugSessionPrints = Boolean.parseBoolean(props.getProperty("server.EnableDebugSessionPrints"));
                 Props_WorldIPAddress = props.getProperty("server.WorldIPAddress");

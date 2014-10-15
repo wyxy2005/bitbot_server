@@ -28,7 +28,8 @@ public class Constants {
     public static final long PriceBetweenServerBroadcastDelay = 2000;
     
     // Socket
-    public static final int SocketPort = 8080;
+    public static final int SocketPort = 80;
+    public static final int SocketPortLegacy = 8080; // to provide compatibility for those on old version of the app
     public static final int SocketPort_HTTPs = 8081;
     public static final int SocketPort_Stream = 8082;
 
