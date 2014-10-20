@@ -1,6 +1,7 @@
 package bitbot.util.packets;
 
 import bitbot.server.Constants;
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
 /**
@@ -20,29 +21,29 @@ public class ServerSocketExchangePacket {
         obj.put("type", Type_Connected);
         obj.put("status", "ok");
         obj.put("serv", Constants.Server_UserAgent);
+        obj.put("info", "Exchange Pair, server time, close, high, low, open, volume, volume cur, buy/sell ratio, [last]");
         
         return obj.toJSONString();
     }
     
     public static final String getPriceChanges(String ExchangeCurrencyPair, long server_time, float close, float high, float low, float open, double volume, double volume_cur, float buysell_ratio, float last) {
         JSONObject obj = new JSONObject();
+
+        JSONArray array = new JSONArray();
+        array.add(ExchangeCurrencyPair);
+        array.add(server_time);
+        array.add(close);
+        array.add(high);
+        array.add(low);
+        array.add(open);
+        array.add(volume);
+        array.add(volume_cur);
+        array.add(buysell_ratio);
+        array.add(last);
+                
+        obj.put("data", array);
         
         obj.put("type", Type_PriceChanges);
-        obj.put("status", "ok");
-        
-        JSONObject objData = new JSONObject();
-        objData.put("exchange_pair", ExchangeCurrencyPair);
-        objData.put("server_time", server_time);
-        objData.put("close", close);
-        objData.put("high", high);
-        objData.put("low", low);
-        objData.put("open", open);
-        objData.put("volume", volume);
-        objData.put("volume_cur", volume_cur);
-        objData.put("buysell_ratio", buysell_ratio);
-        objData.put("last", last);
-                
-        obj.put("data", objData);
         
         return obj.toJSONString();
     }
@@ -50,21 +51,20 @@ public class ServerSocketExchangePacket {
     public static final String getMinuteChanges(String ExchangeCurrencyPair, long server_time, float close, float high, float low, float open, double volume, double volume_cur, float buysell_ratio) {
         JSONObject obj = new JSONObject();
         
-        obj.put("type", Type_Minute);
-        obj.put("status", "ok");
-        
-        JSONObject objData = new JSONObject();
-        objData.put("exchange_pair", ExchangeCurrencyPair);
-        objData.put("server_time", server_time);
-        objData.put("close", close);
-        objData.put("high", high);
-        objData.put("low", low);
-        objData.put("open", open);
-        objData.put("volume", volume);
-        objData.put("volume_cur", volume_cur);
-        objData.put("buysell_ratio", buysell_ratio);
+        JSONArray array = new JSONArray();
+        array.add(ExchangeCurrencyPair);
+        array.add(server_time);
+        array.add(close);
+        array.add(high);
+        array.add(low);
+        array.add(open);
+        array.add(volume);
+        array.add(volume_cur);
+        array.add(buysell_ratio);
                 
-        obj.put("data", objData);
+        obj.put("data", array);
+        
+        obj.put("type", Type_Minute);
         
         return obj.toJSONString();
     }

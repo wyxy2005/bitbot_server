@@ -1,6 +1,5 @@
 package bitbot.util.encryption.input;
 
-import bitbot.util.encryption.BitTools;
 import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;

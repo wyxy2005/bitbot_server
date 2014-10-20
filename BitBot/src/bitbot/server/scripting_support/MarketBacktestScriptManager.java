@@ -1,6 +1,6 @@
 package bitbot.server.scripting_support;
 
-import bitbot.server.scripting.AbstractScriptInteraction;
+import bitbot.server.scripting.MarketBacktestInteraction;
 import javax.script.Invocable;
 import javax.script.ScriptEngine;
 
@@ -20,8 +20,10 @@ public class MarketBacktestScriptManager extends AbstractScriptManager {
                 System.out.println("Script not available: " + scriptName);
                 return;
             }
-            final AbstractScriptInteraction bt = new AbstractScriptInteraction(scriptPath);
+            final MarketBacktestInteraction bt = new MarketBacktestInteraction(scriptPath);
             scriptengine.put("bt", bt);
+            
+            bt.setInvocable(iv);
 
             try {
                 iv.invokeFunction("initialize");
@@ -34,21 +36,19 @@ public class MarketBacktestScriptManager extends AbstractScriptManager {
         }
     }
     
-    public static final String startBacktestScriptfromString(String script) {
-        String ScriptPath = "";
+    public static final String startBacktestScriptfromString(MarketBacktestInteraction bt, String script) {
         try {
-            final Invocable iv = getInvocableInternal(script, ScriptPath, false);
+            final Invocable iv = getInvocableInternal(script, "", false);
             final ScriptEngine scriptengine = (ScriptEngine) iv;
 
             if (iv == null) {
                 return "Script not found.";
             }
-            final AbstractScriptInteraction bt = new AbstractScriptInteraction(ScriptPath);
+            bt.setInvocable(iv);
             scriptengine.put("bt", bt);
 
             try {
                 iv.invokeFunction("initialize");
-                iv.invokeFunction("handle");
             } catch (NoSuchMethodException nsme) {
                 return nsme.getMessage();
             }

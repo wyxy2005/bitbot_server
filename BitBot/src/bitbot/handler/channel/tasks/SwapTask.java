@@ -160,8 +160,7 @@ public class SwapTask implements Runnable {
 
                             // Output
                             body.print(
-                                    CustomXorEncryption.custom_xor_encrypt(obj.toJSONString(), nonce)
-                            );
+                                    CustomXorEncryption.custom_xor_encrypt(obj.toJSONString(), nonce));
                             break;
                         }
                     }

@@ -116,11 +116,11 @@ public class ServerHTTPExchangeHandler implements Container {
         Connection connection = new SocketConnection(server);
         
         // Init HTTP 
-        System.out.println("[Info] Starting HTTP server at port " + Constants.SocketPort);
+       /* System.out.println("[Info] Starting HTTP server at port " + Constants.SocketPort);
         
         SocketAddress address = new InetSocketAddress(Constants.SocketPort);
         connection.connect(address);
-        
+        */
         System.out.println("[Info] Starting HTTP Legacy server at port " + Constants.SocketPortLegacy);
         
         SocketAddress addressL = new InetSocketAddress(Constants.SocketPortLegacy);

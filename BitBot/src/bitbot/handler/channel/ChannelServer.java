@@ -145,7 +145,6 @@ public class ChannelServer {
 
                 final Registry registry = LocateRegistry.getRegistry(Props_WorldIPAddress, Props_WorldRMIPort/*, new SslRMIClientSocketFactory()*/);
                 worldRegistry = (WorldRegistry) registry.lookup(Constants.Server_AzureAuthorization);
-
                 cwi = new ChannelWorldInterfaceImpl(this);
                 wci = worldRegistry.registerChannelServer(Props_WorldRMIHash, cwi, false);
 
