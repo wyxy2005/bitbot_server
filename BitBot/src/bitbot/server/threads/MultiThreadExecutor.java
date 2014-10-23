@@ -22,11 +22,11 @@ public class MultiThreadExecutor {
 	    @Override
 	    public Thread newThread(Runnable r) {
 		final Thread t = new Thread(r);
-		t.setName("Executors worker");
+		t.setName("MultiThreadExecutor worker");
 		return t;
 	    }
 	};
-	final ExecutorService es_ = Executors.newFixedThreadPool(10, thread);
+	final ExecutorService es_ = Executors.newFixedThreadPool(100, thread);
 	es = es_;
     }
 
