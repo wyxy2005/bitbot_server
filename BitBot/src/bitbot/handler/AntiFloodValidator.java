@@ -122,11 +122,12 @@ public class AntiFloodValidator {
         
 	if (System.getProperty("os.name").toLowerCase().contains("linux")) {
 	    try {
-                // gotcha! bye, you noobs.
+                // Drop the IP address, gotcha! bye, you noobs.
 		Runtime.getRuntime().exec(String.format("iptables --append INPUT --source %s -j DROP", address));
-		Runtime.getRuntime().exec(String.format("route add %s gw 127.0.0.1 lo", address));
+		//Runtime.getRuntime().exec(String.format("route add %s gw 127.0.0.1 lo", address)); // Doesn't work on CentOS 7.
                 
-                // http://www.softpanorama.org/Net/Netutils/route_in_linux.shtml
+                // Save IPtables to file.
+                Runtime.getRuntime().exec("iptables-save | sudo tee /etc/sysconfig/iptables");
 	    } catch (IOException e) {
 		FileoutputUtil.outputFileError("Error_Auto_null_route.rtf", e);
 	    }
