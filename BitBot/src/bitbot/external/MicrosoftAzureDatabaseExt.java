@@ -32,7 +32,7 @@ public class MicrosoftAzureDatabaseExt {
 
     /*   
     * Returns the graph data selected from the MSSQL Datababase
-    * @return long (biggest server time), -1 if error
+    * @return long (biggest server time), -2 if error, -1 if no result
     */
     public static long selectGraphData(String ExchangeSite, String currencyPair, int depthSelection, int hoursSelection, long start_server_time, List<TickerItemData> list_BTCe2) {
         // currencyPair = eg: btc_usd
@@ -81,7 +81,7 @@ public class MicrosoftAzureDatabaseExt {
                 e.printStackTrace();
             }
         }
-        return -1;
+        return -2;
     }
 
     /*   

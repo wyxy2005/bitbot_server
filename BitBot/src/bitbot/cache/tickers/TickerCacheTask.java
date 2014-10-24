@@ -84,19 +84,19 @@ public class TickerCacheTask {
                 if (ExchangeCurrencyPair.contains("huobi")) {
                     history = new TickerHistory_Huobi();
                     UpdateTime = 2;
-                    
+
                 } else if (ExchangeCurrencyPair.contains("btce")) {
                     history = new TickerHistory_BTCe();
-                    
+
                 } else if (ExchangeCurrencyPair.contains("btcchina")) {
                     history = new TickerHistory_BTCChina();
-                    
+
                 } else if (ExchangeCurrencyPair.contains("bitstamp")) {
                     history = new TickerHistory_Bitstamp();
-                    
+
                 } else if (ExchangeCurrencyPair.contains("kraken")) {
                     history = new TickerHistory_Kraken();
-                    
+
                 } else if (ExchangeCurrencyPair.contains("okcoin")) {
                     if (ExchangeCurrencyPair.contains("okcoininternational")) {
                         history = new TickerHistory_OkcoinInternational();
@@ -105,37 +105,37 @@ public class TickerCacheTask {
                         history = new TickerHistory_Okcoin();
                         UpdateTime = 5;
                     }
-                    
+
                 } else if (ExchangeCurrencyPair.contains("fybsg") || ExchangeCurrencyPair.contains("fybse")) {
                     history = new TickerHistory_FybSGSE();
                     UpdateTime = 15; // volume is still too low to make an impact
-                    
+
                 } else if (ExchangeCurrencyPair.contains("itbit")) { // may need more work
                     history = new TickerHistory_ItBit();
-                
+
                 } else if (ExchangeCurrencyPair.contains("coinbase")) {
                     history = new TickerHistory_Coinbase();
                     UpdateTime = 15; // Coinbase is just a broker....
-                
+
                 } else if (ExchangeCurrencyPair.contains("cexio")) {
                     history = new TickerHistory_CexIo();
-                
+
                 } else if (ExchangeCurrencyPair.contains("campbx")) {
                     history = new TickerHistory_CampBX();
-                
+
                 } else if (ExchangeCurrencyPair.contains("bitfinex")) {
                     history = new TickerHistory_BitFinex();
-                    
+
                 } else if (ExchangeCurrencyPair.contains("dgex")) {
                     history = new TickerHistory_Dgex();
                     UpdateTime = 15; // volume is still too low to make an impact
-                    
+
                 } else if (ExchangeCurrencyPair.contains("cryptsy")) {
                     history = new TickerHistory_Cryptsy();
-                    
+
                 } else if (ExchangeCurrencyPair.contains("796")) {
                     history = new TickerHistory_796();
-                    
+
                 } else if (ExchangeCurrencyPair.contains("mtgox")) { // goxxed
                     history = new TickerHistory_MTGox();
                 }
@@ -367,7 +367,7 @@ public class TickerCacheTask {
                 VolumeCur += item.getVol_Cur();
 
                 buysell_ratio_Total += item.getBuySell_Ratio();
-                buysellratio_sets ++;
+                buysellratio_sets++;
 
                 lastPriceSet = item.getOpen();
             }
@@ -608,9 +608,9 @@ public class TickerCacheTask {
                 return; // don't want to lock this thread anyway, if one is delayed so be it.
             }
             IsLoading = true;
-            
+
             System.out.println(String.format("[TH] Updating price: %s", ExchangeCurrencyPair));
- 
+
             try {
                 TickerHistoryData data = HistoryConnector.connectAndParseHistoryResult(
                         ExchangeCurrencyPair,
@@ -625,18 +625,18 @@ public class TickerCacheTask {
                         HistoryData = data;
                     }
                     HistoryDatabaseCommitEnum commitResult = HistoryData.tryCommitDatabase(LastCommitTime, ExchangeSite, CurrencyPair, ExchangeCurrencyPair);
-                    
+
                     // Broadcast this piece of data to world server 
                     if (HistoryData.getLastPrice() != 0 && readyToBroadcastPriceChanges()) {
                         ChannelServer.getInstance().broadcastPriceChanges(
-                                ExchangeCurrencyPair, 
-                                HistoryData.getLastPurchaseTime() / 1000l, 
+                                ExchangeCurrencyPair,
+                                HistoryData.getLastPurchaseTime() / 1000l,
                                 HistoryData.getLastPrice(), // using last price as close since this isnt known yet
                                 HistoryData.getHigh(), HistoryData.getLow(), HistoryData.getOpen(),
                                 HistoryData.getVolume(), HistoryData.getVolume_Cur(), HistoryData.getBuySell_Ratio(), HistoryData.getLastPrice()
-                         );
+                        );
                     }
-                    
+
                     switch (commitResult) {
                         case Ok: {
                             // Output
@@ -709,13 +709,17 @@ public class TickerCacheTask {
             }
             System.out.println("Caching currency pair from SQLserv: " + ExchangeSite + ":" + CurrencyPair_);
 
+            final String ExchangeCurrencyPair = String.format("%s-%s", ExchangeSite, CurrencyPair_);
+            
             List<TickerItemData> list_newItems = new ArrayList(); // create a new array first and replace later
             long biggest_server_time_result = MicrosoftAzureDatabaseExt.selectGraphData(ExchangeSite, CurrencyPair_, 999999, 24, LastCachedTime, list_newItems);
-            if (biggest_server_time_result == -1) {
-                return; // temporary network issue or unavailable
-            }
-            final String ExchangeCurrencyPair = String.format("%s-%s", ExchangeSite, CurrencyPair_);
 
+            if (biggest_server_time_result == -2) { // -2 = error
+                return; // temporary network issue or unavailable
+            } else if (biggest_server_time_result == -1) { // no result available
+                completedCaching(ExchangeCurrencyPair);
+            }
+            
             if (!list_newItems.isEmpty()) { // there's still something coming from the database, continue caching
                 if (!list_mssql.containsKey(ExchangeCurrencyPair)) { // First item, no sync needed
                     list_mssql.put(ExchangeCurrencyPair, list_newItems);
@@ -726,7 +730,6 @@ public class TickerCacheTask {
                         return data;
                     });
                 }
-
                 // Set max server_time
                 if (biggest_server_time_result > LastCachedTime) {
                     LastCachedTime = biggest_server_time_result;
@@ -735,12 +738,16 @@ public class TickerCacheTask {
             System.out.println("[Info] Caching price for " + ExchangeCurrencyPair + " --> " + list_newItems.size() + ", MaxServerTime:" + LastCachedTime);
 
             if (list_newItems.size() <= 5) { // Are we done caching yet?
-                isDataAcquisitionFromMSSQL_Completed = true;
-                canAcceptNewInfoFromOtherPeers.add(ExchangeCurrencyPair.hashCode());
-                runnable.getSchedule().cancel(false); // cancel this cache task completely.
-
-                System.out.println("[Info] Stopped caching " + ExchangeCurrencyPair + " data from MSSQL");
+                completedCaching(ExchangeCurrencyPair);
             }
+        }
+
+        private void completedCaching(String ExchangeCurrencyPair) {
+            isDataAcquisitionFromMSSQL_Completed = true;
+            canAcceptNewInfoFromOtherPeers.add(ExchangeCurrencyPair.hashCode());
+            runnable.getSchedule().cancel(false); // cancel this cache task completely.
+
+            System.out.println("[Info] Stopped caching " + ExchangeCurrencyPair + " data from MSSQL");
         }
 
         private void commitToFileStorage() {
