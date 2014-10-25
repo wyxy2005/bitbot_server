@@ -718,6 +718,7 @@ public class TickerCacheTask {
                 return; // temporary network issue or unavailable
             } else if (biggest_server_time_result == -1) { // no result available
                 completedCaching(ExchangeCurrencyPair);
+                return;
             }
             
             if (!list_newItems.isEmpty()) { // there's still something coming from the database, continue caching
