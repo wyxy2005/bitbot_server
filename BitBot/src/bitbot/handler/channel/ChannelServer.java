@@ -76,7 +76,8 @@ public class ChannelServer {
             Props_SelfIPAddress = "127.0.0.1",
             Props_WorldRMIHash = "";
     private static short
-            Props_WorldRMIPort = 5454;
+            Props_WorldRMIPort = 22155,
+            Props_HTTPPort = 80, Props_HTTPsPort = 443;
 
     // Etc
     private final List<String> CachingCurrencyPair = new ArrayList();
@@ -139,7 +140,9 @@ public class ChannelServer {
                 Props_WorldIPAddress = props.getProperty("server.WorldIPAddress");
                 Props_WorldRMIPort = Short.parseShort(props.getProperty("server.WorldRMIPort"));
                 Props_WorldRMIHash = SHA256.sha256(SHA256.sha256(props.getProperty("server.WorldRMIHash")));
-
+                Props_HTTPPort = Short.parseShort(props.getProperty("server.HTTPPort"));
+                Props_HTTPsPort = Short.parseShort(props.getProperty("server.HTTPsPort"));
+                
                 // Establish RMI connection
                 System.out.println(String.format("[Info] Locating world server RMI connection at %s:%d..", Props_WorldIPAddress, Props_WorldRMIPort));
 
@@ -150,7 +153,7 @@ public class ChannelServer {
 
                 // End
                 System.out.println("[Info] Loading tasks..");
-                serverExchangeHandler = ServerHTTPExchangeHandler.Connect();
+                serverExchangeHandler = ServerHTTPExchangeHandler.Connect(Props_HTTPPort, Props_HTTPsPort);
 
                 LoadCurrencyPairTables(false);
 

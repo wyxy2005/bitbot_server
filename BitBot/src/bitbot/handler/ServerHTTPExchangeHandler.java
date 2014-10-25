@@ -104,7 +104,7 @@ public class ServerHTTPExchangeHandler implements Container {
         MultiThreadExecutor.submit(r);
     }
 
-    public static ServerHTTPExchangeHandler Connect() throws Exception {
+    public static ServerHTTPExchangeHandler Connect(short Props_HTTPPort, short Props_HTTPsPort) throws Exception {
         System.out.println("[Info] Establishing server HTTP/HTTPS container");
         
         ServerHTTPExchangeHandler serverhandler = new ServerHTTPExchangeHandler();
@@ -116,20 +116,20 @@ public class ServerHTTPExchangeHandler implements Container {
         Connection connection = new SocketConnection(server);
         
         // Init HTTP 
-       /* System.out.println("[Info] Starting HTTP server at port " + Constants.SocketPort);
+        System.out.println("[Info] Starting HTTP server at port " + Props_HTTPPort);
         
-        SocketAddress address = new InetSocketAddress(Constants.SocketPort);
+        SocketAddress address = new InetSocketAddress(Props_HTTPPort);
         connection.connect(address);
-        */
+        
         System.out.println("[Info] Starting HTTP Legacy server at port " + Constants.SocketPortLegacy);
         
         SocketAddress addressL = new InetSocketAddress(Constants.SocketPortLegacy);
         connection.connect(addressL);
         
         // Init HTTPs
-        System.out.println("[Info] Starting HTTPs server at port " + Constants.SocketPort_HTTPs);
+        System.out.println("[Info] Starting HTTPs server at port " + Props_HTTPsPort);
         
-        SocketAddress address_secure = new InetSocketAddress(Constants.SocketPort_HTTPs);
+        SocketAddress address_secure = new InetSocketAddress(Props_HTTPsPort);
         connection.connect(address_secure, GenerateKeyStore());
         
         return serverhandler;
