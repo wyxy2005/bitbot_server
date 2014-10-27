@@ -26,10 +26,10 @@ public class TimerManager {
 		return t;
 	    }
 	};
-	final ScheduledThreadPoolExecutor stpe = new ScheduledThreadPoolExecutor(10, thread);
+	final ScheduledThreadPoolExecutor stpe = new ScheduledThreadPoolExecutor(100, thread);
 	stpe.setKeepAliveTime(1, TimeUnit.MINUTES);
 	stpe.allowCoreThreadTimeOut(true);
-	stpe.setCorePoolSize(10);
+	stpe.setCorePoolSize(100);
 	stpe.setMaximumPoolSize(200);
 	stpe.setContinueExistingPeriodicTasksAfterShutdownPolicy(false);
 	stpe.setRemoveOnCancelPolicy(true);
