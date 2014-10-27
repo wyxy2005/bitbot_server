@@ -47,7 +47,7 @@ public class ServerHTTPExchangeHandler implements Container {
         //.out.println("IsCloudFlare: " + isCloudFlareAddress);
 
         // Source validation
-        if (ChannelServer.getInstance().isEnforceCloudFlareNetwork()) { 
+        if (ChannelServer.getInstance().isEnforceCloudFlareNetwork()) {
             if (CloudFlareForwardAddress == null || // No forward address yet we are enforcing "cloud-flare" only,
                     !isCloudFlareAddress) { // No a cloudflare address :D nice try h4x0r
                 return;
@@ -95,6 +95,10 @@ public class ServerHTTPExchangeHandler implements Container {
                     r = new SwapTask(request, response, query);
                     break;
                 }
+                case "MLTest": {
+                    r = new MLTestTask(request, response, query);
+                    break;
+                }
                 default: {
                     r = new EchoClientTask(request, response);
                     break;
@@ -106,39 +110,39 @@ public class ServerHTTPExchangeHandler implements Container {
 
     public static ServerHTTPExchangeHandler Connect(short Props_HTTPPort, short Props_HTTPsPort) throws Exception {
         System.out.println("[Info] Establishing server HTTP/HTTPS container");
-        
+
         ServerHTTPExchangeHandler serverhandler = new ServerHTTPExchangeHandler();
         serverhandler.container = serverhandler;
         serverhandler.server = new ContainerServer(serverhandler.container);
 
         Server server = new ContainerServer(serverhandler);
-        
+
         Connection connection = new SocketConnection(server);
-        
+
         // Init HTTP 
         System.out.println("[Info] Starting HTTP server at port " + Props_HTTPPort);
-        
+
         SocketAddress address = new InetSocketAddress(Props_HTTPPort);
         connection.connect(address);
-        
+
         System.out.println("[Info] Starting HTTP Legacy server at port " + Constants.SocketPortLegacy);
-        
+
         SocketAddress addressL = new InetSocketAddress(Constants.SocketPortLegacy);
         connection.connect(addressL);
-        
+
         // Init HTTPs
         System.out.println("[Info] Starting HTTPs server at port " + Props_HTTPsPort);
-        
+
         SocketAddress address_secure = new InetSocketAddress(Props_HTTPsPort);
         connection.connect(address_secure, GenerateKeyStore());
-        
+
         return serverhandler;
     }
-    
+
     private static SSLContext GenerateKeyStore() throws Exception {
         // password = asd41as5d4as54d5sa4d54asds5a!
         final String KeyStorePassword = "asd41as5d4as54d5sa4d54asds5a!";
-        
+
         KeyManagerFactory km = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
         KeyStore serverKeystore = KeyStore.getInstance(KeyStore.getDefaultType());
         try (InputStream keystoreFile = new FileInputStream("bitbot_keystore.jks")) {
@@ -148,7 +152,7 @@ public class ServerHTTPExchangeHandler implements Container {
 
         // asdas2d1214uytuytklhmkflm4564
         final String CAKeyStorePassword = "asdas2d1214uytuytklhmkflm4564";
-        
+
         TrustManagerFactory tm = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
         KeyStore caKeystore = KeyStore.getInstance(KeyStore.getDefaultType());
         try (InputStream caCertFile = new FileInputStream("ca_keystore.jks")) {
@@ -158,7 +162,7 @@ public class ServerHTTPExchangeHandler implements Container {
 
         SSLContext sslContext = SSLContext.getInstance("TLS");
         sslContext.init(km.getKeyManagers(), tm.getTrustManagers(), null);
-        
+
         return sslContext;
     }
 
