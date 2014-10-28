@@ -124,6 +124,8 @@ public class TickerHistory_Cryptsy implements TickerHistoryInterface {
         return null;
     }
 
+    // doge_btc cann_btc drk_btc rdd_btc uro_btc bc_btc btcd_btc
+    
     public static int getCryptsyMarketId(String pair) {
         switch (pair) {
             case "ltc_usd":
@@ -134,14 +136,28 @@ public class TickerHistory_Cryptsy implements TickerHistoryInterface {
                 return 3;
             case "ftc_usd":
                 return 6;
+            case "doge_btc":
+                return 132;
+            case "drk_btc":
+                return 155;
             case "nxt_btc":
                 return 159;
+            case "rdd_btc":
+                return 169;
+            case "bc_btc":
+                return 179;
             case "doge_usd":
                 return 182;
             case "drk_usd":
                 return 213;
+            case "uro_btc":
+                return 247;
+            case "btcd_btc":
+                return 256;
             case "rdd_usd":
                 return 262;
+            case "cann_btc":
+                return 300;
         }
         return -1;
     }

@@ -79,6 +79,13 @@ function check_price() {
     fetchItem('rdd_usd', 'cryptsy');
     fetchItem('nxt_btc', 'cryptsy');
     fetchItem('ltc_btc', 'cryptsy');
+    fetchItem('doge_btc', 'cryptsy');
+    fetchItem('cann_btc', 'cryptsy');
+    fetchItem('drk_btc', 'cryptsy');
+    fetchItem('rdd_btc', 'cryptsy');
+    fetchItem('uro_btc', 'cryptsy');
+    fetchItem('bc_btc', 'cryptsy');
+    fetchItem('btcd_btc', 'cryptsy');
 
     fetchItem('btc Futures_usd', '_796');
     fetchItem('ltc Futures_usd', '_796');
@@ -741,14 +748,28 @@ function check_price() {
                 return 3;
             case "ftc_usd":
                 return 6;
+            case "doge_btc":
+                return 132;
+            case "drk_btc":
+                return 155;
             case "nxt_btc":
                 return 159;
+            case "rdd_btc":
+                return 169;
+            case "bc_btc":
+                return 179;
             case "doge_usd":
                 return 182;
             case "drk_usd":
                 return 213;
+            case "uro_btc":
+                return 247;
+            case "btcd_btc":
+                return 256;
             case "rdd_usd":
                 return 262;
+            case "cann_btc":
+                return 300;
         }
         return -1;
     }
