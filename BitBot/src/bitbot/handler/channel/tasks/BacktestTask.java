@@ -1,6 +1,7 @@
 package bitbot.handler.channel.tasks;
 
 import bitbot.cache.tickers.TickerItem_CandleBar;
+import bitbot.server.Constants;
 import bitbot.server.scripting.MarketBacktestBuySellPoints;
 import bitbot.server.scripting.MarketBacktestInteraction;
 import bitbot.server.scripting_support.MarketBacktestScriptManager;
@@ -40,6 +41,14 @@ public class BacktestTask implements Runnable {
     public void run() {
         try {
             try (PrintStream body = response.getPrintStream()) {
+                long time = System.currentTimeMillis();
+                
+                response.setValue("Content-Type", "text/plain");
+                response.setValue("Server", Constants.Server_UserAgent);
+                response.setValue("Info", "There is nothing to see here ;)");
+                response.setDate("Date", time);
+                response.setDate("Last-Modified", time);
+                
                 JSONObject returnJson = new JSONObject();
 
                 if (content != null) {

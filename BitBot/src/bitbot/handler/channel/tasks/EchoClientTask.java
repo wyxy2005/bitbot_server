@@ -28,6 +28,7 @@ public class EchoClientTask implements Runnable {
 
                 response.setValue("Content-Type", "text/plain");
                 response.setValue("Server", Constants.Server_UserAgent);
+                response.setValue("Info", "There is nothing to see here ;)");
                 response.setDate("Date", time);
                 response.setDate("Last-Modified", time);
 
