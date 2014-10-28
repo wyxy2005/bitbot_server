@@ -671,6 +671,7 @@ public class TickerCacheTask {
         private final String CurrencyPair_;
         private final String ExchangeSite;
         private long LastCachedTime = 0;
+        private boolean IsLoading = false;
 
         // Switching between MSSQL and data from other peers
         private LoggingSaveRunnable runnable = null;
@@ -704,9 +705,11 @@ public class TickerCacheTask {
 
         @Override
         public void run() {
-            if (isDataAcquisitionFromMSSQL_Completed) {
+            if (isDataAcquisitionFromMSSQL_Completed || IsLoading) {
                 return;
             }
+            IsLoading = true;
+            
             System.out.println("Caching currency pair from SQLserv: " + ExchangeSite + ":" + CurrencyPair_);
 
             final String ExchangeCurrencyPair = String.format("%s-%s", ExchangeSite, CurrencyPair_);
@@ -715,8 +718,10 @@ public class TickerCacheTask {
             long biggest_server_time_result = MicrosoftAzureDatabaseExt.selectGraphData(ExchangeSite, CurrencyPair_, 999999, 24, LastCachedTime, list_newItems);
 
             if (biggest_server_time_result == -2) { // -2 = error
+                IsLoading = false;
                 return; // temporary network issue or unavailable
             } else if (biggest_server_time_result == -1) { // no result available
+                IsLoading = false;
                 completedCaching(ExchangeCurrencyPair);
                 return;
             }
@@ -741,6 +746,7 @@ public class TickerCacheTask {
             if (list_newItems.size() <= 5) { // Are we done caching yet?
                 completedCaching(ExchangeCurrencyPair);
             }
+            IsLoading = false;
         }
 
         private void completedCaching(String ExchangeCurrencyPair) {
