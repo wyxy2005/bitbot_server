@@ -13,7 +13,8 @@ public class ServerSocketExchangePacket {
     private static final String 
             Type_Connected = "ok",
             Type_PriceChanges = "instant",
-            Type_Minute = "minute";
+            Type_Minute = "minute",
+            Type_Ping = "ping";
     
     public static final String getHello() {
         JSONObject obj = new JSONObject();
@@ -21,7 +22,18 @@ public class ServerSocketExchangePacket {
         obj.put("type", Type_Connected);
         obj.put("status", "ok");
         obj.put("serv", Constants.Server_UserAgent);
-        obj.put("info", "Exchange Pair, server time, close, high, low, open, volume, volume cur, buy/sell ratio, [last]");
+        obj.put("info", "Exchange Pair, server time, close, high, low, open, volume, volume cur, buy/sell ratio, [last] | WARNING: Session will be disconnected within 15 seconds unless authenticated ping data is provided.");
+        
+        return obj.toJSONString();
+    }
+    
+    public static final String getPing() {
+        JSONObject obj = new JSONObject();
+        
+        obj.put("type", Type_Ping);
+        obj.put("status", "ok");
+        obj.put("serv", Constants.Server_UserAgent);
+        obj.put("info", "");
         
         return obj.toJSONString();
     }

@@ -3,7 +3,7 @@ package bitbot.client;
 import bitbot.server.threads.LoggingSaveRunnable;
 import bitbot.server.threads.TimerManager;
 import bitbot.util.encryption.AESOFB;
-import bitbot.util.packets.LoginPacket;
+import bitbot.util.packets.ServerSocketExchangePacket;
 import java.io.Serializable;
 import java.util.Calendar;
 import java.util.concurrent.locks.Lock;
@@ -50,10 +50,6 @@ public class Client implements Serializable {
         this.LastCapturedTimeMillis_500MSThreshold = this.LastCapturedTimeMillis;
     }
 
-    public void disconnect() {
-
-    }
-
     public final Lock getLock() {
         return mutex;
     }
@@ -95,13 +91,13 @@ public class Client implements Serializable {
         lastPing = cTime;
         SentPing = true;
         pongcount++;
-        session.write(LoginPacket.getPing()); // sending Ping request
+        session.write(ServerSocketExchangePacket.getPing()); // sending Ping request
     }
 
     public final void sendPing_MinaSocketCore() {
         final long then = System.currentTimeMillis();
         pongcount++;
-        session.write(LoginPacket.getPing()); // sending Ping request
+        session.write(ServerSocketExchangePacket.getPing()); // sending Ping request
 
         idleTask = TimerManager.schedule(() -> {
             try {
@@ -116,7 +112,7 @@ public class Client implements Serializable {
         }, 15000); // note: idletime gets added to this too
     }
 
-    public final void pongReceived(final boolean InvalidWindowTitle) {
+    public final void pongReceived() {
         if (FlagPendingDisconnection) {
             this.closeSession();
             return;
@@ -127,9 +123,10 @@ public class Client implements Serializable {
             closeSession();
             return;
         }
-        final Calendar cal = Calendar.getInstance();
-        this.Latency = (int) ((cal.getTimeInMillis() - lastPing) / 2);
-        lastPong = cal.getTimeInMillis();
+        final long then = System.currentTimeMillis();
+        
+        this.Latency = (int) ((then - lastPing) / 2);
+        lastPong = then;
     }
 
 }

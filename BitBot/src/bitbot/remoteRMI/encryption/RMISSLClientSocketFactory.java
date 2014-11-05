@@ -37,7 +37,6 @@
  * intended for use in the design, construction, operation or 
  * maintenance of any nuclear facility. 
  */
-
 package bitbot.remoteRMI.encryption;
 
 /**
@@ -50,15 +49,14 @@ import java.rmi.server.*;
 import javax.net.ssl.*;
 
 public class RMISSLClientSocketFactory
-	implements RMIClientSocketFactory, Serializable {
+        implements RMIClientSocketFactory, Serializable {
 
     @Override
     public Socket createSocket(String host, int port)
-	throws IOException
-	{
-	    SSLSocketFactory factory =
-		(SSLSocketFactory)SSLSocketFactory.getDefault();
-	    SSLSocket socket = (SSLSocket)factory.createSocket(host, port);
-	    return socket;
-	}
+            throws IOException {
+        SSLSocketFactory factory
+                = (SSLSocketFactory) SSLSocketFactory.getDefault();
+        SSLSocket socket = (SSLSocket) factory.createSocket(host, port);
+        return socket;
+    }
 }

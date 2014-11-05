@@ -5,6 +5,8 @@ import bitbot.handler.channel.ChannelServer;
 import bitbot.handler.mina.BlackListFilter;
 import bitbot.handler.mina.PacketDecoder;
 import bitbot.server.Constants;
+import bitbot.server.ServerLog;
+import bitbot.server.ServerLogType;
 import bitbot.util.StringPool;
 import bitbot.util.encryption.input.EndOfFileException;
 import bitbot.util.packets.ServerSocketExchangePacket;
@@ -12,6 +14,10 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.charset.Charset;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 import org.apache.mina.core.buffer.IoBuffer;
 import org.apache.mina.core.buffer.SimpleBufferAllocator;
 import org.apache.mina.core.service.IoHandlerAdapter;
@@ -21,6 +27,9 @@ import org.apache.mina.filter.codec.ProtocolCodecFilter;
 import org.apache.mina.filter.codec.textline.TextLineCodecFactory;
 import org.apache.mina.transport.socket.SocketAcceptor;
 import org.apache.mina.transport.socket.nio.NioSocketAcceptor;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.ContainerFactory;
+import org.json.simple.parser.JSONParser;
 
 /**
  *
@@ -105,7 +114,7 @@ public class ServerSocketExchangeHandler extends IoHandlerAdapter {
             final Client client = (Client) session.getAttribute(StringPool.CLIENT_KEY);
             try {
                 if (client != null) {
-                    client.disconnect();
+                    client.closeSession();
                 }
             } finally {
                 session.removeAttribute(StringPool.CLIENT_KEY);
@@ -118,47 +127,66 @@ public class ServerSocketExchangeHandler extends IoHandlerAdapter {
 
     @Override
     public void messageReceived(final IoSession session, final Object message) throws Exception {
-        /*  final SeekableLittleEndianAccessor slea = new GenericSeekableLittleEndianAccessor(new ByteArrayByteStream((byte[]) message));
-         final RecvPacketOpcode code = Header.get(slea.readShort());
+        String receiveMessage = (String) message;
+        final Client c = (Client) session.getAttribute(StringPool.CLIENT_KEY);
 
-         if (code != null) {
-         final Client c = (Client) session.getAttribute(StringPool.CLIENT_KEY);
+        final long cTime = System.currentTimeMillis();
+        final long Differences = cTime - c.LastCapturedTimeMillis_500MSThreshold;
 
-         final long cTime = System.currentTimeMillis();
-         final long Differences = cTime - c.LastCapturedTimeMillis_500MSThreshold;
-         if (Differences < 500) { // within 500ms
-         if (!c.FlagPendingDisconnection) {
-         c.PacketSpamCountWithinHalfSecond++;
+        if (Differences < 500) { // within 500ms
+            if (!c.FlagPendingDisconnection) {
+                c.PacketSpamCountWithinHalfSecond++;
 
-         // 70 should be the acceptable level, but we will test with 200 first to make sure it doesn't affect laggers.
-         if (c.PacketSpamCountWithinHalfSecond > 200) { // Spam > 70 packet within 500ms = dc.
-         c.flagPendingDisconnection();
+                // 70 should be the acceptable level, but we will test with 200 first to make sure it doesn't affect laggers.
+                if (c.PacketSpamCountWithinHalfSecond > 10) { // Spam > 70 packet within 500ms = dc.
+                    c.closeSession();
 
-         InetSocketAddress socketAddress = (InetSocketAddress) session.getRemoteAddress();
-         InetAddress inetAddress = socketAddress.getAddress();
+                    InetSocketAddress socketAddress = (InetSocketAddress) session.getRemoteAddress();
+                    InetAddress inetAddress = socketAddress.getAddress();
 
-         ServerLog.RegisterForLogging(ServerLogType.PacketSpam,
-         String.format("[%s 0x%s] IP : %s, Count : %d\nData : %s\nString : %s",
-         code.name(),
-         Integer.toHexString(code.getValue()),
-         inetAddress.getHostAddress(),
-         c.PacketSpamCountWithinHalfSecond,
-         HexTool.toString((byte[]) message),
-         HexTool.toStringFromAscii((byte[]) message)));
-         }
-         }
-         } else {
-         c.LastCapturedTimeMillis_500MSThreshold = cTime;
-         c.PacketSpamCountWithinHalfSecond = 0;
-         }
-         // This is also used throughout the packet handler to determine the current time instead of calling System.currentTimeMillis() again
-         c.LastCapturedTimeMillis = cTime;
-         //	    System.out.println("Differences : "+(Differences)+", count : "+c.PacketSpamCountWithinHalfSecond+", cTime : " + cTime);
+                    ServerLog.RegisterForLogging(ServerLogType.PacketSpam,
+                            String.format("IP : %s, Count : %d\r\nData : %s",
+                                    inetAddress.getHostAddress(),
+                                    c.PacketSpamCountWithinHalfSecond,
+                                    receiveMessage));
+                    return;
+                }
+            }
+        } else {
+            c.LastCapturedTimeMillis_500MSThreshold = cTime;
+            c.PacketSpamCountWithinHalfSecond = 0;
+        }
+        // This is also used throughout the packet handler to determine the current time instead of calling System.currentTimeMillis() again
+        c.LastCapturedTimeMillis = cTime;
+        //	    System.out.println("Differences : "+(Differences)+", count : "+c.PacketSpamCountWithinHalfSecond+", cTime : " + cTime);
 
-         handlePacket(code, slea, c);
-         } else if (Constants.enableUnhandledPacketLogging) { // Console output part for debugging
-         System.out.println(String.format("[Unhandled Packet] %s\nString : %s", HexTool.toString((byte[]) message), HexTool.toStringFromAscii((byte[]) message)));
-         }*/
+        // Handle packet
+        try {
+            JSONParser parser = new JSONParser(); // Init parser
+
+            ContainerFactory containerFactory = new ContainerFactory() {
+                @Override
+                public List creatArrayContainer() {
+                    return new LinkedList();
+                }
+
+                @Override
+                public Map createObjectContainer() {
+                    return new LinkedHashMap();
+                }
+            };
+            LinkedHashMap jsonArray = (LinkedHashMap) parser.parse(receiveMessage, containerFactory);
+
+            String type = jsonArray.get("type").toString();
+            switch (type) {
+                case "ping": {
+                    c.pongReceived();
+                    break;
+                }
+            }
+        } catch (Exception exp) {
+            throw new EndOfFileException();
+        }
     }
 
     @Override

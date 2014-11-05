@@ -89,7 +89,7 @@ public class ServerClientHandler extends IoHandlerAdapter {
             final Client client = (Client) session.getAttribute(StringPool.CLIENT_KEY);
             try {
                 if (client != null) {
-                    client.disconnect();
+                    client.closeSession();
                 }
             } finally {
                 session.removeAttribute(StringPool.CLIENT_KEY);

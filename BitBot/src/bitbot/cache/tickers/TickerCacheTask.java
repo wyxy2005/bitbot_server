@@ -90,6 +90,7 @@ public class TickerCacheTask {
 
                 } else if (ExchangeCurrencyPair.contains("btcchina")) {
                     history = new TickerHistory_BTCChina();
+                    UpdateTime = 5;
 
                 } else if (ExchangeCurrencyPair.contains("bitstamp")) {
                     history = new TickerHistory_Bitstamp();
@@ -135,6 +136,7 @@ public class TickerCacheTask {
 
                 } else if (ExchangeCurrencyPair.contains("796")) {
                     history = new TickerHistory_796();
+                    UpdateTime = 5;
 
                 } else if (ExchangeCurrencyPair.contains("mtgox")) { // goxxed
                     history = new TickerHistory_MTGox();
