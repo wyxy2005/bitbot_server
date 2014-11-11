@@ -185,7 +185,7 @@ public class ServerSocketExchangeHandler extends IoHandlerAdapter {
                 }
             }
         } catch (Exception exp) {
-            throw new EndOfFileException();
+           // throw new EndOfFileException();
         }
     }
 
