@@ -1,6 +1,5 @@
 package bitbot.cache.tickers;
 
-import bitbot.cache.tickers.HTTP.TickerHistory_MTGox;
 import bitbot.cache.tickers.HTTP.TickerHistory_Dgex;
 import bitbot.cache.tickers.HTTP.TickerHistory_CexIo;
 import bitbot.cache.tickers.HTTP.TickerHistory_ItBit;
@@ -79,21 +78,22 @@ public class TickerCacheTask {
             // History
             if (ChannelServer.getInstance().isEnableTickerHistory()) {
                 TickerHistoryInterface history = null;
-                int UpdateTime = 10;
+                int UpdateTime_Millis = 10000;
 
                 if (ExchangeCurrencyPair.contains("huobi")) {
                     history = new TickerHistory_Huobi();
-                    UpdateTime = 2;
+                    UpdateTime_Millis = 500;
 
                 } else if (ExchangeCurrencyPair.contains("btce")) {
                     history = new TickerHistory_BTCe();
 
                 } else if (ExchangeCurrencyPair.contains("btcchina")) {
                     history = new TickerHistory_BTCChina();
-                    UpdateTime = 5;
+                    UpdateTime_Millis = 1000;
 
                 } else if (ExchangeCurrencyPair.contains("bitstamp")) {
                     history = new TickerHistory_Bitstamp();
+                    UpdateTime_Millis = 1000;
 
                 } else if (ExchangeCurrencyPair.contains("kraken")) {
                     history = new TickerHistory_Kraken();
@@ -101,22 +101,22 @@ public class TickerCacheTask {
                 } else if (ExchangeCurrencyPair.contains("okcoin")) {
                     if (ExchangeCurrencyPair.contains("okcoininternational")) {
                         history = new TickerHistory_OkcoinInternational();
-                        UpdateTime = 10;
+                        UpdateTime_Millis = 1000;
                     } else {
                         history = new TickerHistory_Okcoin();
-                        UpdateTime = 5;
+                        UpdateTime_Millis = 500;
                     }
 
                 } else if (ExchangeCurrencyPair.contains("fybsg") || ExchangeCurrencyPair.contains("fybse")) {
                     history = new TickerHistory_FybSGSE();
-                    UpdateTime = 15; // volume is still too low to make an impact
+                    UpdateTime_Millis = 15000; // volume is still too low to make an impact
 
                 } else if (ExchangeCurrencyPair.contains("itbit")) { // may need more work
                     history = new TickerHistory_ItBit();
 
                 } else if (ExchangeCurrencyPair.contains("coinbase")) {
                     history = new TickerHistory_Coinbase();
-                    UpdateTime = 15; // Coinbase is just a broker....
+                    UpdateTime_Millis = 15000; // Coinbase is just a broker....
 
                 } else if (ExchangeCurrencyPair.contains("cexio")) {
                     history = new TickerHistory_CexIo();
@@ -126,27 +126,28 @@ public class TickerCacheTask {
 
                 } else if (ExchangeCurrencyPair.contains("bitfinex")) {
                     history = new TickerHistory_BitFinex();
+                    UpdateTime_Millis = 1000;
 
                 } else if (ExchangeCurrencyPair.contains("dgex")) {
                     history = new TickerHistory_Dgex();
-                    UpdateTime = 15; // volume is still too low to make an impact
+                    UpdateTime_Millis = 15000; // volume is still too low to make an impact
 
                 } else if (ExchangeCurrencyPair.contains("cryptsy")) {
                     history = new TickerHistory_Cryptsy();
 
                 } else if (ExchangeCurrencyPair.contains("796")) {
                     history = new TickerHistory_796();
-                    UpdateTime = 5;
+                    UpdateTime_Millis = 1000;
 
                 } else if (ExchangeCurrencyPair.contains("mtgox")) { // goxxed
-                    history = new TickerHistory_MTGox();
+                    //history = new TickerHistory_MTGox(); // died
                 }
                 //bitfinex-btc_usd---kraken-xbt_usd---kraken-xbt_eur---cexio-ghs_btc
 
                 if (history != null) {
                     runnable_exchangeHistory.add(TimerManager.register(
                             new TickerCacheTask_ExchangeHistory(ExchangeSite, CurrencyPair, ExchangeCurrencyPair, history),
-                            UpdateTime * 1000, Integer.MAX_VALUE));
+                            UpdateTime_Millis, Integer.MAX_VALUE));
                 }
             }
         }
@@ -261,15 +262,15 @@ public class TickerCacheTask {
             return list_chart;
         }
         // Timestamp
-        final long cTime = (System.currentTimeMillis() / 1000l);
+        final long cTime_Millis = System.currentTimeMillis();
+        //final Calendar dtCal = Calendar.getInstance();
+        //dtCal.setTimeInMillis(cTime_Millis); // set UTC time
+        //dtCal.set(Calendar.HOUR_OF_DAY, 0);
+        
+        final long cTime = cTime_Millis / 1000;
         final long startTime = cTime - (60l * 60l * backtestHours);
         long LastUsedTime = 0;
 
-        /*  Close = (open + high + low + close) / 4
-         High = maximum of high, open, or close (whichever is highest)
-         Low = minimum of low, open, or close (whichever is lowest)
-         Open = (open of previous bar + close of previous bar) / 2
-         */
         float high = 0, low = Float.MAX_VALUE, open = -1, lastPriceSet = 0;
         double Volume = 0, VolumeCur = 0;
         float buysell_ratio_Total = 0, buysellratio_sets = 1;
