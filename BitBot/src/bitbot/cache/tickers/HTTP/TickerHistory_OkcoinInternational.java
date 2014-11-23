@@ -22,8 +22,20 @@ public class TickerHistory_OkcoinInternational implements TickerHistoryInterface
 
     @Override
     public TickerHistoryData connectAndParseHistoryResult(String ExchangeCurrencyPair, String CurrencyPair, long LastPurchaseTime, int LastTradeId) {
-        //String Uri = String.format("https://www.okcoin.com/api/trades.do?symbol=%s&since=%d", CurrencyPair, LastPurchaseTime);
-        String Uri = String.format("https://www.okcoin.com/api/trades.do?symbol=%s&ok=1", CurrencyPair);
+        String Uri;
+        
+        if (CurrencyPair.contains("Futures")) {
+            String[] split1 = CurrencyPair.split("_");
+            String[] split2 = split1[0].split(" ");
+
+            Uri = String.format("https://www.okcoin.com/api/v1/future_trades.do?symbol=%s&contract_type=%s",
+                    String.format("%s_%s", split2[0], split1[1]),
+                    split2[2].equals("Quarterly") ? "quarter" : (split2[2].equals("Monthly") ? "month" : (split2[2].equals("BiWeekly") ? "next_week" : "this_week"))
+            );
+        } else {
+            Uri = String.format("https://www.okcoin.com/api/trades.do?symbol=%s&ok=1", CurrencyPair);
+        }
+        
         String GetResult = HttpClient.httpsGet(Uri, "");
 
         if (GetResult != null) {
