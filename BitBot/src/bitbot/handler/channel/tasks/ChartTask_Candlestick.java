@@ -72,8 +72,13 @@ public class ChartTask_Candlestick implements Runnable {
         // API Version
         if (query.containsKey("APIVersion")) {
             APIVersion = Integer.parseInt(query.get("APIVersion"));
+            
+            if (APIVersion == 1) { // Depreciated
+                isAuthorized = false;
+            }
         } else {
             APIVersion = 1;
+            isAuthorized = false;
         }
 
         // checks
