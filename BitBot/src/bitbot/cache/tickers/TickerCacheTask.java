@@ -263,10 +263,12 @@ public class TickerCacheTask {
         }
         // Timestamp
         final long cTime_Millis = System.currentTimeMillis();
-        //final Calendar dtCal = Calendar.getInstance();
-        //dtCal.setTimeInMillis(cTime_Millis); // set UTC time
-        //dtCal.set(Calendar.HOUR_OF_DAY, 0);
-        
+        final Calendar dtCal = Calendar.getInstance();
+        dtCal.setTimeInMillis(cTime_Millis); // set UTC time
+        dtCal.set(Calendar.HOUR_OF_DAY, 0);
+
+        final boolean includeVolumeData = ticker.contains("coinbase");
+
         final long cTime = cTime_Millis / 1000;
         final long startTime = cTime - (60l * 60l * backtestHours);
         long LastUsedTime = 0;
@@ -308,11 +310,13 @@ public class TickerCacheTask {
                             if (LastUsedTime == 0) {
                                 LastUsedTime = item.getServerTime();
                             }
-                            if (Volume == 0) {
-                                Volume = item.getVol();
-                            }
-                            if (VolumeCur == 0) {
-                                VolumeCur = item.getVol_Cur();
+                            if (includeVolumeData) {
+                                if (Volume == 0) {
+                                    Volume = item.getVol();
+                                }
+                                if (VolumeCur == 0) {
+                                    VolumeCur = item.getVol_Cur();
+                                }
                             }
                             // TODO: Fix buy/sell ratio here
                         } else {
@@ -366,8 +370,10 @@ public class TickerCacheTask {
                 if (open == -1) {
                     open = item.getOpen();
                 }
-                Volume += item.getVol();
-                VolumeCur += item.getVol_Cur();
+                if (includeVolumeData) {
+                    Volume += item.getVol();
+                    VolumeCur += item.getVol_Cur();
+                }
 
                 buysell_ratio_Total += item.getBuySell_Ratio();
                 buysellratio_sets++;
@@ -712,11 +718,11 @@ public class TickerCacheTask {
                 return;
             }
             IsLoading = true;
-            
+
             System.out.println("Caching currency pair from SQLserv: " + ExchangeSite + ":" + CurrencyPair_);
 
             final String ExchangeCurrencyPair = String.format("%s-%s", ExchangeSite, CurrencyPair_);
-            
+
             List<TickerItemData> list_newItems = new ArrayList(); // create a new array first and replace later
             long biggest_server_time_result = MicrosoftAzureDatabaseExt.selectGraphData(ExchangeSite, CurrencyPair_, 999999, 24, LastCachedTime, list_newItems);
 
@@ -728,7 +734,7 @@ public class TickerCacheTask {
                 completedCaching(ExchangeCurrencyPair);
                 return;
             }
-            
+
             if (!list_newItems.isEmpty()) { // there's still something coming from the database, continue caching
                 if (!list_mssql.containsKey(ExchangeCurrencyPair)) { // First item, no sync needed
                     list_mssql.put(ExchangeCurrencyPair, list_newItems);

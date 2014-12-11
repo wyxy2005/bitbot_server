@@ -36,7 +36,7 @@ exports.post = function (request, response) {
 
     if (verifiedCurrencyPair &&
         low > 0 && high > 0 && high > low &&
-        times > 0 && times <= 50 &&
+        times > 0 && times <= 999 && // TODO: Check if the user have paid
         (delay_between_notification >= 59) &&
         (delay_between_notification <= 36000) &&
         increment_percent_daily >= 0 && increment_percent_daily <= 20 &&

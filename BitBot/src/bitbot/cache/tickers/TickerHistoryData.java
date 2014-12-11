@@ -90,11 +90,13 @@ public class TickerHistoryData {
             return HistoryDatabaseCommitEnum.Ok;
         }
         PreparedStatement ps = null;
+        final String query = String.format("INSERT INTO bitcoinbot.%s (\"high\", \"low\", \"vol\", \"vol_cur\", \"open\", \"close\", \"server_time\", \"buysell_ratio\") VALUES (?,?,?,?,?,?,?,?);",
+                    DatabaseTablesConstants.getDatabaseTableName(TmpExchangeSite, TmpcurrencyPair));
+        
         try {
             Connection con = DatabaseConnection.getConnection();
 
-            ps = con.prepareStatement(String.format("INSERT INTO bitcoinbot.%s (\"high\", \"low\", \"vol\", \"vol_cur\", \"open\", \"close\", \"server_time\", \"buysell_ratio\") VALUES (?,?,?,?,?,?,?,?);",
-                    DatabaseTablesConstants.getDatabaseTableName(TmpExchangeSite, TmpcurrencyPair)));
+            ps = con.prepareStatement(query);
             ps.setFloat(1, High);
             ps.setFloat(2, Low);
             ps.setDouble(3, Volume);
@@ -108,6 +110,7 @@ public class TickerHistoryData {
         } catch (Exception e) {
             //e.printStackTrace();
             ServerLog.RegisterForLoggingException(ServerLogType.HistoryCacheTask_DB, e);
+            ServerLog.RegisterForLogging(ServerLogType.HistoryCacheTask_DB, "Query: " + query);
             return HistoryDatabaseCommitEnum.DatabaseError;
         } finally {
             try {

@@ -1,0 +1,29 @@
+#
+# Thanasis     Regression utility
+#
+# Full name:   Thanasis Efthymiou
+# BTC:         1CRSH4LGGRWVWqgwfquky2Rk5eJK6gsyus
+#
+  
+init: (context)-> 
+   context.period = 80
+   context.threshold_up = 30
+   context.threshold_down = 5
+
+handle: (context, data)->
+    instrument = data.instruments[0]
+    price      =  instrument.close[instrument.close.length - 1]
+   
+    linearreg_angle = talib.LINEARREG_ANGLE
+      inReal : instrument.close
+      startIdx: 0
+      endIdx: instrument.close.length-1
+      optInTimePeriod:context.period    
+ 
+    angle      =  linearreg_angle[_.size(linearreg_angle) - 1]
+ 
+    if angle  > context.threshold_up  
+       buy instrument
+    else if angle < -context.threshold_down
+       sell instrument
+ 

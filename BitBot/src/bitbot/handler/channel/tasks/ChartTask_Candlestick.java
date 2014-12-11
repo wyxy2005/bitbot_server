@@ -108,7 +108,7 @@ public class ChartTask_Candlestick implements Runnable {
                     List<TickerItem_CandleBar> ret = ChannelServer.getInstance().getTickerTask().getTickerList_Candlestick(currencypair, hours, interval, ExchangeSite, ServerTimeFrom);
 
                     switch (APIVersion) {
-                        case 1: {
+                        /*case 1: {
                             JSONArray array = new JSONArray();
                             
                             ret.stream().map((item) -> {
@@ -149,7 +149,7 @@ public class ChartTask_Candlestick implements Runnable {
                             });
                             body.println(array.toJSONString());
                             break;
-                        }
+                        }*/
                         case 3: { // encrypted
                             JSONArray array = new JSONArray();
                             

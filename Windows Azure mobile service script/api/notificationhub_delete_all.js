@@ -11,7 +11,7 @@ exports.post = function(request, response) {
     
     function deleteItemFromDB(uniqueid, platform) {
         var mssql = request.service.mssql;
-        var query = "DELETE from push_price WHERE uniqueid = ? AND operating_system = ?";
+        var query = "DELETE FROM push_price WHERE uniqueid = ? AND operating_system = ?";
          
         // console.log(query);
          

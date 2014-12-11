@@ -383,6 +383,9 @@ public class ChannelServer {
             wci.broadcastPriceChanges(ExchangeCurrencyPair, server_time, close, high, low, open, volume, volume_cur, buysell_ratio, last);
         } catch (RemoteException exp) {
             ServerLog.RegisterForLoggingException(ServerLogType.RemoteError, exp);
+            
+            // attempt reconnect
+            reconnectWorld(null);
         } catch (NoClassDefFoundError servError) {
             // world server may have crashed or inactive :(
             System.out.println("[Warning] World Server may be inacctive or crashed. Please restart.");
@@ -393,8 +396,12 @@ public class ChannelServer {
     public void broadcastSwapData(String ExchangeCurrency, float rate, float spot_price, double amount_lent, int timestamp) {
         try {
             wci.broadcastSwapData(ExchangeCurrency, rate, spot_price, amount_lent, timestamp);
+            
         } catch (RemoteException exp) {
             ServerLog.RegisterForLoggingException(ServerLogType.RemoteError, exp);
+            
+            // attempt reconnect
+            reconnectWorld(null);
         } catch (NoClassDefFoundError servError) {
             // world server may have crashed or inactive :(
             System.out.println("[Warning] World Server may be inacctive or crashed. Please restart.");

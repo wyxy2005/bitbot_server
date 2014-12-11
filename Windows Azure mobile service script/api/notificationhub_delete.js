@@ -33,7 +33,7 @@ exports.post = function(request, response) {
    
    function updateDatabase(uniqueid, exchangesite, currencypair, platform) {
         var mssql = request.service.mssql;
-        var query = "UPDATE push_price SET times = 0 WHERE uniqueid = ? and exchange_pair = ? AND operating_system = ?";
+        var query = "DELETE FROM push_price WHERE uniqueid = ? and exchange_pair = ? AND operating_system = ?";
 
           mssql.query(query, [uniqueid, exchangesite + '_' + currencypair, platform], {
                success: function(results) {            
