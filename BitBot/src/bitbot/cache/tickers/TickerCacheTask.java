@@ -267,7 +267,7 @@ public class TickerCacheTask {
         dtCal.setTimeInMillis(cTime_Millis); // set UTC time
         dtCal.set(Calendar.HOUR_OF_DAY, 0);
 
-        final boolean includeVolumeData = ticker.contains("coinbase");
+        final boolean includeVolumeData = ExchangeSite.contains("coinbase");
 
         final long cTime = cTime_Millis / 1000;
         final long startTime = cTime - (60l * 60l * backtestHours);
