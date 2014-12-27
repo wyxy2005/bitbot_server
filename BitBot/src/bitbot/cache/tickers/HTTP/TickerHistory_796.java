@@ -21,11 +21,15 @@ public class TickerHistory_796 implements TickerHistoryInterface {
     public TickerHistoryData connectAndParseHistoryResult(String ExchangeCurrencyPair, String CurrencyPair, long LastPurchaseTime, int LastTradeId) {
         String Uri;
         if (CurrencyPair.contains("btc")) {
-            Uri = "http://api.796.com/v3/futures/trades.html?type=weekly";
+            if (CurrencyPair.contains("Quarterly")) {
+                Uri = "http://api.796.com/v3/futures/trades.html?type=btcquarterlyfutures";
+            } else {
+                Uri = "http://api.796.com/v3/futures/trades.html?type=weekly";
+            }
         } else {
             Uri = "http://api.796.com/v3/futures/trades.html?type=ltc";
         }
-        
+
         String GetResult = HttpClient.httpGet(Uri, "");
 
         if (GetResult != null) {
