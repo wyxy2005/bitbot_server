@@ -61,7 +61,6 @@ public class ExponentialMovingAverageTask implements Runnable {
 
         //System.out.println("FromClient: " + serverAuthorization);
         //System.out.println("Real: " + encoded);
-
         if (!serverAuthorization.equals(encoded)) {
             isAuthorized = false;
         }
@@ -71,13 +70,7 @@ public class ExponentialMovingAverageTask implements Runnable {
     public void run() {
         try {
             try (PrintStream body = response.getPrintStream()) {
-                long time = System.currentTimeMillis();
-
-                response.setValue("Content-Type", "text/plain");
-                response.setValue("Server", Constants.Server_UserAgent);
-                response.setValue("Info", "There is nothing to see here ;)");
-                response.setDate("Date", time);
-                response.setDate("Last-Modified", time);
+                _ResponseHeader.addBasicResponseHeader(response);
 
                 if (isAuthorized) {
                     List<List<ExponentialMovingAverageData>> ret
@@ -89,7 +82,7 @@ public class ExponentialMovingAverageTask implements Runnable {
                     for (int i = ret.get(0).size(); i > 0; i--) {
                         ExponentialMovingAverageData highItem = ret.get(0).get(i - 1);
                         ExponentialMovingAverageData lowItem = ret.get(1).get(i - 1);
-                        
+
                         array_EMA.add(createEMAJsonObject(highItem, lowItem));
                     }
                     mainObj.put("EMAs", array_EMA);

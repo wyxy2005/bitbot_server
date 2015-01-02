@@ -63,3 +63,6 @@ BitBot/DataLog/huobi_price_btc_cny.txt
 *.class
 *.jar
 *.class
+*.class
+*.class
+*.class

@@ -2,6 +2,7 @@ package bitbot.util;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
 
 /**
@@ -43,5 +44,27 @@ public class DateTimeUtil {
     
     public static Date convertDateTime(long s) {
         return new Date(s * 1000);
+    }
+    
+    
+    /// Rounding time
+    public static long roundToCandlestickOpening(long ServerTimeFrom, int intervalMinutes) {
+        final long cTime_Millis = System.currentTimeMillis();
+        
+        if (ServerTimeFrom == 0)
+            return 0;
+        
+        final Calendar dtCal = Calendar.getInstance();
+        dtCal.setTimeInMillis(ServerTimeFrom * 1000); // set UTC time
+        
+        if (intervalMinutes < 60) { // go by the hour
+            
+        } else if (intervalMinutes < 60 * 24) { // go by the daily
+            
+        } else if (intervalMinutes < 60 * 24 * 30) { // go by the month
+            
+        }
+        
+        return 0;
     }
 }

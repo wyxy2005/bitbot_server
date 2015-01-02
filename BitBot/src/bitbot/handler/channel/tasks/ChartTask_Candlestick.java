@@ -8,7 +8,6 @@ import bitbot.util.encryption.HMACSHA1;
 import java.io.PrintStream;
 import java.util.List;
 import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
 import org.simpleframework.http.Query;
 import org.simpleframework.http.Request;
 import org.simpleframework.http.Response;
@@ -72,7 +71,7 @@ public class ChartTask_Candlestick implements Runnable {
         // API Version
         if (query.containsKey("APIVersion")) {
             APIVersion = Integer.parseInt(query.get("APIVersion"));
-            
+
             if (APIVersion <= 2) { // Depreciated
                 isAuthorized = false;
             }
@@ -96,63 +95,57 @@ public class ChartTask_Candlestick implements Runnable {
     public void run() {
         try {
             try (PrintStream body = response.getPrintStream()) {
-                long time = System.currentTimeMillis();
-
-                response.setValue("Content-Type", "text/plain");
-                response.setValue("Server", Constants.Server_UserAgent);
-                response.setValue("Info", "There is nothing to see here ;)");
-                response.setDate("Date", time);
-                response.setDate("Last-Modified", time);
+                _ResponseHeader.addBasicResponseHeader(response);
 
                 if (isAuthorized) {
                     List<TickerItem_CandleBar> ret = ChannelServer.getInstance().getTickerTask().getTickerList_Candlestick(currencypair, hours, interval, ExchangeSite, ServerTimeFrom);
 
                     switch (APIVersion) {
                         /*case 1: {
-                            JSONArray array = new JSONArray();
+                         JSONArray array = new JSONArray();
                             
-                            ret.stream().map((item) -> {
-                                JSONObject obj = new JSONObject();
-                                obj.put("server_time", item.getServerTime());
-                                obj.put("Open", item.getOpen());
-                                obj.put("Close", item.getClose());
-                                obj.put("High", item.getHigh());
-                                obj.put("Low", item.getLow());
-                                obj.put("Volume", item.getVol());
-                                obj.put("VolumeCur", item.getVol_Cur());
-                                obj.put("Ratio", item.getBuySell_Ratio());
-                                return obj;
-                            }).forEach((obj) -> {
-                                array.add(obj);
-                            });
-                            body.println(array.toJSONString());
-                            break;
-                        }
-                        case 2: { // better optimized for data
-                            JSONArray array = new JSONArray();
+                         ret.stream().map((item) -> {
+                         JSONObject obj = new JSONObject();
+                         obj.put("server_time", item.getServerTime());
+                         obj.put("Open", item.getOpen());
+                         obj.put("Close", item.getClose());
+                         obj.put("High", item.getHigh());
+                         obj.put("Low", item.getLow());
+                         obj.put("Volume", item.getVol());
+                         obj.put("VolumeCur", item.getVol_Cur());
+                         obj.put("Ratio", item.getBuySell_Ratio());
+                         return obj;
+                         }).forEach((obj) -> {
+                         array.add(obj);
+                         });
+                         body.println(array.toJSONString());
+                         break;
+                         }
+                         case 2: { // better optimized for data
+                         JSONArray array = new JSONArray();
                             
-                            ret.stream().map((item) -> {
-                                JSONArray obj_array = new JSONArray();
+                         ret.stream().map((item) -> {
+                         JSONArray obj_array = new JSONArray();
 
-                                obj_array.add(item.getServerTime());
-                                obj_array.add(item.getOpen());
-                                obj_array.add(item.getClose());
-                                obj_array.add(item.getHigh());
-                                obj_array.add(item.getLow());
-                                obj_array.add(item.getVol());
-                                obj_array.add(item.getVol_Cur());
-                                obj_array.add(item.getBuySell_Ratio());
+                         obj_array.add(item.getServerTime());
+                         obj_array.add(item.getOpen());
+                         obj_array.add(item.getClose());
+                         obj_array.add(item.getHigh());
+                         obj_array.add(item.getLow());
+                         obj_array.add(item.getVol());
+                         obj_array.add(item.getVol_Cur());
+                         obj_array.add(item.getBuySell_Ratio());
 
-                                return obj_array;
-                            }).forEach((obj) -> {
-                                array.add(obj);
-                            });
-                            body.println(array.toJSONString());
-                            break;
-                        }*/
+                         return obj_array;
+                         }).forEach((obj) -> {
+                         array.add(obj);
+                         });
+                         body.println(array.toJSONString());
+                         break;
+                         }*/
                         case 3: { // encrypted
                             JSONArray array = new JSONArray();
-                            
+
                             ret.stream().map((item) -> {
                                 JSONArray obj_array = new JSONArray();
 

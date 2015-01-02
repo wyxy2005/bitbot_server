@@ -173,86 +173,6 @@ public class TickerCacheTask {
         return new ArrayList(list_mssql.get(ExchangeSite + "-" + ticker));
     }
 
-    @Deprecated
-    public List<TickerItem_CandleBar> getTickerList(final String ticker, final int hoursSelection, int depth, String ExchangeSite, long ServerTimeFrom) {
-        final List<TickerItem_CandleBar> list_BTCe2 = new ArrayList(); // create a new array first
-        final String dataSet = ExchangeSite + "-" + ticker;
-
-        // Is the data set available?
-        if (!list_mssql.containsKey(dataSet)) {
-            return list_BTCe2;
-        }
-
-        final long cTime = (System.currentTimeMillis() - (1000l * 60l * 60l * hoursSelection)) / 1000;
-
-        int skipNumber = 0;
-        float high = 0, low = Float.MAX_VALUE,
-                buy = Float.MAX_VALUE;
-        double Volume = 0, VolumeCur = 0;
-
-        // No need to lock this thread, if we are creating a new ArrayList off existing.
-        // Its a copy :)
-        List<TickerItemData> currentList = new ArrayList(list_mssql.get(dataSet));
-
-        Iterator<TickerItemData> itr = currentList.iterator();
-        while (itr.hasNext()) { // Loop through things in proper sequence
-            TickerItemData item = itr.next();
-
-            long itemTime = item.getServerTime();
-
-            if (cTime <= itemTime && itemTime >= ServerTimeFrom) {
-                skipNumber++;
-
-                if (skipNumber == depth) {
-                    if (high != 0) { // default value = 0, so we'll fall back
-                        high = item.getHigh();
-                        low = item.getLow();
-                        buy = item.getClose();
-                        Volume = item.getVol();
-                        VolumeCur = item.getVol_Cur();
-                    }
-
-                    list_BTCe2.add(
-                            new TickerItem_CandleBar(
-                                    item.getServerTime(),
-                                    (float) item.getClose() == 0 ? item.getOpen() : item.getClose(),
-                                    (float) high,
-                                    (float) low,
-                                    (float) buy, // dummy data
-                                    Volume,
-                                    VolumeCur, 0, false)
-                    );
-
-                    // reset
-                    high = 0;
-                    low = Float.MAX_VALUE;
-                    buy = Float.MAX_VALUE;
-                    Volume = 0;
-                    VolumeCur = 0;
-
-                    skipNumber = 0;
-                } else {
-                    if (item.getHigh() > high) {
-                        high = item.getHigh();
-                    }
-                    if (item.getLow() < low) {
-                        low = item.getLow();
-                    }
-                    if (item.getOpen() < buy) {
-                        buy = item.getOpen();
-                    }
-                    if (item.getVol() > Volume) {
-                        Volume = item.getVol();
-                    }
-                    if (item.getVol_Cur() > VolumeCur) {
-                        VolumeCur = item.getVol_Cur();
-                    }
-                }
-            }
-        }
-        return list_BTCe2;
-    }
-
     public List<TickerItem_CandleBar> getTickerList_Candlestick(final String ticker, final int backtestHours, int intervalMinutes, String ExchangeSite, long ServerTimeFrom) {
         final List<TickerItem_CandleBar> list_chart = new ArrayList(); // create a new array first
         final String dataSet = ExchangeSite + "-" + ticker;
@@ -395,96 +315,62 @@ public class TickerCacheTask {
                             VolumeCur, 0, true)
             );
         }
-
-        /*while (LastUsedTime + (intervalMinutes * 60) < cTime) {
-         TickerItem_CandleBar lastItem = list_BTCe2.get(list_BTCe2.size() - 1);
-
-         LastUsedTime += (intervalMinutes * 60);
-
-         list_BTCe2.add(
-         new TickerItem_CandleBar(
-         LastUsedTime,
-         (float) lastItem.getClose() == 0 ? lastItem.getOpen() : lastItem.getClose(),
-         (float) lastItem.getClose(),
-         (float) lastItem.getClose(),
-         (float) lastItem.getClose(),
-         0,
-         0)
-         );
-         }*/
-        /*
-         while (itr.hasNext()) { // Loop through things in proper sequence
-         TickerItemData item = itr.next();
-
-         if (item.getServerTime() >= ServerTimeFrom) {
-         // Check if last added tick is above the threshold 'intervalMinutes'
-         if (LastUsedTime + (intervalMinutes * 60) < item.getServerTime()) {
-         while (LastUsedTime + (intervalMinutes * 60) < item.getServerTime()) {
-         if (item.getServerTime() > cTime) {
-         // If there's not enough data available..
-         if (LastUsedTime == 0) {
-         LastUsedTime = item.getServerTime();
-         }
-         if (high == 0 || low == Double.MAX_VALUE || open == -1) { // add last daya
-         list_BTCe2.add(
-         new TickerItem_CandleBar(
-         LastUsedTime + (intervalMinutes * 60),
-         (float) item.getClose() == 0 ? item.getOpen() : item.getClose(),
-         (float) item.getClose(),
-         (float) item.getClose(),
-         (float) item.getClose(),
-         0,
-         0)
-         );
-         } else {
-         // Add to list
-         list_BTCe2.add(
-         new TickerItem_CandleBar(
-         LastUsedTime + (intervalMinutes * 60),
-         (float) item.getClose() == 0 ? item.getOpen() : item.getClose(),
-         (float) high,
-         (float) low,
-         (float) open,
-         Volume,
-         VolumeCur)
-         );
-         }
-         }
-         // reset
-         high = 0;
-         low = Double.MAX_VALUE;
-         open = -1;
-         Volume = 0;
-         VolumeCur = 0;
-
-         if (LastUsedTime == 0) {
-         LastUsedTime = item.getServerTime();
-         }
-         LastUsedTime = LastUsedTime + (intervalMinutes * 60);// item.getServerTime();
-         }
-         } else {
-         high = Math.max(item.getHigh(), high);
-         low = Math.min(item.getLow(), low);
-         if (high == 0) {
-         high = item.getHigh();
-         }
-         if (low == Double.MAX_VALUE) {
-         low = item.getLow();
-         }
-         if (open == -1) {
-         open = item.getOpen();
-         }
-         if (item.getVol() > Volume) {
-         Volume = item.getVol();
-         }
-         if (item.getVol_Cur() > VolumeCur) {
-         VolumeCur = item.getVol_Cur();
-         }
-         }
-         }
-         }
-         */
+        
         return list_chart;
+    }
+    
+    public ReturnVolumeProfileData getVolumeProfile(final String ticker, final int minutesBackFromNow, String ExchangeSite) {
+        final ReturnVolumeProfileData profile = new ReturnVolumeProfileData();
+        final String dataSet = ExchangeSite + "-" + ticker;
+
+        // Is the data set available?
+        if (!list_mssql.containsKey(dataSet)) {
+            return profile;
+        }
+        // Timestamp
+        final long cTime_Millis = System.currentTimeMillis();
+        final long cTime = cTime_Millis / 1000;
+        final long startTime = cTime - (60l * 60l * minutesBackFromNow);
+        
+        double totalBuyVolume_Cur = 0, totalSellVolume_Cur = 0;
+        double totalBuyVolume = 0, totalSellVolume = 0;
+
+        // No need to lock this thread, if we are creating a new ArrayList off existing.
+        // Its a copy :)
+        //List<TickerItemData> currentList = new LinkedList(list_mssql.get(dataSet));
+        //Iterator<TickerItemData> itr = currentList.iterator();
+        final List<TickerItemData> currentList = list_mssql.get(dataSet);
+        final Iterator<TickerItemData> items = currentList.stream().
+                filter((data) -> (data.getServerTime() > startTime)).
+                sorted(TickerItemComparator).
+                iterator();
+
+        while (items.hasNext()) {
+            TickerItemData item = items.next();
+
+            float buyAndSellRatio = item.getBuySell_Ratio() + 1.0f;
+            
+            // volume cur
+            double buyVolumeCur = (item.getVol_Cur() / buyAndSellRatio) * item.getBuySell_Ratio();
+            double sellVolumeCur = item.getVol_Cur() - buyVolumeCur;
+            
+            totalBuyVolume_Cur += buyVolumeCur;
+            totalSellVolume_Cur += sellVolumeCur;
+            
+            // volume
+            double buyVolume = (item.getVol() / buyAndSellRatio) * item.getBuySell_Ratio();
+            double sellVolume = item.getVol() - buyVolume;
+            
+            totalBuyVolume += buyVolume;
+            totalSellVolume += sellVolume;
+        }
+        profile.TotalBuyVolume_Cur = totalBuyVolume_Cur;
+        profile.TotalSellVolume_Cur = totalSellVolume_Cur;
+        
+        profile.TotalBuyVolume = totalBuyVolume;
+        profile.TotalSellVolume = totalSellVolume;
+        
+        return profile;
     }
 
     public Map<String, List<TickerItemData>> getBitcoinPriceIndex(final String ticker, final int backtestHours, int intervalMinutes, long ServerTimeFrom) {
