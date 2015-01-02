@@ -6,6 +6,8 @@ import bitbot.util.encryption.CustomXorEncryption;
 import bitbot.util.encryption.HMACSHA1;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.util.ArrayList;
+import java.util.List;
 import org.json.simple.JSONArray;
 import org.simpleframework.http.Query;
 import org.simpleframework.http.Request;
@@ -21,7 +23,7 @@ public class VolumeProfileTask implements Runnable {
     private final Response response;
     private final Request request;
 
-    private final int minutesBackFromNow;
+    private final List<Integer> hoursFromNow;
     private final String ExchangeSite;
     private final String currencypair, serverAuthorization;
     private final long nonce;
@@ -40,11 +42,25 @@ public class VolumeProfileTask implements Runnable {
         }
 
         // hours
-        int minutesBackFromNow_ = Integer.parseInt(query.get("minutesBackFromNow"));
-        if (minutesBackFromNow_ <= 0 || minutesBackFromNow_ >= (24 * 30 * 12 * 10)) {
+        hoursFromNow = new ArrayList();
+        String strhoursFromNow = query.get("hoursFromNow");
+        String[] strhoursFromNowArray = strhoursFromNow.split(",");
+        for (String hours : strhoursFromNowArray) {
+            int val = 0;
+            try {
+                val = Integer.parseInt(hours);
+            } catch (Exception exp) {
+            }
+
+            if (val <= 0 || val > (24 * 7)) { // don't allow selection for more than a week
+                isAuthorized = false;
+            } else {
+                hoursFromNow.add(Integer.parseInt(hours));
+            }
+        }
+        if (hoursFromNow.isEmpty() || hoursFromNow.size() > 5) { // max 5 items, to prevent denial of service
             isAuthorized = false;
         }
-        this.minutesBackFromNow = minutesBackFromNow_;
 
         // exchange site
         if (query.containsKey("ExchangeSite")) {
@@ -67,11 +83,11 @@ public class VolumeProfileTask implements Runnable {
         // checks
         this.serverAuthorization = query.get("serverAuthorization").replace(' ', '+');
 
-        final String encoded = HMACSHA1.encode(String.valueOf(nonce), currencypair + ((minutesBackFromNow ^ 0x1000000) ^ nonce) + ExchangeSite);
+        final String encoded = HMACSHA1.encode(String.valueOf(nonce), strhoursFromNow + currencypair + (0x1000000 ^ nonce) + ExchangeSite);
         //System.out.println("FromClient: " + serverAuthorization);
         //System.out.println("Real: " + encoded);
         if (!serverAuthorization.equals(encoded)) {
-            isAuthorized = false;
+            //   isAuthorized = false;
         }
     }
 
@@ -82,21 +98,27 @@ public class VolumeProfileTask implements Runnable {
                 _ResponseHeader.addBasicResponseHeader(response);
 
                 if (isAuthorized) {
-                    ReturnVolumeProfileData profile = ChannelServer.getInstance().getTickerTask().getVolumeProfile(currencypair, minutesBackFromNow, ExchangeSite);
+                    List<ReturnVolumeProfileData> profiles = ChannelServer.getInstance().getTickerTask().getVolumeProfile(currencypair, hoursFromNow, ExchangeSite);
 
                     JSONArray array = new JSONArray();
-                    
-                    array.add(profile.TotalBuyVolume);
-                    array.add(profile.TotalSellVolume);
-                    array.add(profile.TotalBuyVolume_Cur);
-                    array.add(profile.TotalSellVolume_Cur);
-                    
-                    if (profile.TotalBuyVolume > profile.TotalSellVolume) { // buy is more than sell
-                        array.add(1);
-                        array.add(profile.TotalSellVolume / profile.TotalBuyVolume);
-                    } else { // sell is more than buy
-                        array.add(profile.TotalBuyVolume / profile.TotalSellVolume);
-                        array.add(1);
+
+                    for (ReturnVolumeProfileData profile : profiles) {
+                        JSONArray obj_array = new JSONArray();
+                        
+                        obj_array.add(profile.TotalBuyVolume);
+                        obj_array.add(profile.TotalSellVolume);
+                        obj_array.add(profile.TotalBuyVolume_Cur);
+                        obj_array.add(profile.TotalSellVolume_Cur);
+
+                        if (profile.TotalBuyVolume > profile.TotalSellVolume) { // buy is more than sell
+                            obj_array.add(1);
+                            obj_array.add(profile.TotalSellVolume / profile.TotalBuyVolume);
+                        } else { // sell is more than buy
+                            obj_array.add(profile.TotalBuyVolume / profile.TotalSellVolume);
+                            obj_array.add(1);
+                        }
+                        
+                        array.add(obj_array);
                     }
 
                     body.print(

@@ -99,6 +99,10 @@ public class ServerHTTPExchangeHandler implements Container {
                     r = new MLTestTask(request, response, query);
                     break;
                 }
+                case "VolumeProfile": {
+                    r = new VolumeProfileTask(request, response, query);
+                    break;
+                }
                 default: {
                     r = new EchoClientTask(request, response);
                     break;
