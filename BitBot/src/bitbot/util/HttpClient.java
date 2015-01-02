@@ -26,7 +26,7 @@ public class HttpClient {
 
             // Send post request
             con.setDoOutput(false);
-            con.setReadTimeout(10000);
+            con.setReadTimeout(10000); // timeout of 10 seconds
 
             int responseCode = con.getResponseCode();
             //System.out.println("\nSending 'POST' request to URL : " + obj.toString());

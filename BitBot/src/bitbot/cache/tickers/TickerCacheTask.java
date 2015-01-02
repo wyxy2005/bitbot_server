@@ -475,6 +475,7 @@ public class TickerCacheTask {
         private boolean IsLoading;
         private long LastCommitTime;
         private TickerHistoryData HistoryData;
+        private long lastCacheTime = 0;
 
         private long lastBroadcastedTime = 0;
 
@@ -498,10 +499,14 @@ public class TickerCacheTask {
 
         @Override
         public void run() {
+            long cTime = System.currentTimeMillis();
             if (IsLoading) // prevent double-caching of data at that instance
             {
-                return; // don't want to lock this thread anyway, if one is delayed so be it.
+                if (cTime - lastCacheTime < 20000) { // below 20 seconds ago... 
+                    return; // don't want to lock this thread anyway, if one is delayed so be it.
+                }
             }
+            lastCacheTime = cTime;
             IsLoading = true;
 
             System.out.println(String.format("[TH] Updating price: %s", ExchangeCurrencyPair));
