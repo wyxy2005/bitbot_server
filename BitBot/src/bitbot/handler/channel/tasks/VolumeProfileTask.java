@@ -52,13 +52,13 @@ public class VolumeProfileTask implements Runnable {
             } catch (Exception exp) {
             }
 
-            if (val <= 0 || val > (24 * 7)) { // don't allow selection for more than a week
+            if (val <= 0 || val > (24 * 7 * 4)) { // don't allow selection for more than a 4 weeks
                 isAuthorized = false;
             } else {
                 hoursFromNow.add(Integer.parseInt(hours));
             }
         }
-        if (hoursFromNow.isEmpty() || hoursFromNow.size() > 5) { // max 5 items, to prevent denial of service
+        if (hoursFromNow.isEmpty() || hoursFromNow.size() > 7) { // max 7 items, to prevent denial of service
             isAuthorized = false;
         }
 
@@ -87,7 +87,7 @@ public class VolumeProfileTask implements Runnable {
         //System.out.println("FromClient: " + serverAuthorization);
         //System.out.println("Real: " + encoded);
         if (!serverAuthorization.equals(encoded)) {
-            //   isAuthorized = false;
+            isAuthorized = false;
         }
     }
 
