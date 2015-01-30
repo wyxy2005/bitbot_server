@@ -16,6 +16,7 @@ import bitbot.cache.tickers.HTTP.TickerHistory_FybSGSE;
 import bitbot.cache.tickers.HTTP.TickerHistory_Bitstamp;
 import bitbot.cache.tickers.HTTP.TickerHistory_Cryptsy;
 import bitbot.cache.tickers.HTTP.TickerHistory_796;
+import bitbot.cache.tickers.HTTP.TickerHistory_CoinbaseExchange;
 import bitbot.external.MicrosoftAzureDatabaseExt;
 import bitbot.graph.ExponentialMovingAverage;
 import bitbot.graph.ExponentialMovingAverageData;
@@ -93,7 +94,7 @@ public class TickerCacheTask {
 
                 } else if (ExchangeCurrencyPair.contains("bitstamp")) {
                     history = new TickerHistory_Bitstamp();
-                    UpdateTime_Millis = 1000;
+                    UpdateTime_Millis = 2000;
 
                 } else if (ExchangeCurrencyPair.contains("kraken")) {
                     history = new TickerHistory_Kraken();
@@ -115,8 +116,13 @@ public class TickerCacheTask {
                     history = new TickerHistory_ItBit();
 
                 } else if (ExchangeCurrencyPair.contains("coinbase")) {
-                    history = new TickerHistory_Coinbase();
-                    UpdateTime_Millis = 15000; // Coinbase is just a broker....
+                    if (ExchangeCurrencyPair.contains("coinbaseexchange")) {
+                        history = new TickerHistory_CoinbaseExchange();
+                        UpdateTime_Millis = 5000;
+                    } else {
+                        history = new TickerHistory_Coinbase();
+                        UpdateTime_Millis = 15000; // Coinbase is just a broker....
+                    }
 
                 } else if (ExchangeCurrencyPair.contains("cexio")) {
                     history = new TickerHistory_CexIo();
@@ -321,15 +327,15 @@ public class TickerCacheTask {
 
     public List<ReturnVolumeProfileData> getVolumeProfile(final String ticker, final List<Integer> hoursFromNow, String ExchangeSite) {
         List<ReturnVolumeProfileData> ret = new ArrayList();
-        
+
         for (Integer i : hoursFromNow) {
             ReturnVolumeProfileData profile = getVolumeProfileInternal(ticker, i, ExchangeSite);
-            
+
             ret.add(profile);
         }
         return ret;
     }
-    
+
     private ReturnVolumeProfileData getVolumeProfileInternal(final String ticker, final int hoursFromNow, String ExchangeSite) {
         final ReturnVolumeProfileData profile = new ReturnVolumeProfileData();
         final String dataSet = ExchangeSite + "-" + ticker;
@@ -349,9 +355,64 @@ public class TickerCacheTask {
         // No need to lock this thread, if we are creating a new ArrayList off existing.
         // Its a copy :)
         final List<TickerItemData> currentList = list_mssql.get(dataSet);
-        
+
         //System.out.println("Start time: " + startTime + " , Cur time: " + cTime + " , " + currentList.get(currentList.size() - 1).getServerTime());
-        
+        final Iterator<TickerItemData> items = currentList.stream().
+                filter((data) -> (data.getServerTime() > startTime)).
+                sorted(TickerItemComparator).
+                iterator();
+
+        while (items.hasNext()) {
+            TickerItemData item = items.next();
+//System.out.println("["+item.getServerTime()+"] " + item.getBuySell_Ratio());
+            if (item.getBuySell_Ratio() != 0f && item.getBuySell_Ratio() != 1.0f) {
+                float buyAndSellRatio = item.getBuySell_Ratio() + 1.0f;
+
+                // volume cur
+                double buyVolumeCur = (item.getVol_Cur() / buyAndSellRatio) * item.getBuySell_Ratio();
+                double sellVolumeCur = item.getVol_Cur() - buyVolumeCur;
+
+                totalBuyVolume_Cur += buyVolumeCur;
+                totalSellVolume_Cur += sellVolumeCur;
+
+                // volume
+                double buyVolume = (item.getVol() / buyAndSellRatio) * item.getBuySell_Ratio();
+                double sellVolume = item.getVol() - buyVolume;
+
+                totalBuyVolume += buyVolume;
+                totalSellVolume += sellVolume;
+            }
+        }
+        profile.TotalBuyVolume_Cur = totalBuyVolume_Cur;
+        profile.TotalSellVolume_Cur = totalSellVolume_Cur;
+
+        profile.TotalBuyVolume = totalBuyVolume;
+        profile.TotalSellVolume = totalSellVolume;
+
+        return profile;
+    }
+
+    private ReturnVolumeProfileData getVolumeProfileByPrice_Internal(final String ticker, final int hoursFromNow, String ExchangeSite) {
+        final ReturnVolumeProfileData profile = new ReturnVolumeProfileData();
+        final String dataSet = ExchangeSite + "-" + ticker;
+
+        // Is the data set available?
+        if (!list_mssql.containsKey(dataSet)) {
+            return profile;
+        }
+        // Timestamp
+        final long cTime_Millis = System.currentTimeMillis();
+        final long cTime = cTime_Millis / 1000;
+        final long startTime = cTime - (hoursFromNow * 60l * 60l);
+
+        double totalBuyVolume_Cur = 0, totalSellVolume_Cur = 0;
+        double totalBuyVolume = 0, totalSellVolume = 0;
+
+        // No need to lock this thread, if we are creating a new ArrayList off existing.
+        // Its a copy :)
+        final List<TickerItemData> currentList = list_mssql.get(dataSet);
+
+        //System.out.println("Start time: " + startTime + " , Cur time: " + cTime + " , " + currentList.get(currentList.size() - 1).getServerTime());
         final Iterator<TickerItemData> items = currentList.stream().
                 filter((data) -> (data.getServerTime() > startTime)).
                 sorted(TickerItemComparator).
@@ -645,7 +706,7 @@ public class TickerCacheTask {
                     list_mssql.put(ExchangeCurrencyPair, list_newItems);
                 } else {
                     List<TickerItemData> currentList = list_mssql.get(ExchangeCurrencyPair);
-                    
+
                     for (TickerItemData cur : list_newItems) {
                         currentList.add(cur);
                     }

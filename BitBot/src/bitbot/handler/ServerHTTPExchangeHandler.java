@@ -124,7 +124,7 @@ public class ServerHTTPExchangeHandler implements Container {
         Connection connection = new SocketConnection(server);
 
         // Init HTTP 
-       System.out.println("[Info] Starting HTTP server at port " + Props_HTTPPort);
+        System.out.println("[Info] Starting HTTP server at port " + Props_HTTPPort);
 
         SocketAddress address = new InetSocketAddress(Props_HTTPPort);
         connection.connect(address);
@@ -135,7 +135,7 @@ public class ServerHTTPExchangeHandler implements Container {
         connection.connect(addressL);
 
         // Init HTTPs
-       System.out.println("[Info] Starting HTTPs server at port " + Props_HTTPsPort);
+        System.out.println("[Info] Starting HTTPs server at port " + Props_HTTPsPort);
 
         SocketAddress address_secure = new InetSocketAddress(Props_HTTPsPort);
         connection.connect(address_secure, GenerateKeyStore());

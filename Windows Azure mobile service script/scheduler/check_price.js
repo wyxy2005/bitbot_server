@@ -350,6 +350,7 @@ function check_price() {
                         // sent another tile update to the main
                         push.mpns.sendTile(clientUniqueId, {
                             count: 1,
+                            backContent: currentPrice.toString() + ':' + alertMsg_Toast,
                         }, {
                                 success: function(pushResponse) {
                                 }
@@ -386,7 +387,7 @@ function check_price() {
                     }
                 }
             });*/
-        } else if (platform == "Windows8") {
+        } else if (platform == "Windows8" || platform == "Windows8.1") {
             push.wns.sendToastImageAndText04(clientUniqueId, {
                 text1: currentPrice.toString(),
                 text2: alertMsg_Toast,

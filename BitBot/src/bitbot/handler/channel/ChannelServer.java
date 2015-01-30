@@ -7,7 +7,6 @@ import bitbot.cache.swaps.BacklogCommitTask_Swaps;
 import bitbot.cache.swaps.SwapsCacheTask;
 import bitbot.cache.tickers.TickerCacheTask;
 import bitbot.cache.tickers.BacklogCommitTask_Tickers;
-import bitbot.handler.ServerClientHandler;
 import bitbot.handler.ServerSocketExchangeHandler;
 import bitbot.remoteRMI.ChannelWorldInterface;
 import bitbot.remoteRMI.WorldChannelInterface;
