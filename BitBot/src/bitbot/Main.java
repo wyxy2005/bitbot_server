@@ -8,12 +8,14 @@ import bitbot.util.BitcoinWisdomReader;
 import bitbot.util.MT4CVSReader;
 import bitbot.util.encryption.CustomXorEncryption;
 import java.security.cert.X509Certificate;
+import java.util.Calendar;
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
+import org.apache.commons.lang3.time.DateUtils;
 
 /**
  *
@@ -106,6 +108,36 @@ public class Main {
                 String CVSFile = args[1];
 
                 MT4CVSReader.ReadCVSFile(CVSFile);
+                break;
+            }
+            case "testtime": {
+                int intervalMinutes = Integer.parseInt(args[1]);
+                
+                final Calendar dtCal = Calendar.getInstance();
+                dtCal.setTimeInMillis(System.currentTimeMillis());
+
+                int truncateField = -1;
+                if (intervalMinutes < 60) {
+                    // below 1 hour
+                    truncateField = Calendar.HOUR; // {Calendar.HOUR_OF_DAY, Calendar.HOUR},
+                } else if (intervalMinutes < 60 * 24) {
+                    // below 1 day
+                    truncateField = Calendar.DATE; // {Calendar.DATE, Calendar.DAY_OF_MONTH, Calendar.AM_PM, Calendar.DAY_OF_YEAR, Calendar.DAY_OF_WEEK, Calendar.DAY_OF_WEEK_IN_MONTH */
+                } else if (intervalMinutes < 60 * 24 * 30) {
+                    // below 30 days
+                    truncateField = Calendar.MONTH;
+               } else if (intervalMinutes < 60 * 24 * 30 * 12 * 100) {
+                    // below 100 years
+                    truncateField = Calendar.YEAR;
+                } else {
+                   // wtf
+                    truncateField = Calendar.ERA;
+               }
+                long LastUsedTime = DateUtils.truncate(dtCal, truncateField).getTimeInMillis();
+                
+                final Calendar dtCal_final = Calendar.getInstance();
+                dtCal_final.setTimeInMillis(LastUsedTime);
+                System.out.println(dtCal_final.getTime().toString());
                 break;
             }
             default: {

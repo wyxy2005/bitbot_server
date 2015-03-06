@@ -27,7 +27,6 @@ import org.apache.mina.filter.codec.ProtocolCodecFilter;
 import org.apache.mina.filter.codec.textline.TextLineCodecFactory;
 import org.apache.mina.transport.socket.SocketAcceptor;
 import org.apache.mina.transport.socket.nio.NioSocketAcceptor;
-import org.json.simple.JSONObject;
 import org.json.simple.parser.ContainerFactory;
 import org.json.simple.parser.JSONParser;
 
@@ -52,12 +51,16 @@ public class ServerSocketExchangeHandler extends IoHandlerAdapter {
 
         instance.acceptor = new NioSocketAcceptor(Runtime.getRuntime().availableProcessors() * 2);
         instance.acceptor.setReuseAddress(true);
-        instance.acceptor.getSessionConfig().setIdleTime(IdleStatus.BOTH_IDLE, 10);
+        instance.acceptor.getSessionConfig().setIdleTime(IdleStatus.BOTH_IDLE, 50);
         instance.acceptor.getSessionConfig().setTcpNoDelay(true);
 
         // filters
         instance.acceptor.getFilterChain().addFirst("blacklist", new BlackListFilter());
-        instance.acceptor.getFilterChain().addLast("codec", new ProtocolCodecFilter(new TextLineCodecFactory(Charset.forName("UTF-8"))));
+
+        TextLineCodecFactory tlcFactory = new TextLineCodecFactory(Charset.forName("UTF-8"));
+        tlcFactory.setDecoderMaxLineLength(1024);
+        tlcFactory.setEncoderMaxLineLength(1024);
+        instance.acceptor.getFilterChain().addLast("codec", new ProtocolCodecFilter(tlcFactory));
 
         instance.InetSocketadd = new InetSocketAddress(InetAddress.getByName(ipAddr), Constants.SocketPort_Stream);
         instance.acceptor.setHandler(instance);
@@ -127,7 +130,7 @@ public class ServerSocketExchangeHandler extends IoHandlerAdapter {
 
     @Override
     public void messageReceived(final IoSession session, final Object message) throws Exception {
-        String receiveMessage = (String) message;
+        final String receiveMessage = (String) message;
         final Client c = (Client) session.getAttribute(StringPool.CLIENT_KEY);
 
         final long cTime = System.currentTimeMillis();
@@ -185,7 +188,7 @@ public class ServerSocketExchangeHandler extends IoHandlerAdapter {
                 }
             }
         } catch (Exception exp) {
-           // throw new EndOfFileException();
+            exp.printStackTrace();
         }
     }
 

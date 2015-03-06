@@ -36,6 +36,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import org.apache.commons.lang3.time.DateUtils;
 
 /**
  *
@@ -148,7 +149,6 @@ public class TickerCacheTask {
                 } else if (ExchangeCurrencyPair.contains("mtgox")) { // goxxed
                     //history = new TickerHistory_MTGox(); // died
                 }
-                //bitfinex-btc_usd---kraken-xbt_usd---kraken-xbt_eur---cexio-ghs_btc
 
                 if (history != null) {
                     runnable_exchangeHistory.add(TimerManager.register(
@@ -189,9 +189,6 @@ public class TickerCacheTask {
         }
         // Timestamp
         final long cTime_Millis = System.currentTimeMillis();
-        final Calendar dtCal = Calendar.getInstance();
-        dtCal.setTimeInMillis(cTime_Millis); // set UTC time
-        dtCal.set(Calendar.HOUR_OF_DAY, 0);
 
         final boolean includeVolumeData = !ExchangeSite.contains("coinbase");
 
@@ -209,12 +206,32 @@ public class TickerCacheTask {
         //Iterator<TickerItemData> itr = currentList.iterator();
         final List<TickerItemData> currentList = list_mssql.get(dataSet);
         final Iterator<TickerItemData> items = currentList.stream().
-                filter((data) -> (data.getServerTime() > ServerTimeFrom)).
+                filter((data) -> (data.getServerTime() > ServerTimeFrom) && (data.getServerTime() > startTime)).
                 sorted(TickerItemComparator).
                 iterator();
 
         while (items.hasNext()) {
             TickerItemData item = items.next();
+
+            // round the last used time to best possible time for the chart period
+            if (LastUsedTime == 0) {
+                final Calendar dtCal = Calendar.getInstance();
+                dtCal.setTimeInMillis(item.getServerTime());
+
+                int truncateField = -1;
+                if (intervalMinutes < 60) { // below 1 hour
+                    truncateField = Calendar.HOUR;
+                } else if (intervalMinutes < 60 * 24) { // below 1 day
+                    truncateField = Calendar.DATE;
+                } else if (intervalMinutes < 60 * 24 * 30) { // below 30 days
+                    truncateField = Calendar.MONTH;
+                } else if (intervalMinutes < 60 * 24 * 30 * 12 * 100) { // below 100 years
+                    truncateField = Calendar.YEAR;
+                } else { // wtf
+                    truncateField = Calendar.ERA;
+                }
+                LastUsedTime = DateUtils.truncate(dtCal, truncateField).getTimeInMillis();
+            }
 
             // Check if last added tick is above the threshold 'intervalMinutes'
             if (LastUsedTime + (intervalMinutes * 60) < item.getServerTime()) {
@@ -323,6 +340,10 @@ public class TickerCacheTask {
         }
 
         return list_chart;
+    }
+
+    private static long getNearestRoundingTime() {
+        return 0;
     }
 
     public List<ReturnVolumeProfileData> getVolumeProfile(final String ticker, final List<Integer> hoursFromNow, String ExchangeSite) {
