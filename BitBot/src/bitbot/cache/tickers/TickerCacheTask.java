@@ -231,6 +231,9 @@ public class TickerCacheTask {
                     truncateField = Calendar.ERA;
                 }
                 LastUsedTime = DateUtils.truncate(dtCal, truncateField).getTimeInMillis();
+                while (LastUsedTime < item.getServerTime()) { // no data available prior to this.
+                    LastUsedTime += (intervalMinutes * 60);
+                }
             }
 
             // Check if last added tick is above the threshold 'intervalMinutes'

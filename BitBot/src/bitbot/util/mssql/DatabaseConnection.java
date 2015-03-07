@@ -22,7 +22,7 @@ public class DatabaseConnection {
     private static String DecryptedDatabaseStrings_u = null;
     private static String DecryptedDatabaseStrings_p = null;
 
-    private static final long connectionTimeOut = 5 * 60 * 1000; // 5 minutes
+    private static final long connectionTimeOut = 3 * 60 * 1000; // 3 minutes
     private static final ReentrantLock mutex = new ReentrantLock();
     private static final Map<Long, ConWrapper> connections = new HashMap();
 
@@ -46,33 +46,22 @@ public class DatabaseConnection {
         }
     }
 
-    /*public static Connection getConnection_BAK() {
-// Setup the connection with the DB
-        Connection connect = null;
-        try {
-            //Class.forName("net.sourceforge.jtds.jdbc.Driver");
-            Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
-            
-            connect = DriverManager.getConnection(
-                DecryptedDatabaseStrings, DecryptedDatabaseStrings_u, DecryptedDatabaseStrings_p);
-        } catch (SQLException | ClassNotFoundException exp) {
-            exp.printStackTrace();
-        }
-        return connect;
-    }*/
-
     public static final Connection getConnection() {
-        if (Randomizer.nextInt(100) == 0) {
+        // clearing task
+        if (Randomizer.nextInt(20) == 0) {
             new Thread(new ClearingTask()).start();
         }
+        
         final long threadID = Thread.currentThread().getId();
         ConWrapper ret = connections.get(threadID);
 
-        if (ret != null && ret.closeIfexpiredConnection(System.currentTimeMillis())) {
-            ret = null;
+        if (ret != null) {
+            if (ret.closeIfexpiredConnection(System.currentTimeMillis())) {
+                ret = null;
+            }
         }
         if (ret == null) {
-            Connection retCon = connectToDB();
+            Connection retCon = connectToDBInternal();
             ret = new ConWrapper(retCon, threadID);
 
             mutex.lock();
@@ -85,7 +74,7 @@ public class DatabaseConnection {
         return ret.getConnection();
     }
 
-    public static final Connection connectToDB() {
+    public static final Connection connectToDBInternal() {
         try {
             Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
             //Class.forName("net.sourceforge.jtds.jdbc.Driver");
@@ -108,6 +97,7 @@ public class DatabaseConnection {
         try {
             for (final ConWrapper con : connections.values()) {
                 con.connection.close();
+                con.expiredConnection = true;
             }
             connections.clear();
         } finally {
@@ -161,7 +151,8 @@ public class DatabaseConnection {
                 } finally {
                     mutex.unlock();
                 }
-                this.connection = connectToDB();
+                this.connection = connectToDBInternal();
+                this.expiredConnection = false;
             }
             lastAccessTime = System.currentTimeMillis(); // Record Access
             return this.connection;
@@ -172,7 +163,7 @@ public class DatabaseConnection {
          *
          * @return
          */
-        public final boolean closeIfexpiredConnection(final long cTime) {
+        private boolean closeIfexpiredConnection(final long cTime) {
             if (expiredConnection)
                 return true;
             if (lastAccessTime == 0) {

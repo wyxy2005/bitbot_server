@@ -1,0 +1,26 @@
+[2015-02-21 17:07:17] Query: INSERT INTO bitcoinbot.cryptsy_price_ltc_btc ("high", "low", "vol", "vol_cur", "open", "close", "server_time", "buysell_ratio") VALUES (?,?,?,?,?,?,?,?);
+--
+[2015-02-21 17:07:17] com.microsoft.sqlserver.jdbc.SQLServerException: SQL Server did not return a response. The connection has been closed.
+	at com.microsoft.sqlserver.jdbc.SQLServerConnection.terminate(SQLServerConnection.java:1667)
+	at com.microsoft.sqlserver.jdbc.SQLServerConnection.terminate(SQLServerConnection.java:1654)
+	at com.microsoft.sqlserver.jdbc.TDSReader.readPacket(IOBuffer.java:4844)
+	at com.microsoft.sqlserver.jdbc.TDSCommand.startResponse(IOBuffer.java:6150)
+	at com.microsoft.sqlserver.jdbc.SQLServerPreparedStatement.doExecutePreparedStatement(SQLServerPreparedStatement.java:402)
+	at com.microsoft.sqlserver.jdbc.SQLServerPreparedStatement$PrepStmtExecCmd.doExecute(SQLServerPreparedStatement.java:350)
+	at com.microsoft.sqlserver.jdbc.TDSCommand.execute(IOBuffer.java:5696)
+	at com.microsoft.sqlserver.jdbc.SQLServerConnection.executeCommand(SQLServerConnection.java:1715)
+	at com.microsoft.sqlserver.jdbc.SQLServerStatement.executeCommand(SQLServerStatement.java:180)
+	at com.microsoft.sqlserver.jdbc.SQLServerStatement.executeStatement(SQLServerStatement.java:155)
+	at com.microsoft.sqlserver.jdbc.SQLServerPreparedStatement.execute(SQLServerPreparedStatement.java:332)
+	at bitbot.cache.tickers.TickerHistoryData.commitDatabase(TickerHistoryData.java:109)
+	at bitbot.cache.tickers.BacklogCommitTask_Tickers.ImmediateBacklogTimerPersistingTask(BacklogCommitTask_Tickers.java:157)
+	at bitbot.cache.tickers.BacklogCommitTask_Tickers$ImmediateBacklogTimerPersistingTask.run(BacklogCommitTask_Tickers.java:135)
+	at java.lang.Thread.run(Thread.java:745)
+	at java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:511)
+	at java.util.concurrent.FutureTask.run(FutureTask.java:266)
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1142)
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:617)
+	at java.lang.Thread.run(Thread.java:745)
+
+--
+
