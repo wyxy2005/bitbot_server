@@ -25,13 +25,27 @@ public class CloudflareIPValidator {
         "197.234.240.0/22",
         "198.41.128.0/17",
         "162.158.0.0/15",
-        "104.16.0.0/12"
+        "104.16.0.0/12",
+        "172.64.0.0/13"
     };
 
     private static final List<Pair<Integer, Integer>> CompiledIPAddrRange = new ArrayList<>();
 
     static {
+        /*String[] usingAddressList;
+        
+        String HttpGetResult = HttpClient.httpsGet("https://www.cloudflare.com/ips-v4", "");
+        if (HttpGetResult == null) {
+            usingAddressList = IPAddress_v4;
+        } else {
+            usingAddressList = HttpGetResult.split("\\r?\\n");
+        }
+        System.out.println(HttpGetResult);*/
         for (String CloudFlareIP : IPAddress_v4) {
+     /*       if (CloudFlareIP.isEmpty()) {
+                continue;
+            }
+            System.out.println(CloudFlareIP);*/
             String[] splitIPAddr = CloudFlareIP.split("\\.");
             String[] last_mask = splitIPAddr[3].split("\\/");
 
