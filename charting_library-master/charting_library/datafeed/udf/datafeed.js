@@ -28,9 +28,9 @@ Datafeeds.UDFCompatibleDatafeed = function(datafeedURL, updateFrequency) {
 
 Datafeeds.UDFCompatibleDatafeed.prototype.defaultConfiguration = function() {
 	return {
-		supports_search: false,
-		supports_group_request: true,
-		supported_resolutions: ["1", "5", "15", "30", "60", "1D", "1W", "1M"],
+		supports_search: true,
+		supports_group_request: false,
+		supported_resolutions: ["1m", "3m", "5m", "15m", "30m", "60m", "120m", "240m", "360m", "720m", "1D", "2D", "3D", "W", "3W", "1M"],
 		supports_marks: false
 	};
 };
@@ -80,7 +80,6 @@ Datafeeds.UDFCompatibleDatafeed.prototype._send = function(url, params) {
 			request += (i === 0 ? "?" : "&") + key + "=" + value;
 		}
 	}
-
 	this._logMessage("New request: " + request);
 
 	return $.ajax(request);
@@ -414,7 +413,7 @@ Datafeeds.UDFCompatibleDatafeed.prototype.unsubscribeQuotes = function(listenerG
 Datafeeds.SymbolsStorage = function(datafeed) {
 	this._datafeed = datafeed;
 
-	this._exchangesList = ["NYSE", "FOREX", "AMEX"];
+	this._exchangesList = ["All Exchanges",    "BTCe", "Bitfinex", "Bitstamp", "Okcoin", "BTCChina", "Coinbase", "CoinbaseExchange", "Campbx", "Itbit", "Cryptsy", "796", "Fybsg", "Fybse", "Kraken", "CexIO", "Dgex"];
 	this._exchangesWaitingForData = {};
 	this._exchangesDataCache = {};
 

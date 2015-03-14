@@ -87,7 +87,10 @@ public class ExponentialMovingAverageTask implements Runnable {
                     }
                     mainObj.put("EMAs", array_EMA);
 
-                    body.println(mainObj.toJSONString());
+                    String retString = mainObj.toJSONString();
+
+                    response.setContentLength(retString.length());
+                    body.print(retString);
                 } else {
                     response.setStatus(Status.UNAUTHORIZED);
                 }

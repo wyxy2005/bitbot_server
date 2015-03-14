@@ -26,7 +26,10 @@ public class EchoClientTask implements Runnable {
             try (PrintStream body = response.getPrintStream()) {
                 _ResponseHeader.addBasicResponseHeader(response);
 
-                body.println("You are connected to BitBot server.");
+                String retString = "You are connected to BitBot server.";
+
+                response.setContentLength(retString.length());
+                body.print(retString);
             }
         } catch (IOException e) {
             e.printStackTrace();

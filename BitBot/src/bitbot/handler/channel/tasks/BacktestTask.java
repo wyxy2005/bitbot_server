@@ -112,18 +112,27 @@ public class BacktestTask implements Runnable {
                         }
                         returnJson.put("Debug", array_Debug);
 
-                        body.println(returnJson.toJSONString());
+                        String retString = returnJson.toJSONString();
+
+                        response.setContentLength(retString.length());
+                        body.print(retString);
                     } else {
                         returnJson.put("success", "0");
                         returnJson.put("error_msg", returnResult);
 
-                        body.println(returnJson.toJSONString());
+                        String retString = returnJson.toJSONString();
+
+                        response.setContentLength(retString.length());
+                        body.print(retString);
                     }
                 } else {
                     returnJson.put("success", "0");
                     returnJson.put("error_msg", "No content available.");
 
-                    body.println(returnJson.toJSONString());
+                    String retString = returnJson.toJSONString();
+
+                    response.setContentLength(retString.length());
+                    body.print(retString);
                 }
                 response.setStatus(Status.OK);
                 body.close();

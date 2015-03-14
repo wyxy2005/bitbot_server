@@ -162,9 +162,11 @@ public class ChartTask_Candlestick implements Runnable {
                             }).forEach((obj) -> {
                                 array.add(obj);
                             });
-                            body.print(
-                                    CustomXorEncryption.custom_xor_encrypt(array.toJSONString(), nonce)
-                            );
+
+                            String retString = CustomXorEncryption.custom_xor_encrypt(array.toJSONString(), nonce);
+
+                            response.setContentLength(retString.length());
+                            body.print(retString);
                             break;
                         }
                     }

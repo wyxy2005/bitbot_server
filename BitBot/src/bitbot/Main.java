@@ -1,5 +1,6 @@
 package bitbot;
 
+import bitbot.handler.CloudflareIPValidator;
 import bitbot.handler.channel.ChannelServer;
 import bitbot.handler.world.WorldServer;
 import bitbot.server.threads.MultiThreadExecutor;
@@ -96,8 +97,10 @@ public class Main {
                     return;
                 }
                 String txtJsonFile = args[1];
+                String sqlPat = args[2];
+                boolean showdebugOnly = Boolean.parseBoolean(args[3]);
 
-                BitcoinWisdomReader.ReadJsonFile(txtJsonFile);
+                BitcoinWisdomReader.ReadJsonFile(txtJsonFile, sqlPat, showdebugOnly);
                 break;
             }
             case "readMT4Data": {

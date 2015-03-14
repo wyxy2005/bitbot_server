@@ -121,9 +121,10 @@ public class VolumeProfileTask implements Runnable {
                         array.add(obj_array);
                     }
 
-                    body.print(
-                            CustomXorEncryption.custom_xor_encrypt(array.toJSONString(), nonce)
-                    );
+                    String retString = CustomXorEncryption.custom_xor_encrypt(array.toJSONString(), nonce);
+                    
+                    response.setContentLength(retString.length());
+                    body.print(retString);
                 } else {
                     response.setStatus(Status.UNAUTHORIZED);
                 }

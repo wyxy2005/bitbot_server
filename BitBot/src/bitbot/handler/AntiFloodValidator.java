@@ -20,7 +20,7 @@ import java.util.Map;
 public class AntiFloodValidator {
     
     // Anti flood
-    private static final int AllowedInterval = 100,
+    private static final int AllowedInterval = 50,
             AllowedResetInveral = 10000;
     private static final int SpamCount = 100;
     private static final String BlockedIPFileList = "BlockedIPs.properties";
@@ -74,7 +74,8 @@ public class AntiFloodValidator {
 	    final long difference = cTime - track.left;
 	    if (difference < AllowedInterval) {
 		count++;
-	    } else if (difference > AllowedResetInveral) {
+	    }
+            if (difference > AllowedResetInveral) {
 		count = 1;
             }
 	    if (count >= SpamCount) {

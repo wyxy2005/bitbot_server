@@ -36,6 +36,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import org.apache.commons.lang3.time.DateUtils;
 
 /**
@@ -179,6 +180,20 @@ public class TickerCacheTask {
         return new ArrayList(list_mssql.get(ExchangeSite + "-" + ticker));
     }
 
+    public TickerItemData getTickerSummary(final String ticker, String ExchangeSite) {
+        final String dataSet = ExchangeSite + "-" + ticker;
+
+        // Is the data set available?
+        if (!list_mssql.containsKey(dataSet)) {
+            return null;
+        }
+        final List<TickerItemData> currentList = list_mssql.get(dataSet);
+        if (currentList.isEmpty()) {
+            return null;
+        }
+        return currentList.get(0);
+    }
+
     public List<TickerItem_CandleBar> getTickerList_Candlestick(final String ticker, final int backtestHours, int intervalMinutes, String ExchangeSite, long ServerTimeFrom) {
         final List<TickerItem_CandleBar> list_chart = new ArrayList(); // create a new array first
         final String dataSet = ExchangeSite + "-" + ticker;
@@ -187,13 +202,14 @@ public class TickerCacheTask {
         if (!list_mssql.containsKey(dataSet)) {
             return list_chart;
         }
+
         // Timestamp
         final long cTime_Millis = System.currentTimeMillis();
 
-        final boolean includeVolumeData = !ExchangeSite.contains("coinbase");
+        final boolean includeVolumeData = !ExchangeSite.equalsIgnoreCase("coinbase");
 
         final long cTime = cTime_Millis / 1000;
-        final long startTime = cTime - (60l * 60l * backtestHours);
+        final long startTime = backtestHours == 0 ? 0 : (cTime - (60l * 60l * backtestHours));
         long LastUsedTime = 0;
 
         float high = 0, low = Float.MAX_VALUE, open = -1, lastPriceSet = 0;
@@ -343,10 +359,6 @@ public class TickerCacheTask {
         }
 
         return list_chart;
-    }
-
-    private static long getNearestRoundingTime() {
-        return 0;
     }
 
     public List<ReturnVolumeProfileData> getVolumeProfile(final String ticker, final List<Integer> hoursFromNow, String ExchangeSite) {

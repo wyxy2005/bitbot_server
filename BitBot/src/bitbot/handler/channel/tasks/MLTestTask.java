@@ -20,7 +20,7 @@ public class MLTestTask implements Runnable {
 
     private final Response response;
     private final Request request;
-    
+
     private final int backtestHours;
     private final int intervalMinutes;
     private final String ExchangeSite;
@@ -29,7 +29,7 @@ public class MLTestTask implements Runnable {
     private final int APIVersion;
 
     private boolean isAuthorized = true;
-    
+
     private static long LastRequestTime = 0;
 
     public MLTestTask(Request request, Response response, Query query) {
@@ -75,7 +75,7 @@ public class MLTestTask implements Runnable {
         } else {
             returnType = "json";
         }
-        
+
         final long cTime = System.currentTimeMillis();
         if (cTime - LastRequestTime < 1000) {
             isAuthorized = false;
@@ -113,7 +113,11 @@ public class MLTestTask implements Runnable {
                                 }).forEach((obj) -> {
                                     array.add(obj);
                                 });
-                                body.print(array.toJSONString());
+
+                                String retString = array.toJSONString();
+
+                                response.setContentLength(retString.length());
+                                body.print(retString);
                             } else { // csv
                                 final String newLine = "\r\n";
 
@@ -134,8 +138,11 @@ public class MLTestTask implements Runnable {
                                     sb.append(newLine);
                                 }
                                 sb.append(newLine);
-                                
-                                body.print(sb.toString());
+
+                                String retString = sb.toString();
+
+                                response.setContentLength(retString.length());
+                                body.print(retString);
                             }
                             break;
                         }

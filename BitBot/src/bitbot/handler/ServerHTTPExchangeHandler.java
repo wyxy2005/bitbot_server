@@ -66,41 +66,64 @@ public class ServerHTTPExchangeHandler implements Container {
 
         // Query
         Query query = request.getQuery();
-        String queryType = query.get("Type"); // Chart  
+        final String path = request.getPath().getPath();
+        final String queryType = query.get("Type"); // Chart  
 
         //http://www.simpleframework.org/doc/tutorial/tutorial.php
         Runnable r; // ensure that r is always not null
-        if (queryType == null) {
+        if (path == null) {
             r = new EchoClientTask(request, response);
-        } else {
+        } else if (path.equals("/")) {
             // http://127.0.0.1:8080/?Type=Chart
-            switch (queryType) {
-                case "Chart": {
-                    r = new ChartTask(request, response, query);
-                    break;
+            if (queryType == null) {
+                r = new EchoClientTask(request, response);
+            } else {
+                switch (queryType) {
+                    case "Chart": {
+                        r = new ChartTask(request, response, query);
+                        break;
+                    }
+                    case "CandlestickChart": {
+                        r = new ChartTask_Candlestick(request, response, query);
+                        break;
+                    }
+                    case "BackTest": {
+                        r = new BacktestTask(request, response, query);
+                        break;
+                    }
+                    case "EMA": {
+                        r = new ExponentialMovingAverageTask(request, response, query);
+                        break;
+                    }
+                    case "Swaps": {
+                        r = new SwapTask(request, response, query);
+                        break;
+                    }
+                    case "MLTest": {
+                        r = new MLTestTask(request, response, query);
+                        break;
+                    }
+                    case "VolumeProfile": {
+                        r = new VolumeProfileTask(request, response, query);
+                        break;
+                    }
+                    default: {
+                        r = new EchoClientTask(request, response);
+                        break;
+                    }
                 }
-                case "CandlestickChart": {
-                    r = new ChartTask_Candlestick(request, response, query);
-                    break;
-                }
-                case "BackTest": {
-                    r = new BacktestTask(request, response, query);
-                    break;
-                }
-                case "EMA": {
-                    r = new ExponentialMovingAverageTask(request, response, query);
-                    break;
-                }
-                case "Swaps": {
-                    r = new SwapTask(request, response, query);
-                    break;
-                }
-                case "MLTest": {
-                    r = new MLTestTask(request, response, query);
-                    break;
-                }
-                case "VolumeProfile": {
-                    r = new VolumeProfileTask(request, response, query);
+            }
+        } else {
+            switch (path) {
+                case "/symbol_info":
+                case "/config":
+                case "/symbols":
+                case "/symbol":
+                case "/search":
+                case "/history":
+                case "/quotes":
+                case "/marks": {
+                    r = new TradingViewUDFTask(request, response, query, path);
                     break;
                 }
                 default: {

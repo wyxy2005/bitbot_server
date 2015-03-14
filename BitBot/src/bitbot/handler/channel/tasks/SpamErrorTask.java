@@ -29,7 +29,11 @@ public class SpamErrorTask implements Runnable {
                 
                 response.setStatus(Status.SERVICE_UNAVAILABLE);
                 
-                body.println("too fast, or you have been banned. Contact support. bitbotlive@outlook.com");
+                
+                String retString = "too fast, or you have been banned. Contact support. bitbotlive@outlook.com";
+                
+                response.setContentLength(retString.length());
+                body.println(retString);
             }
         } catch (IOException e) {
             e.printStackTrace();

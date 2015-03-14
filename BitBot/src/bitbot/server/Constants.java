@@ -30,5 +30,22 @@ public class Constants {
     // Socket
     public static final int SocketPortLegacy = 8080; // to provide compatibility for those on old version of the app
     public static final int SocketPort_Stream = 8082;
+    
+    
+    // TradingView UDF
+    public static boolean tv_supports_search = true;
+    public static boolean tv_supports_group_request = false;
+    public static boolean tv_supports_marks = false;
+    
+    public static String[] tv_exchange_value = { "",                "BTCe", "Bitfinex", "Bitstamp", "Okcoin", "BTCChina", "Coinbase", "CoinbaseExchange", "Campbx", "Itbit", "Cryptsy", "_796", "Fybsg", "Fybse", "Kraken", "CexIO", "Dgex"};
+    public static String[] tv_exchange_name = { "All Exchanges",    "BTCe", "Bitfinex", "Bitstamp", "Okcoin", "BTCChina", "Coinbase", "CoinbaseExchange", "Campbx", "Itbit", "Cryptsy", "_796", "Fybsg", "Fybse", "Kraken", "CexIO", "Dgex"};
+    public static String[] tv_exchange_desc = { "",                 "BTCe", "Bitfinex", "Bitstamp", "Okcoin", "BTCChina", "Coinbase", "CoinbaseExchange", "Campbx", "Itbit", "Cryptsy", "_796", "Fybsg", "Fybse", "Kraken", "CexIO", "Dgex"};
+    
 
+    public static String[] tv_symbolType1 = { "All types", "Bitcoin", "Stock", "Index"};
+    public static String[] tv_symbolType2 = { "", "bitcoin", "stock", "index"};
+    
+    public static String[] tv_supportedResolutions = { "1m", "3m", "5m", "15m", "30m", "60m", "120m", "240m", "360m", "720m", "1D", "2D", "3D", "W", "3W", "1M"};
+
+ 
 }

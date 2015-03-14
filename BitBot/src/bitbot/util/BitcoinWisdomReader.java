@@ -21,14 +21,24 @@ import org.json.simple.parser.JSONParser;
  */
 public class BitcoinWisdomReader {
 
-    public static void ReadJsonFile(String file) {
+    public static void ReadJsonFile(String file, String path, boolean showdebugOnly) throws InterruptedException {
+        System.out.println("Output to SQL table: " + path);
+        System.out.println("======================Starting in 3 seconds======================"); // some delay, in case its pressed by accident
+        
+        Thread.sleep(3000);
+        
         Calendar beforeDate = Calendar.getInstance();
-        beforeDate.set(Calendar.MONTH, 4);
-        beforeDate.set(Calendar.DAY_OF_MONTH, 21);
+        beforeDate.set(Calendar.MONTH, 2 - 1);
+        beforeDate.set(Calendar.DAY_OF_MONTH, 23);
         
-        System.out.println(beforeDate.getTimeInMillis() / 1000);
+        System.out.println("Before: " + beforeDate.getTimeInMillis() / 1000);
         
+        Calendar endDate = Calendar.getInstance();
+        endDate.set(Calendar.MONTH, 3 - 1);
+        endDate.set(Calendar.DAY_OF_MONTH, 6);
         
+        System.out.println("End: " + endDate.getTimeInMillis() / 1000);
+             
         try (BufferedReader br = new BufferedReader(new FileReader(file))) {
             String line = br.readLine();
 
@@ -67,14 +77,14 @@ public class BitcoinWisdomReader {
                 Calendar cal = Calendar.getInstance();
                 cal.setTimeInMillis(time * 1000);
 
-              //  if (beforeDate.after(cal)) {
+                if (cal.after(beforeDate) && cal.before(endDate)) {
                     System.out.println(String.format("[%s] Open: %f, High: %f, Low: %f, Close: %f, VolumeCur: %f, Volume: %f", cal.getTime().toString(), open, high, low, close, vol_cur, vol));
-                    
-                    InsertSQLTable("mtgox_price_btc_usd", high, low, vol, vol_cur, open, close, time); 
-              //  } else {
-                   // System.out.println(time);
-              //      break;
-              //  }
+
+                    if (showdebugOnly)
+                        InsertSQLTable(path, high, low, vol, vol_cur, open, close, time); 
+                } else {
+                    //System.out.println(time);
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();

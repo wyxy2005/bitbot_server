@@ -125,7 +125,10 @@ public class SwapTask implements Runnable {
                             }
 
                             // Output
-                            body.println(obj.toJSONString());
+                            String retString = obj.toJSONString();
+
+                            response.setContentLength(retString.length());
+                            body.println(retString);
                             break;
                         }
                         case 2: { // encrypted return data
@@ -154,8 +157,10 @@ public class SwapTask implements Runnable {
                             }
 
                             // Output
-                            body.print(
-                                    CustomXorEncryption.custom_xor_encrypt(obj.toJSONString(), nonce));
+                            String retString = CustomXorEncryption.custom_xor_encrypt(obj.toJSONString(), nonce);
+
+                            response.setContentLength(retString.length());
+                            body.print(retString);
                             break;
                         }
                     }

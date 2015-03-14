@@ -13,6 +13,7 @@ public class _ResponseHeader {
         long time = System.currentTimeMillis();
 
         response.setValue("Content-Type", "text/plain");
+        response.setValue("Access-Control-Allow-Origin", "*");
         response.setValue("Server", Constants.Server_UserAgent);
         response.setValue("Info", "There is nothing to see here ;)");
         response.setDate("Date", time);

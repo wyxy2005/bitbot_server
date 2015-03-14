@@ -123,7 +123,11 @@ public class ChartTask implements Runnable {
                                 }).forEach((obj) -> {
                                     array.add(obj);
                                 });
-                                body.println(array.toJSONString());
+
+                                String retString = array.toJSONString();
+
+                                response.setContentLength(retString.length());
+                                body.print(retString);
                                 break;
                             }
                             case "csv": {
@@ -138,7 +142,11 @@ public class ChartTask implements Runnable {
                                     sb.append(item.getVol()).append(",");
                                     sb.append(item.getVol_Cur()).append(",");
 
-                                    body.println(sb.toString());
+       
+                                    String retString = sb.toString();
+
+                                    response.setContentLength(retString.length());
+                                    body.print(retString);
                                 }
                                 break;
                             }
