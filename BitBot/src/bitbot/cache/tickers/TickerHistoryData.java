@@ -1,8 +1,8 @@
 package bitbot.cache.tickers;
 
 import bitbot.handler.channel.ChannelServer;
-import bitbot.server.ServerLog;
-import bitbot.server.ServerLogType;
+import bitbot.logging.ServerLog;
+import bitbot.logging.ServerLogType;
 import bitbot.util.mssql.DatabaseConnection;
 import bitbot.util.FileoutputUtil;
 import bitbot.util.mssql.DatabaseTablesConstants;

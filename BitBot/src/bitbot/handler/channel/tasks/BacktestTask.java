@@ -1,7 +1,7 @@
 package bitbot.handler.channel.tasks;
 
 import bitbot.cache.tickers.TickerItem_CandleBar;
-import bitbot.server.Constants;
+import bitbot.Constants;
 import bitbot.server.scripting.MarketBacktestBuySellPoints;
 import bitbot.server.scripting.MarketBacktestInteraction;
 import bitbot.server.scripting_support.MarketBacktestScriptManager;

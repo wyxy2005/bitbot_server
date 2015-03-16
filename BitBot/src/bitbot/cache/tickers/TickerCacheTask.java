@@ -21,7 +21,7 @@ import bitbot.external.MicrosoftAzureDatabaseExt;
 import bitbot.graph.ExponentialMovingAverage;
 import bitbot.graph.ExponentialMovingAverageData;
 import bitbot.handler.channel.ChannelServer;
-import bitbot.server.Constants;
+import bitbot.Constants;
 import bitbot.server.threads.LoggingSaveRunnable;
 import bitbot.server.threads.TimerManager;
 import java.io.File;
@@ -76,6 +76,10 @@ public class TickerCacheTask {
                 tickercache.setLoggingSaveRunnable(runnable);
 
                 runnable_mssql.add(runnable);
+
+                List<TickerItemData> arrays = new ArrayList(); // same reference
+                list_mssql.put(ExchangeCurrencyPair, arrays);
+                list_mssql.put(ExchangeCurrencyPair.toLowerCase(), arrays); // to fix for futures
             }
 
             // History
@@ -818,18 +822,48 @@ public class TickerCacheTask {
      * @param open the opening price
      * @param volume the volume
      * @param volume_cur the volume detonated in the primary currency, eg
-     * bitcoin instead of USD
+     * @param buysell_ratio bitcoin instead of USD
      */
     public void receivedNewGraphEntry_OtherPeers(String ExchangeCurrencyPair, long server_time, float close, float high, float low, float open, double volume, double volume_cur, float buysell_ratio) {
-        System.out.println(String.format("[Info] New info from other peers %s [%d], Close: %f, High: %f", ExchangeCurrencyPair, server_time, close, high));
+        //System.out.println(String.format("[Info] New info from other peers %s [%d], Close: %f, High: %f", ExchangeCurrencyPair, server_time, close, high));
 
         if (list_mssql.containsKey(ExchangeCurrencyPair)
                 && canAcceptNewInfoFromOtherPeers.contains(ExchangeCurrencyPair.hashCode())) { // First item, no sync needed
             List<TickerItemData> currentList = list_mssql.get(ExchangeCurrencyPair);
+            
+            synchronized (currentList) {
+                if (currentList.size() > 0) {
+                    TickerItemData lastItem = currentList.get(currentList.size() - 1);
+                    
+                    if (lastItem.isUnmaturedData()) {
+                        lastItem.replaceUnmaturedData(server_time, close, high, low, open, volume, volume_cur, buysell_ratio, false);
+                        return;
+                    }
+                }
+                // add new item entry
+                currentList.add(new TickerItemData(server_time, close, high, low, open, volume, volume_cur, buysell_ratio, false));
+                //System.out.println("[Info] Added New info from other peers");
+            }
+        }
+    }
 
-            currentList.add(new TickerItemData(server_time, close, high, low, open, volume, volume_cur, buysell_ratio));
+    public void recievedNewUnmaturedData(String ExchangeCurrencyPair, long server_time, float close, float high, float low, float open, double volume, double volume_cur, float buysell_ratio) {
+        if (list_mssql.containsKey(ExchangeCurrencyPair)
+                && canAcceptNewInfoFromOtherPeers.contains(ExchangeCurrencyPair.hashCode())) { // First item, no sync needed
+            List<TickerItemData> currentList = list_mssql.get(ExchangeCurrencyPair);
 
-            //System.out.println("[Info] Added New info from other peers");
+            synchronized (currentList) {
+                if (currentList.size() > 0) {
+                    TickerItemData lastItem = currentList.get(currentList.size() - 1);
+
+                    // replace or add new unmatured data
+                    if (lastItem.isUnmaturedData()) {
+                        lastItem.replaceUnmaturedData(server_time, close, high, low, open, volume, volume_cur, buysell_ratio, true);
+                    } else {
+                        currentList.add(new TickerItemData(server_time, close, high, low, open, volume, volume_cur, buysell_ratio, true));
+                    }
+                }
+            }
         }
     }
 }

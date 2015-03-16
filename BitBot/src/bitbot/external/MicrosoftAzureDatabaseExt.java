@@ -1,7 +1,7 @@
 package bitbot.external;
 
 import bitbot.cache.swaps.SwapsItemData;
-import bitbot.server.Constants;
+import bitbot.Constants;
 import bitbot.util.mssql.DatabaseConnection;
 import bitbot.cache.tickers.TickerItemData;
 import bitbot.util.mssql.DatabaseTablesConstants;

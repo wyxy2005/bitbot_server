@@ -1,6 +1,6 @@
 package bitbot.handler.channel.tasks;
 
-import bitbot.server.Constants;
+import bitbot.Constants;
 import org.simpleframework.http.Response;
 
 /**

@@ -20,7 +20,7 @@ import java.util.Map;
 public class AntiFloodValidator {
     
     // Anti flood
-    private static final int AllowedInterval = 50,
+    private static final int 
             AllowedResetInveral = 10000;
     private static final int SpamCount = 100;
     private static final String BlockedIPFileList = "BlockedIPs.properties";
@@ -51,7 +51,7 @@ public class AntiFloodValidator {
         }
     }
     
-    public static boolean CheckSpam(String address) {
+    public static boolean CheckSpam(String address, int AllowedInterval) {
 	if (isBlocked(address)) {
 //	    if (Randomizer.nextInt(200) == 1) {	
 //		FileoutputUtil.log("DOS_Log.rtf", String.format("DOS activity with : %s : %s", addr.toString(), saaddr.getHostName()));

@@ -1,7 +1,7 @@
 package bitbot.server.threads;
 
-import bitbot.server.ServerLog;
-import bitbot.server.ServerLogType;
+import bitbot.logging.ServerLog;
+import bitbot.logging.ServerLogType;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;

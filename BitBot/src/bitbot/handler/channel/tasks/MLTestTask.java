@@ -2,7 +2,7 @@ package bitbot.handler.channel.tasks;
 
 import bitbot.cache.tickers.TickerItem_CandleBar;
 import bitbot.handler.channel.ChannelServer;
-import bitbot.server.Constants;
+import bitbot.Constants;
 import java.io.PrintStream;
 import java.util.List;
 import org.json.simple.JSONArray;

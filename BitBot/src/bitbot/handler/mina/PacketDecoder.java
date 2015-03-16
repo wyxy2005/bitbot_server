@@ -1,7 +1,7 @@
 package bitbot.handler.mina;
 
 import bitbot.client.Client;
-import bitbot.server.Constants;
+import bitbot.Constants;
 import bitbot.util.encryption.AESOFB;
 import bitbot.util.encryption.CustomEncryption;
 

@@ -2,7 +2,7 @@ package bitbot.cache.tickers.HTTP;
 
 import bitbot.cache.tickers.TickerHistoryInterface;
 import bitbot.cache.tickers.TickerHistoryData;
-import bitbot.server.Constants;
+import bitbot.Constants;
 
 /**
  *

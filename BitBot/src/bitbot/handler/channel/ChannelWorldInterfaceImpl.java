@@ -52,7 +52,10 @@ public class ChannelWorldInterfaceImpl extends UnicastRemoteObject implements Ch
 
     @Override
     public void broadcastPriceChanges(String ExchangeCurrencyPair, long server_time, float close, float high, float low, float open, double volume, double volume_cur, float buysell_ratio, float last) throws RemoteException {
+        server.getTickerTask().recievedNewUnmaturedData(ExchangeCurrencyPair, server_time, close, high, low, open, volume, volume_cur, buysell_ratio);
+        
         //System.out.println(String.format("[Info] Latest info from other peers %s [%d], Price: %f, Amount: %f", ExchangeCurrencyPair, date, price, amount));
+        
         if (ChannelServer.getInstance().isEnableSocketStreaming() && 
                 ChannelServer.getInstance().getServerSocketExchangeHandler() != null) {
             ChannelServer.getInstance().getServerSocketExchangeHandler().broadcastMessage(ServerSocketExchangePacket.getPriceChanges(ExchangeCurrencyPair, server_time, close, high, low, open, volume, volume_cur, buysell_ratio, last));

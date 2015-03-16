@@ -25,6 +25,8 @@ public interface TickerItem {
     
     public float getBuySell_Ratio();
     
+    public boolean isUnmaturedData();
+    
 
     // set
     

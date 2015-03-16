@@ -2,7 +2,7 @@ package bitbot.handler.world;
 
 import bitbot.remoteRMI.encryption.XorClientSocketFactory;
 import bitbot.remoteRMI.encryption.XorServerSocketFactory;
-import bitbot.server.Constants;
+import bitbot.Constants;
 import java.io.FileReader;
 import java.rmi.AlreadyBoundException;
 import java.rmi.RMISecurityManager;

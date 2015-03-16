@@ -1,7 +1,7 @@
 package bitbot.handler.channel.tasks;
 
 import bitbot.handler.channel.ChannelServer;
-import bitbot.server.Constants;
+import bitbot.Constants;
 import bitbot.cache.tickers.TickerItemData;
 import bitbot.cache.tickers.TickerItem_CandleBar;
 import bitbot.util.encryption.HMACSHA1;

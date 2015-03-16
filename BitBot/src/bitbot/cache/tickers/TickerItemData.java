@@ -10,11 +10,12 @@ import org.json.simple.JSONObject;
  */
 public class TickerItemData implements TickerItem {
 
-    private final long server_time;
-    private final float high, low, open, close, buysell_ratio;
-    private final double vol, vol_cur;
+    private long server_time;
+    private float high, low, open, close, buysell_ratio;
+    private double vol, vol_cur;
+    private boolean unmatured_data;
 
-    public TickerItemData(long server_time, float close, float high, float low, float open, double volume, double volume_cur, float buysell_ratio) {
+    public TickerItemData(long server_time, float close, float high, float low, float open, double volume, double volume_cur, float buysell_ratio, boolean unmatured_data) {
         this.server_time = server_time;//DateTimeUtil.convertDateTime(Long.parseLong(obj.get("server_time").toString()));
         this.high = high;
         this.low = low;
@@ -23,7 +24,23 @@ public class TickerItemData implements TickerItem {
         this.vol = volume;
         this.vol_cur = volume_cur;
         this. buysell_ratio = buysell_ratio;
-
+        this.unmatured_data = unmatured_data;
+        
+        //System.out.println("server_time at: " + server_time.toString());
+        //System.out.println("updated at: " + updated.toString());
+    }
+    
+    public void replaceUnmaturedData(long server_time, float close, float high, float low, float open, double volume, double volume_cur, float buysell_ratio, boolean unmatured_data) {
+        this.server_time = server_time;//DateTimeUtil.convertDateTime(Long.parseLong(obj.get("server_time").toString()));
+        this.high = high;
+        this.low = low;
+        this.open = open;
+        this.close = close;
+        this.vol = volume;
+        this.vol_cur = volume_cur;
+        this. buysell_ratio = buysell_ratio;
+        this.unmatured_data = unmatured_data;
+        
         //System.out.println("server_time at: " + server_time.toString());
         //System.out.println("updated at: " + updated.toString());
     }
@@ -37,7 +54,8 @@ public class TickerItemData implements TickerItem {
         this.vol = rs.getDouble("vol");
         this.vol_cur = rs.getDouble("vol_cur");
         this.buysell_ratio = rs.getFloat("buysell_ratio");
-
+        this.unmatured_data = false;
+        
         //System.out.println("server_time at: " + server_time.toString());
         //System.out.println("updated at: " + updated.toString());
     }
@@ -52,7 +70,7 @@ public class TickerItemData implements TickerItem {
         this.vol = Double.parseDouble(obj.get("vol").toString());
         this.vol_cur = Double.parseDouble(obj.get("vol_cur").toString());
         this.buysell_ratio = Float.parseFloat(obj.get("buysell_ratio").toString());
-
+        this.unmatured_data = false;
         //System.out.println("server_time at: " + server_time.toString());
         //System.out.println("updated at: " + updated.toString());
     }
@@ -100,6 +118,11 @@ public class TickerItemData implements TickerItem {
     @Override
     public float getBuySell_Ratio() {
         return buysell_ratio;
+    }
+    
+    @Override
+    public boolean isUnmaturedData() {
+        return unmatured_data;
     }
 
   /*  @Override

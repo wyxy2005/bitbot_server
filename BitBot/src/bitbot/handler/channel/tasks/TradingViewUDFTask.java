@@ -3,19 +3,17 @@ package bitbot.handler.channel.tasks;
 import bitbot.cache.tickers.TickerItemData;
 import bitbot.cache.tickers.TickerItem_CandleBar;
 import bitbot.handler.channel.ChannelServer;
-import bitbot.server.Constants;
+import bitbot.Constants;
 import bitbot.tradingviewUDF.TV_Symbol;
 import bitbot.tradingviewUDF.TV_symboldatabase;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.List;
-import java.util.Map.Entry;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.simpleframework.http.Query;
 import org.simpleframework.http.Request;
 import org.simpleframework.http.Response;
-import org.simpleframework.http.Status;
 
 /**
  *

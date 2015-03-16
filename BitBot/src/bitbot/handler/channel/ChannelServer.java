@@ -1,7 +1,7 @@
 package bitbot.handler.channel;
 
 import bitbot.handler.ServerHTTPExchangeHandler;
-import bitbot.server.Constants;
+import bitbot.Constants;
 import bitbot.cache.news.NewsCacheTask;
 import bitbot.cache.swaps.BacklogCommitTask_Swaps;
 import bitbot.cache.swaps.SwapsCacheTask;
@@ -11,8 +11,8 @@ import bitbot.handler.ServerSocketExchangeHandler;
 import bitbot.remoteRMI.ChannelWorldInterface;
 import bitbot.remoteRMI.WorldChannelInterface;
 import bitbot.remoteRMI.world.WorldRegistry;
-import bitbot.server.ServerLog;
-import bitbot.server.ServerLogType;
+import bitbot.logging.ServerLog;
+import bitbot.logging.ServerLogType;
 import bitbot.util.encryption.SHA256;
 import java.io.BufferedReader;
 import java.io.File;

@@ -148,7 +148,7 @@ public class WorldChannelInterfaceImpl extends UnicastRemoteObject implements Wo
         }
 
         // Update index
-        final TickerItemData data = new TickerItemData(server_time, close, high, low, open, volume, volume_cur, buysell_ratio);
+        final TickerItemData data = new TickerItemData(server_time, close, high, low, open, volume, volume_cur, buysell_ratio, false);
         
         index_priceMinuteTicker_Mutex.lock();
         try {

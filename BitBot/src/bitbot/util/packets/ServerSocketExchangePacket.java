@@ -1,6 +1,6 @@
 package bitbot.util.packets;
 
-import bitbot.server.Constants;
+import bitbot.Constants;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 

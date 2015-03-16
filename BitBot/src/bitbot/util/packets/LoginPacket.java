@@ -1,7 +1,7 @@
 package bitbot.util.packets;
 
 import bitbot.handler.SendPacketOpcode;
-import bitbot.server.Constants;
+import bitbot.Constants;
 import bitbot.util.encryption.output.MaplePacketLittleEndianWriter;
 
 /**

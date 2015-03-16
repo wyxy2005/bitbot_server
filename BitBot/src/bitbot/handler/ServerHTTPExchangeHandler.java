@@ -2,7 +2,7 @@ package bitbot.handler;
 
 import bitbot.handler.channel.ChannelServer;
 import bitbot.handler.channel.tasks.*;
-import bitbot.server.Constants;
+import bitbot.Constants;
 import bitbot.server.threads.MultiThreadExecutor;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -58,12 +58,6 @@ public class ServerHTTPExchangeHandler implements Container {
         }
         //System.out.println("EndUserIP : " + IPAddress);
 
-        // Anti flood check
-        if (AntiFloodValidator.CheckSpam(IPAddress)) {
-            MultiThreadExecutor.submit(new SpamErrorTask(request, response));
-            return;
-        }
-
         // Query
         Query query = request.getQuery();
         final String path = request.getPath().getPath();
@@ -78,6 +72,12 @@ public class ServerHTTPExchangeHandler implements Container {
             if (queryType == null) {
                 r = new EchoClientTask(request, response);
             } else {
+                // Anti flood check
+                if (AntiFloodValidator.CheckSpam(IPAddress, 100)) {
+                    MultiThreadExecutor.submit(new SpamErrorTask(request, response));
+                    return;
+                }
+
                 switch (queryType) {
                     case "Chart": {
                         r = new ChartTask(request, response, query);
@@ -115,14 +115,28 @@ public class ServerHTTPExchangeHandler implements Container {
             }
         } else {
             switch (path) {
+                case "/search":
+                    // Anti flood check
+                    if (AntiFloodValidator.CheckSpam(IPAddress, 10)) {
+                        MultiThreadExecutor.submit(new SpamErrorTask(request, response));
+                        return;
+                    }
+
+                    r = new TradingViewUDFTask(request, response, query, path);
+                    break;
                 case "/symbol_info":
                 case "/config":
                 case "/symbols":
                 case "/symbol":
-                case "/search":
                 case "/history":
                 case "/quotes":
                 case "/marks": {
+                    // Anti flood check
+                    if (AntiFloodValidator.CheckSpam(IPAddress, 100)) {
+                        MultiThreadExecutor.submit(new SpamErrorTask(request, response));
+                        return;
+                    }
+
                     r = new TradingViewUDFTask(request, response, query, path);
                     break;
                 }

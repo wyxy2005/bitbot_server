@@ -2,7 +2,7 @@ package bitbot.handler.channel.tasks;
 
 import bitbot.cache.swaps.SwapsItemData;
 import bitbot.handler.channel.ChannelServer;
-import bitbot.server.Constants;
+import bitbot.Constants;
 import bitbot.util.encryption.CustomXorEncryption;
 import bitbot.util.encryption.HMACSHA1;
 import java.io.PrintStream;

@@ -1,6 +1,6 @@
 package bitbot.util;
 
-import bitbot.server.Constants;
+import bitbot.Constants;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
