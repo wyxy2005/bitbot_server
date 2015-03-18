@@ -169,7 +169,8 @@ public class TradingViewUDFTask implements Runnable {
         JSONObject json_main = new JSONObject();
 
         if (ret.isEmpty()) {
-            json_main.put("s", "not enough data");
+            json_main.put("s", "no_data"); // Status code. Expected values: “ok” | “error” | “incomplete” | “no_data”
+            json_main.put("errmsg", "Not enough data, please wait."); // Status code. Expected values: “ok” | “error” | “incomplete” | “no_data”
         } else {
             json_main.put("s", "ok");
         }

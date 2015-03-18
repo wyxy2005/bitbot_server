@@ -28,16 +28,17 @@ public class BitcoinWisdomReader {
         Thread.sleep(3000);
         
         Calendar beforeDate = Calendar.getInstance();
-        beforeDate.set(Calendar.MONTH, 2 - 1);
-        beforeDate.set(Calendar.DAY_OF_MONTH, 23);
+        beforeDate.set(Calendar.MONTH, 9 - 1);
+        beforeDate.set(Calendar.DAY_OF_MONTH, 05);
+        beforeDate.set(Calendar.YEAR, 2014);
         
         System.out.println("Before: " + beforeDate.getTimeInMillis() / 1000);
         
-        Calendar endDate = Calendar.getInstance();
+     /*  Calendar endDate = Calendar.getInstance();
         endDate.set(Calendar.MONTH, 3 - 1);
         endDate.set(Calendar.DAY_OF_MONTH, 6);
         
-        System.out.println("End: " + endDate.getTimeInMillis() / 1000);
+        System.out.println("End: " + endDate.getTimeInMillis() / 1000);*/
              
         try (BufferedReader br = new BufferedReader(new FileReader(file))) {
             String line = br.readLine();
@@ -77,7 +78,7 @@ public class BitcoinWisdomReader {
                 Calendar cal = Calendar.getInstance();
                 cal.setTimeInMillis(time * 1000);
 
-                if (cal.after(beforeDate) && cal.before(endDate)) {
+                if (cal.before(beforeDate)) {
                     System.out.println(String.format("[%s] Open: %f, High: %f, Low: %f, Close: %f, VolumeCur: %f, Volume: %f", cal.getTime().toString(), open, high, low, close, vol_cur, vol));
 
                     if (showdebugOnly)

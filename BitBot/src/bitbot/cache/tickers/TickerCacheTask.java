@@ -36,7 +36,6 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import org.apache.commons.lang3.time.DateUtils;
 
 /**
@@ -80,6 +79,7 @@ public class TickerCacheTask {
                 List<TickerItemData> arrays = new ArrayList(); // same reference
                 list_mssql.put(ExchangeCurrencyPair, arrays);
                 list_mssql.put(ExchangeCurrencyPair.toLowerCase(), arrays); // to fix for futures
+                list_mssql.put(ExchangeCurrencyPair.replace(" ", "").toLowerCase(), arrays); // and one without space, for hyperlinks
             }
 
             // History
@@ -835,6 +835,8 @@ public class TickerCacheTask {
                 if (currentList.size() > 0) {
                     TickerItemData lastItem = currentList.get(currentList.size() - 1);
                     
+                    // If an unmatured data is available
+                    // replace it with a matured ones
                     if (lastItem.isUnmaturedData()) {
                         lastItem.replaceUnmaturedData(server_time, close, high, low, open, volume, volume_cur, buysell_ratio, false);
                         return;
