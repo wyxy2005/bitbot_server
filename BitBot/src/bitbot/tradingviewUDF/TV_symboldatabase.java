@@ -78,6 +78,7 @@ public class TV_symboldatabase {
         symbols.add(new TV_Symbol("LTC_BTC", "Litecoin/ Bitcoin", "Cryptsy", "bitcoin"));
         
         symbols.add(new TV_Symbol("BTC Futures_USD", "Bitcoin Weekly Futures/ Dollar", "_796", "bitcoin"));
+        symbols.add(new TV_Symbol("BTC Futures_CNY", "Bitcoin Weekly Futures/ Chinese Yuan", "_796", "bitcoin"));
         symbols.add(new TV_Symbol("BTC Futures Quarterly_USD", "Bitcoin Quarterly Futures/ Dollar", "_796", "bitcoin"));
         symbols.add(new TV_Symbol("LTC Futures_USD", "Litecoin Weekly Futures/ Dollar", "_796", "bitcoin"));
         

@@ -26,11 +26,11 @@ function check_price() {
     fetchItem('eur_usd', 'btce');
     fetchItem('nvc_usd', 'btce');
     fetchItem('nvc_btc', 'btce');
-    fetchItem('trc_btc', 'btce');
+    //fetchItem('trc_btc', 'btce');
     fetchItem('ppc_usd', 'btce');
     fetchItem('ppc_btc', 'btce');
-    fetchItem('ftc_btc', 'btce');
-    fetchItem('xpm_btc', 'btce');
+    //fetchItem('ftc_btc', 'btce');
+    //fetchItem('xpm_btc', 'btce');
 
     fetchItem('btc_cny', 'btcchina');
     fetchItem('ltc_cny', 'btcchina');
@@ -88,6 +88,7 @@ function check_price() {
     fetchItem('btcd_btc', 'cryptsy');
 
     fetchItem('btc Futures_usd', '_796');
+    fetchItem('btc Futures_cny', '_796');
     fetchItem('ltc Futures_usd', '_796');
 
     function fetchItem(currencypair, source) {
@@ -132,7 +133,9 @@ function check_price() {
                     }
             }
         } else if (source == '_796') {
-            if (currencypair.indexOf('btc') > -1) {
+            if (currencypair.indexOf('cny') > -1) {
+                fetchfromSource(currencypair, source, 'http://api.796.com/v3/futures/ticker.html?type=btccnyweeklyfutures');
+            } else if (currencypair.indexOf('btc') > -1) {
                 fetchfromSource(currencypair, source, 'http://api.796.com/v3/futures/ticker.html?type=weekly');
             } else {
                 fetchfromSource(currencypair, source, 'http://api.796.com/v3/futures/ticker.html?type=ltc');
