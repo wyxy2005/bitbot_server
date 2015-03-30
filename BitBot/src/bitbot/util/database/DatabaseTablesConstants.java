@@ -1,4 +1,4 @@
-package bitbot.util.mssql;
+package bitbot.util.database;
 
 /**
  *

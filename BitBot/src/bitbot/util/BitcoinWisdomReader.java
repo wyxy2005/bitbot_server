@@ -1,6 +1,6 @@
 package bitbot.util;
 
-import bitbot.util.mssql.DatabaseConnection;
+import bitbot.util.database.DatabaseConnection;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.sql.Connection;
