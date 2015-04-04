@@ -1,7 +1,7 @@
 package bitbot.util.database;
 
-import bitbot.util.encryption.Base64;
 import bitbot.util.Randomizer;
+import bitbot.util.encryption.Base64;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -18,16 +18,16 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public class DatabaseConnection {
 
-    private static String DecryptedDatabaseStrings = null;
+    private static String DatabaseConnectionString = 
+            "jdbc:sqlserver://fjoynp4lnu.database.windows.net:1433;database=BitCoinATpqACXAu;encrypt=true;hostNameInCertificate=*.database.windows.net;loginTimeout=300;socketTimeout=60;";
     private static String DecryptedDatabaseStrings_u = null;
     private static String DecryptedDatabaseStrings_p = null;
 
-    private static final long connectionTimeOut = 3 * 60 * 1000; // 3 minutes
+    private static final long connectionTimeOut_Minutes = 3; // 3 minutes
     private static final ReentrantLock mutex = new ReentrantLock();
     private static final Map<Long, ConWrapper> connections = new HashMap();
 
     static {
-        String encrypted = "amRiYzpzcWxzZXJ2ZXI6Ly9mam95bnA0bG51LmRhdGFiYXNlLndpbmRvd3MubmV0OjE0MzM7ZGF0YWJhc2U9Qml0Q29pbkFUcHFBQ1hBdTtlbmNyeXB0PXRydWU7aG9zdE5hbWVJbkNlcnRpZmljYXRlPSouZGF0YWJhc2Uud2luZG93cy5uZXQ7bG9naW5UaW1lb3V0PTMwMDtzb2NrZXRUaW1lb3V0PTYwOw==";
         String encrypted_u = "c2ZfMzRtZG9sc3NhZDk0NW0=";
         String encrypted_p = "MzEyZGZkNGY1OjpAJGRnZ2dmZzQ1NDU1NDY=";
         
@@ -38,25 +38,21 @@ public class DatabaseConnection {
             //System.out.println(Base64.encodeBytes(DecryptedDatabaseStrings.getBytes()));
             
         try {
-            DecryptedDatabaseStrings = new String(Base64.decode(encrypted));
             DecryptedDatabaseStrings_u = new String(Base64.decode(encrypted_u));
             DecryptedDatabaseStrings_p = new String(Base64.decode(encrypted_p));
         } catch (IOException exp) {
-            DecryptedDatabaseStrings = "";
         }
     }
 
     public static final Connection getConnection() {
         // clearing task
-        if (Randomizer.nextInt(20) == 0) {
-            new Thread(new ClearingTask()).start();
-        }
+        new Thread(new ClearingTask()).start();
         
         final long threadID = Thread.currentThread().getId();
         ConWrapper ret = connections.get(threadID);
 
         if (ret != null) {
-            if (ret.closeIfexpiredConnection(System.currentTimeMillis())) {
+            if (ret.closeIfexpiredConnection()) {
                 ret = null;
             }
         }
@@ -84,7 +80,7 @@ public class DatabaseConnection {
         }
 
         try {
-            Connection con = DriverManager.getConnection(DecryptedDatabaseStrings, DecryptedDatabaseStrings_u, DecryptedDatabaseStrings_p);
+            Connection con = DriverManager.getConnection(DatabaseConnectionString, DecryptedDatabaseStrings_u, DecryptedDatabaseStrings_p);
             return con;
         } catch (Exception e) {
             e.printStackTrace();
@@ -144,7 +140,7 @@ public class DatabaseConnection {
         }
 
         public final Connection getConnection() {
-            if (closeIfexpiredConnection(System.currentTimeMillis())) {
+            if (closeIfexpiredConnection()) {
                 mutex.lock();
                 try {
                     connections.remove(threadid);
@@ -163,14 +159,16 @@ public class DatabaseConnection {
          *
          * @return
          */
-        private boolean closeIfexpiredConnection(final long cTime) {
+        private boolean closeIfexpiredConnection() {
             if (expiredConnection)
                 return true;
             if (lastAccessTime == 0) {
                 return false;
             }
+            final long cTime = System.currentTimeMillis();
+            
             try {
-                if (cTime - lastAccessTime >= connectionTimeOut || connection.isClosed()) {
+                if (cTime - lastAccessTime >= (connectionTimeOut_Minutes * 60 * 1000) || connection.isClosed()) {
                     expiredConnection = true;
                     connection.close();
                     return true;

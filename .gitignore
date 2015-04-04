@@ -69,3 +69,7 @@ BitBot/DataLog/huobi_price_btc_cny.txt
 *.class
 *.class
 *.jar
+/other dependency/datastax_cassandra/nbproject/private/
+/other dependency/datastax_cassandra/build/
+/other dependency/codahale_metrics/nbproject/private/
+/other dependency/codahale_metrics/build/
