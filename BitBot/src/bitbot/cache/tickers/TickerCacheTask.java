@@ -24,9 +24,12 @@ import bitbot.handler.channel.ChannelServer;
 import bitbot.Constants;
 import bitbot.server.threads.LoggingSaveRunnable;
 import bitbot.server.threads.TimerManager;
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Comparator;
@@ -68,7 +71,7 @@ public class TickerCacheTask {
 
             // graph fetching from database
             if (ChannelServer.getInstance().isEnableSQLDataAcquisition()) {
-                TickerCacheTask_MSSql tickercache = new TickerCacheTask_MSSql(ExchangeSite, CurrencyPair);
+                TickerCacheTask_MSSql tickercache = new TickerCacheTask_MSSql(ExchangeCurrencyPair, ExchangeSite, CurrencyPair);
                 LoggingSaveRunnable runnable = TimerManager.register(tickercache, MSSQL_CacheRefreshTime_Seconds * 1000, Integer.MAX_VALUE);
 
                 // set this reference so we are able to cancel this task later when we dont need the database anymore
@@ -683,16 +686,18 @@ public class TickerCacheTask {
 
     public class TickerCacheTask_MSSql implements Runnable {
 
+        private final String ExchangeCurrencyPair;
         private final String CurrencyPair_;
         private final String ExchangeSite;
         private long LastCachedTime = 0;
-        private boolean IsLoading = false;
+        private boolean IsLoading = false, IsFirstDataAcquisition = true;
 
         // Switching between MSSQL and data from other peers
         private LoggingSaveRunnable runnable = null;
         private boolean isDataAcquisitionFromMSSQL_Completed = false; // just for reference, not using it for now
 
-        public TickerCacheTask_MSSql(String ExchangeSite, String CacheCurrencyPair) {
+        public TickerCacheTask_MSSql(String ExchangeCurrencyPair, String ExchangeSite, String CacheCurrencyPair) {
+            this.ExchangeCurrencyPair = ExchangeCurrencyPair;
             this.CurrencyPair_ = CacheCurrencyPair;
             this.ExchangeSite = ExchangeSite;
         }
@@ -725,11 +730,19 @@ public class TickerCacheTask {
             }
             IsLoading = true;
 
-            System.out.println("Caching currency pair from SQLserv: " + ExchangeSite + ":" + CurrencyPair_);
-
-            final String ExchangeCurrencyPair = String.format("%s-%s", ExchangeSite, CurrencyPair_);
-
+            // First acquire from storage
             List<TickerItemData> list_newItems = new ArrayList(); // create a new array first and replace later
+            if (IsFirstDataAcquisition) {
+                System.out.println("Caching currency pair from Storage: " + ExchangeCurrencyPair);
+
+                ReadFromFileStorage(list_newItems);
+
+                IsFirstDataAcquisition = false;
+            }
+
+            // Try SQL
+            System.out.println("Caching currency pair from SQLserv: " + ExchangeCurrencyPair);
+
             long biggest_server_time_result = MicrosoftAzureDatabaseExt.selectGraphData(ExchangeSite, CurrencyPair_, 60000, 24, LastCachedTime, list_newItems);
 
             if (biggest_server_time_result == -2) { // -2 = error
@@ -739,6 +752,10 @@ public class TickerCacheTask {
                 IsLoading = false;
                 completedCaching(ExchangeCurrencyPair);
                 return;
+            }
+            // Set max server_time
+            if (biggest_server_time_result > LastCachedTime) {
+                LastCachedTime = biggest_server_time_result;
             }
 
             if (!list_newItems.isEmpty()) { // there's still something coming from the database, continue caching
@@ -751,11 +768,8 @@ public class TickerCacheTask {
                         currentList.add(cur);
                     }
                 }
-                // Set max server_time
-                if (biggest_server_time_result > LastCachedTime) {
-                    LastCachedTime = biggest_server_time_result;
-                }
             }
+
             System.out.println("[Info] Caching price for " + ExchangeCurrencyPair + " --> " + list_newItems.size() + ", MaxServerTime:" + LastCachedTime);
 
             if (list_newItems.size() <= 5) { // Are we done caching yet?
@@ -769,43 +783,108 @@ public class TickerCacheTask {
             canAcceptNewInfoFromOtherPeers.add(ExchangeCurrencyPair.hashCode());
             runnable.getSchedule().cancel(false); // cancel this cache task completely.
 
+            commitToFileStorage();
+
             System.out.println("[Info] Stopped caching " + ExchangeCurrencyPair + " data from MSSQL");
         }
 
-        private void commitToFileStorage() {
-            if (isDataAcquisitionFromMSSQL_Completed) {
-                final String ExchangeCurrencyPair = String.format("%s-%s", ExchangeSite, CurrencyPair_);
+        private void ReadFromFileStorage(List<TickerItemData> list_newItems) {
+            // Start saving to local file
+            File f = new File("CachedPrice");
+            if (!f.exists()) {
+                f.mkdirs();
+            }
+            try {
+                File f_data = new File(f, ExchangeCurrencyPair);
+                if (!f_data.exists()) {
+                    return;
+                }
 
-                if (list_mssql.containsKey(ExchangeCurrencyPair)) {
-                    // Create a new ArrayList to prevent threading issue
-                    List<TickerItemData> currentList = new ArrayList(list_mssql.get(ExchangeCurrencyPair));
+                FileInputStream fis = null;
+                BufferedReader reader = null;
+                try {
+                    fis = new FileInputStream(f_data);
+                    reader = new BufferedReader(new InputStreamReader(fis));
 
-                    // Start saving to local file
-                    File f = new File(String.format("CachedPrice%s", System.getProperty("file.separator")));
-                    if (!f.exists()) {
-                        f.mkdirs();
-                    }
-                    // override existing file if any.
-                    try (FileOutputStream out = new FileOutputStream(f.getPath() + ExchangeCurrencyPair, false)) {
-                        final StringBuilder sb = new StringBuilder();
+                    String line = null;
+                    while ((line = reader.readLine()) != null) {
+                        String[] LineSplit = line.split(",");
 
-                        for (TickerItemData data : currentList) {
-                            sb.append(data.getClose()).append(',');
-                            sb.append(data.getOpen()).append(',');
-                            sb.append(data.getHigh()).append(',');
-                            sb.append(data.getLow()).append(',');
-                            sb.append(data.getRealServerTime()).append(',');
-                            sb.append(data.getServerTime()).append(',');
-                            sb.append(data.getVol()).append(',');
-                            sb.append(data.getVol_Cur()).append(',');
-                            sb.append("\n");
+                        float close = Float.parseFloat(LineSplit[0]);
+                        float open = Float.parseFloat(LineSplit[1]);
+                        float high = Float.parseFloat(LineSplit[2]);
+                        float low = Float.parseFloat(LineSplit[3]);
+                        long servertime = Long.parseLong(LineSplit[4]);
+                        double volume = Double.parseDouble(LineSplit[5]);
+                        double volume_cur = Double.parseDouble(LineSplit[6]);
+                        float ratio = Float.parseFloat(LineSplit[7]);
+
+                        TickerItemData data = new TickerItemData(servertime, close, high, low, open, volume, volume_cur, ratio, false);
+
+                        list_newItems.add(data);
+                        
+                        // update max server time
+                        if (servertime > LastCachedTime) {
+                            LastCachedTime = servertime;
                         }
-                        out.write(sb.toString().getBytes());
-
-                    } catch (IOException ess) {
-                        ess.printStackTrace();
+                    }
+                } catch (Exception error) {
+                    // data is corrupted?
+                    f_data.delete();
+                } finally {
+                    if (reader != null) {
+                        reader.close();
+                    }
+                    if (fis != null) {
+                        fis.close();
                     }
                 }
+            } catch (IOException exp) {
+                exp.printStackTrace();
+            }
+        }
+
+        private void commitToFileStorage() {
+            // Create a new ArrayList to prevent threading issue
+            List<TickerItemData> currentList = new ArrayList(list_mssql.get(ExchangeCurrencyPair));
+
+            // Start saving to local file
+            File f = new File("CachedPrice");
+            if (!f.exists()) {
+                f.mkdirs();
+            }
+            try {
+                File f_data = new File(f, ExchangeCurrencyPair);
+                f_data.createNewFile();
+
+                // override existing file if any.
+                FileOutputStream out = null;
+                try {
+                    out = new FileOutputStream(f_data, false);
+                    final StringBuilder sb = new StringBuilder();
+
+                    for (TickerItemData data : currentList) {
+                        sb.append(data.getClose()).append(',');
+                        sb.append(data.getOpen()).append(',');
+                        sb.append(data.getHigh()).append(',');
+                        sb.append(data.getLow()).append(',');
+                        sb.append(data.getServerTime()).append(',');
+                        sb.append(data.getVol()).append(',');
+                        sb.append(data.getVol_Cur()).append(',');
+                        sb.append(data.getBuySell_Ratio()).append(',');
+                        sb.append("\r\n");
+                    }
+                    out.write(sb.toString().getBytes());
+                } catch (Exception error) {
+                    // data is corrupted?
+                    f_data.delete();
+                } finally {
+                    if (out != null) {
+                        out.close();
+                    }
+                }
+            } catch (IOException exp) {
+                exp.printStackTrace();
             }
         }
     }
@@ -830,11 +909,11 @@ public class TickerCacheTask {
         if (list_mssql.containsKey(ExchangeCurrencyPair)
                 && canAcceptNewInfoFromOtherPeers.contains(ExchangeCurrencyPair.hashCode())) { // First item, no sync needed
             List<TickerItemData> currentList = list_mssql.get(ExchangeCurrencyPair);
-            
+
             synchronized (currentList) {
                 if (currentList.size() > 0) {
                     TickerItemData lastItem = currentList.get(currentList.size() - 1);
-                    
+
                     // If an unmatured data is available
                     // replace it with a matured ones
                     if (lastItem.isUnmaturedData()) {

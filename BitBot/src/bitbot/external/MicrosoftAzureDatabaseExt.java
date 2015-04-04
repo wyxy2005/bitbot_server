@@ -36,12 +36,6 @@ public class MicrosoftAzureDatabaseExt {
     */
     public static long selectGraphData(String ExchangeSite, String currencyPair, int depthSelection, int hoursSelection, long start_server_time, List<TickerItemData> list_BTCe2) {
         // currencyPair = eg: btc_usd
-     /*   String parameters = String.format("nonce=%d&currencypair=%s&depth=%d&hours=%d&start_server_time=%d&exchangesite=%s",
-         System.currentTimeMillis(), currencyPair, depthSelection, hoursSelection, start_server_time, ExchangeSite);
-
-         return post("https://bitcoinbot.azure-mobile.net/api/btce_select_graph_data?", parameters, "");
-         */
-
         String tableName = DatabaseTablesConstants.getDatabaseTableName(ExchangeSite, currencyPair);
 
         PreparedStatement ps = null;
