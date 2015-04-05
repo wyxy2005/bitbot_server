@@ -78,13 +78,20 @@ public class BitcoinWisdomReader {
                 Calendar cal = Calendar.getInstance();
                 cal.setTimeInMillis(time * 1000);
 
-                if (cal.before(beforeDate)) {
+             /*   if (cal.before(beforeDate)) {
                     System.out.println(String.format("[%s] Open: %f, High: %f, Low: %f, Close: %f, VolumeCur: %f, Volume: %f", cal.getTime().toString(), open, high, low, close, vol_cur, vol));
 
                     if (showdebugOnly)
                         InsertSQLTable(path, high, low, vol, vol_cur, open, close, time); 
                 } else {
                     //System.out.println(time);
+                }*/
+                
+                if (time <= 1389355200) {
+                                        System.out.println(String.format("[%s] Open: %f, High: %f, Low: %f, Close: %f, VolumeCur: %f, Volume: %f", cal.getTime().toString(), open, high, low, close, vol_cur, vol));
+
+                    if (showdebugOnly)
+                        InsertSQLTable(path, high, low, vol, vol_cur, open, close, time); 
                 }
             }
         } catch (Exception e) {

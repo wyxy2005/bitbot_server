@@ -42,7 +42,13 @@
     			}
 			}
 			var param_symbol = getURLParameters("symbol");
+			
 			var param_interval = getURLParameters("interval");
+
+			var param_uniqueid = getURLParameters('uniqueid');
+			if (param_uniqueid == null) {
+				param_uniqueid = public_user_id;
+			}
 
 			TradingView.onready(function()
 			{
@@ -61,9 +67,9 @@
 					drawings_access: { type: 'black', tools: [ { name: "Regression Trend" } ] },
 					enabled_features: ["use_localstorage_for_settings", "narrow_chart_enabled", "move_logo_to_main_pane"],
 					disabled_features: ["header_symbol_search"],
-					charts_storage_url: 'http://127.0.0.1',
+					charts_storage_url: 'http://saveload.tradingview.com',
 					client_id: 'tradingview.com',
-					user_id: 'public_user_id',
+					user_id: param_uniqueid,
 					overrides: {
 						"symbolWatermarkProperties.transparency": 100
 					}

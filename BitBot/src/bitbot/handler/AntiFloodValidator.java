@@ -22,7 +22,7 @@ public class AntiFloodValidator {
     // Anti flood
     private static final int 
             AllowedResetInveral = 10000;
-    private static final int SpamCount = 100;
+    private static final int SpamCount = 200;
     private static final String BlockedIPFileList = "BlockedIPs.properties";
     
     // variables
@@ -65,7 +65,7 @@ public class AntiFloodValidator {
 	long cTime = System.currentTimeMillis();
 	if (track == null) {
 	    synchronized (mutex) {
-		tracker.put(address, new Pair(cTime, 1)); // 1 count
+		tracker.put(address, new Pair(cTime, 0)); // 0 count
 	    }
 	} else {
 	    count = track.right;
@@ -74,9 +74,8 @@ public class AntiFloodValidator {
 	    final long difference = cTime - track.left;
 	    if (difference < AllowedInterval) {
 		count++;
-	    }
-            if (difference > AllowedResetInveral) {
-		count = 1;
+	    } else if (difference > AllowedResetInveral) {
+		count = 0;
             }
 	    if (count >= SpamCount) {
 		synchronized (mutex) {
@@ -85,7 +84,7 @@ public class AntiFloodValidator {
 		FileoutputUtil.log("DOS_Log.rtf", String.format("Banned IP address : %s", address));
 		return true;
 	    }
-	    track.left = cTime == -1 ? System.currentTimeMillis() : cTime;
+	    track.left = cTime;
 	    track.right = count;
 	}
         return false;

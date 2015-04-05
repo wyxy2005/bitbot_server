@@ -30,6 +30,8 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.file.CopyOption;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Comparator;
@@ -683,6 +685,8 @@ public class TickerCacheTask {
             }
         }
     }
+    
+    private static final Object localStorageReadWriteMutex = new Object();
 
     public class TickerCacheTask_MSSql implements Runnable {
 
@@ -799,44 +803,45 @@ public class TickerCacheTask {
                 if (!f_data.exists()) {
                     return;
                 }
+                synchronized (localStorageReadWriteMutex) { // not enough memory to run everything concurrently 
+                    FileInputStream fis = null;
+                    BufferedReader reader = null;
+                    try {
+                        fis = new FileInputStream(f_data);
+                        reader = new BufferedReader(new InputStreamReader(fis));
 
-                FileInputStream fis = null;
-                BufferedReader reader = null;
-                try {
-                    fis = new FileInputStream(f_data);
-                    reader = new BufferedReader(new InputStreamReader(fis));
+                        String line = null;
+                        while ((line = reader.readLine()) != null) {
+                            String[] LineSplit = line.split(",");
 
-                    String line = null;
-                    while ((line = reader.readLine()) != null) {
-                        String[] LineSplit = line.split(",");
+                            float close = Float.parseFloat(LineSplit[0]);
+                            float open = Float.parseFloat(LineSplit[1]);
+                            float high = Float.parseFloat(LineSplit[2]);
+                            float low = Float.parseFloat(LineSplit[3]);
+                            long servertime = Long.parseLong(LineSplit[4]);
+                            double volume = Double.parseDouble(LineSplit[5]);
+                            double volume_cur = Double.parseDouble(LineSplit[6]);
+                            float ratio = Float.parseFloat(LineSplit[7]);
 
-                        float close = Float.parseFloat(LineSplit[0]);
-                        float open = Float.parseFloat(LineSplit[1]);
-                        float high = Float.parseFloat(LineSplit[2]);
-                        float low = Float.parseFloat(LineSplit[3]);
-                        long servertime = Long.parseLong(LineSplit[4]);
-                        double volume = Double.parseDouble(LineSplit[5]);
-                        double volume_cur = Double.parseDouble(LineSplit[6]);
-                        float ratio = Float.parseFloat(LineSplit[7]);
+                            TickerItemData data = new TickerItemData(servertime, close, high, low, open, volume, volume_cur, ratio, false);
 
-                        TickerItemData data = new TickerItemData(servertime, close, high, low, open, volume, volume_cur, ratio, false);
+                            list_newItems.add(data);
 
-                        list_newItems.add(data);
-                        
-                        // update max server time
-                        if (servertime > LastCachedTime) {
-                            LastCachedTime = servertime;
+                            // update max server time
+                            if (servertime > LastCachedTime) {
+                                LastCachedTime = servertime;
+                            }
                         }
-                    }
-                } catch (Exception error) {
-                    // data is corrupted?
-                    f_data.delete();
-                } finally {
-                    if (reader != null) {
-                        reader.close();
-                    }
-                    if (fis != null) {
-                        fis.close();
+                    } catch (Exception error) {
+                        // data is corrupted?
+                        f_data.delete();
+                    } finally {
+                        if (reader != null) {
+                            reader.close();
+                        }
+                        if (fis != null) {
+                            fis.close();
+                        }
                     }
                 }
             } catch (IOException exp) {
@@ -845,43 +850,56 @@ public class TickerCacheTask {
         }
 
         private void commitToFileStorage() {
-            // Create a new ArrayList to prevent threading issue
-            List<TickerItemData> currentList = new ArrayList(list_mssql.get(ExchangeCurrencyPair));
-
             // Start saving to local file
             File f = new File("CachedPrice");
             if (!f.exists()) {
                 f.mkdirs();
             }
             try {
-                File f_data = new File(f, ExchangeCurrencyPair);
+                File f_data = new File(f, ExchangeCurrencyPair + ".temp");
                 f_data.createNewFile();
+                
+                File f_target = new File(f, ExchangeCurrencyPair);
+                
+                
+                synchronized (localStorageReadWriteMutex) { // not enough memory to run everything concurrently 
+                    // Create a new ArrayList to prevent threading issue
+                    // create here so we dont create unnecessary memory allocation until this synchronized block is called
+                    List<TickerItemData> currentList = new ArrayList(list_mssql.get(ExchangeCurrencyPair));
+                    
+                    // override existing file if any.
+                    FileOutputStream out = null;
+                    try {
+                        out = new FileOutputStream(f_data, false);
+                        final StringBuilder sb = new StringBuilder();
 
-                // override existing file if any.
-                FileOutputStream out = null;
-                try {
-                    out = new FileOutputStream(f_data, false);
-                    final StringBuilder sb = new StringBuilder();
+                        for (TickerItemData data : currentList) {
+                            sb.append(data.getClose()).append(',');
+                            sb.append(data.getOpen()).append(',');
+                            sb.append(data.getHigh()).append(',');
+                            sb.append(data.getLow()).append(',');
+                            sb.append(data.getServerTime()).append(',');
+                            sb.append(data.getVol()).append(',');
+                            sb.append(data.getVol_Cur()).append(',');
+                            sb.append(data.getBuySell_Ratio()).append(',');
+                            sb.append("\r\n");
+                        }
+                        out.write(sb.toString().getBytes());
 
-                    for (TickerItemData data : currentList) {
-                        sb.append(data.getClose()).append(',');
-                        sb.append(data.getOpen()).append(',');
-                        sb.append(data.getHigh()).append(',');
-                        sb.append(data.getLow()).append(',');
-                        sb.append(data.getServerTime()).append(',');
-                        sb.append(data.getVol()).append(',');
-                        sb.append(data.getVol_Cur()).append(',');
-                        sb.append(data.getBuySell_Ratio()).append(',');
-                        sb.append("\r\n");
+                        sb.delete(0, sb.length());
+                    } catch (Exception error) {
+                        // data is corrupted?
+                        f_data.delete();
+                    } finally {
+                        if (out != null) {
+                            out.close();
+                        }
                     }
-                    out.write(sb.toString().getBytes());
-                } catch (Exception error) {
-                    // data is corrupted?
+                    if (f_target.exists()){
+                        f_target.delete();
+                    }
+                    Files.move(f_data.toPath(), f_target.toPath());
                     f_data.delete();
-                } finally {
-                    if (out != null) {
-                        out.close();
-                    }
                 }
             } catch (IOException exp) {
                 exp.printStackTrace();

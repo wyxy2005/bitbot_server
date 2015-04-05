@@ -1,6 +1,5 @@
 package bitbot.util.database;
 
-import bitbot.util.Randomizer;
 import bitbot.util.encryption.Base64;
 import java.io.IOException;
 import java.sql.Connection;
@@ -18,8 +17,8 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public class DatabaseConnection {
 
-    private static String DatabaseConnectionString = 
-            "jdbc:sqlserver://fjoynp4lnu.database.windows.net:1433;database=BitCoinATpqACXAu;encrypt=true;hostNameInCertificate=*.database.windows.net;loginTimeout=300;socketTimeout=60;";
+    private static String DatabaseConnectionString
+            = "jdbc:sqlserver://fjoynp4lnu.database.windows.net:1433;database=BitCoinATpqACXAu;encrypt=true;hostNameInCertificate=*.database.windows.net;loginTimeout=300;socketTimeout=60;";
     private static String DecryptedDatabaseStrings_u = null;
     private static String DecryptedDatabaseStrings_p = null;
 
@@ -30,13 +29,11 @@ public class DatabaseConnection {
     static {
         String encrypted_u = "c2ZfMzRtZG9sc3NhZDk0NW0=";
         String encrypted_p = "MzEyZGZkNGY1OjpAJGRnZ2dmZzQ1NDU1NDY=";
-        
-        //System.out.println(Base64.encodeBytes("jdbc:sqlserver://fjoynp4lnu.database.windows.net:1433;database=BitCoinATpqACXAu;encrypt=true;hostNameInCertificate=*.database.windows.net;loginTimeout=300;socketTimeout=60;".getBytes()));
 
+        //System.out.println(Base64.encodeBytes("jdbc:sqlserver://fjoynp4lnu.database.windows.net:1433;database=BitCoinATpqACXAu;encrypt=true;hostNameInCertificate=*.database.windows.net;loginTimeout=300;socketTimeout=60;".getBytes()));
         //DecryptedDatabaseStrings = "jdbc:jtds:sqlserver://fjoynp4lnu.database.windows.net:1433;DatabaseName=BitCoinATpqACXAu;useNTLMv2=true;useJCIFS=true;tcpNoDelay=true;instance=SQLEXPRESS;ssl=require";
-            //DecryptedDatabaseStrings = "jdbc:sqlserver://fjoynp4lnu.database.windows.net:1433;database=BitCoinATpqACXAu;encrypt=true;hostNameInCertificate=*.database.windows.net;loginTimeout=300;";
-            //System.out.println(Base64.encodeBytes(DecryptedDatabaseStrings.getBytes()));
-            
+        //DecryptedDatabaseStrings = "jdbc:sqlserver://fjoynp4lnu.database.windows.net:1433;database=BitCoinATpqACXAu;encrypt=true;hostNameInCertificate=*.database.windows.net;loginTimeout=300;";
+        //System.out.println(Base64.encodeBytes(DecryptedDatabaseStrings.getBytes()));
         try {
             DecryptedDatabaseStrings_u = new String(Base64.decode(encrypted_u));
             DecryptedDatabaseStrings_p = new String(Base64.decode(encrypted_p));
@@ -47,7 +44,7 @@ public class DatabaseConnection {
     public static final Connection getConnection() {
         // clearing task
         new Thread(new ClearingTask()).start();
-        
+
         final long threadID = Thread.currentThread().getId();
         ConWrapper ret = connections.get(threadID);
 
@@ -57,8 +54,7 @@ public class DatabaseConnection {
             }
         }
         if (ret == null) {
-            Connection retCon = connectToDBInternal();
-            ret = new ConWrapper(retCon, threadID);
+            ret = new ConWrapper(threadID);
 
             mutex.lock();
             try {
@@ -68,24 +64,6 @@ public class DatabaseConnection {
             }
         }
         return ret.getConnection();
-    }
-
-    public static final Connection connectToDBInternal() {
-        try {
-            Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
-            //Class.forName("net.sourceforge.jtds.jdbc.Driver");
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-            return null;
-        }
-
-        try {
-            Connection con = DriverManager.getConnection(DatabaseConnectionString, DecryptedDatabaseStrings_u, DecryptedDatabaseStrings_p);
-            return con;
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return null;
     }
 
     public static final void closeAll() throws SQLException {
@@ -133,8 +111,8 @@ public class DatabaseConnection {
         private Connection connection;
         private boolean expiredConnection;
 
-        public ConWrapper(Connection con, long threadid) {
-            this.connection = con;
+        public ConWrapper(long threadid) {
+            this.connection = connectToDBInternal();
             this.threadid = threadid;
             this.expiredConnection = false;
         }
@@ -160,13 +138,14 @@ public class DatabaseConnection {
          * @return
          */
         private boolean closeIfexpiredConnection() {
-            if (expiredConnection)
+            if (expiredConnection) {
                 return true;
+            }
             if (lastAccessTime == 0) {
                 return false;
             }
             final long cTime = System.currentTimeMillis();
-            
+
             try {
                 if (cTime - lastAccessTime >= (connectionTimeOut_Minutes * 60 * 1000) || connection.isClosed()) {
                     expiredConnection = true;
@@ -179,9 +158,27 @@ public class DatabaseConnection {
             }
             return false;
         }
-        
+
         public boolean isExpiredConnection() {
             return expiredConnection;
+        }
+
+        private static Connection connectToDBInternal() {
+            try {
+                Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
+                //Class.forName("net.sourceforge.jtds.jdbc.Driver");
+            } catch (ClassNotFoundException e) {
+                e.printStackTrace();
+                return null;
+            }
+
+            try {
+                Connection con = DriverManager.getConnection(DatabaseConnectionString, DecryptedDatabaseStrings_u, DecryptedDatabaseStrings_p);
+                return con;
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            return null;
         }
     }
 }

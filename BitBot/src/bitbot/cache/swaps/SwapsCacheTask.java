@@ -57,7 +57,7 @@ public class SwapsCacheTask {
             // History
             if (ChannelServer.getInstance().isEnableEnableSwaps()) {
                 SwapsInterface swap = null;
-                int DefaultUpdateTime = 5; // 5 minutes
+                int DefaultUpdateTime = 15; // 5 minutes
 
                 if (ExchangeSite.contains("bitfinex")) {
                     swap = new Swaps_Bitfinex();
