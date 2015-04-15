@@ -55,6 +55,10 @@ public class TV_symboldatabase {
         symbols.add(new TV_Symbol("BTC_CNY", "Bitcoin/ Chinese Yuan", "Huobi", "bitcoin"));
         symbols.add(new TV_Symbol("LTC_CNY", "Litecoin/ Chinese Yuan", "Huobi", "bitcoin"));
         
+        symbols.add(new TV_Symbol("BTC Futures Quarterly_CNY", "Bitcoin Quarterly Futures/ Chinese Yuan", "BitVC", "bitcoin"));
+        symbols.add(new TV_Symbol("BTC Futures BIWEEKLY_CNY", "Bitcoin Biweekly Futures/ Chinese Yuan", "BitVC", "bitcoin"));
+        symbols.add(new TV_Symbol("BTC Futures WEEKLY_CNY", "Bitcoin Weekly Futures/ Chinese Yuan", "BitVC", "bitcoin"));
+        
         symbols.add(new TV_Symbol("BTC_CNY", "Bitcoin/ Chinese Yuan", "BTCChina", "bitcoin"));
         symbols.add(new TV_Symbol("LTC_CNY", "Litecoin/ Chinese Yuan", "BTCChina", "bitcoin"));
         symbols.add(new TV_Symbol("LTC_BTC", "Litecoin/ Bitcoin", "BTCChina", "bitcoin"));

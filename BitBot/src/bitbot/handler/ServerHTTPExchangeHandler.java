@@ -73,7 +73,7 @@ public class ServerHTTPExchangeHandler implements Container {
                 r = new EchoClientTask(request, response);
             } else {
                 // Anti flood check
-                if (AntiFloodValidator.CheckSpam(IPAddress, 100)) {
+                if (AntiFloodValidator.CheckSpam(IPAddress, 300)) {
                     MultiThreadExecutor.submit(new SpamErrorTask(request, response));
                     return;
                 }

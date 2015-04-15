@@ -56,7 +56,7 @@ public class TradingViewUDFTask implements Runnable {
                         break;
                     case "/history":
                         this.sendSymbolHistory(body,
-                                query.get("symbol"), Long.parseLong(query.get("from")), query.get("resolution"));
+                                query.get("symbol"), Long.parseLong(query.get("from")), Long.parseLong(query.get("to")), query.get("resolution"));
                         break;
                     case "/quotes":
                         break;
@@ -113,7 +113,7 @@ public class TradingViewUDFTask implements Runnable {
         body.print(ret);
     }
 
-    private void sendSymbolHistory(PrintStream body, String symbolName, long startDateTimestamp, String resolution) {
+    private void sendSymbolHistory(PrintStream body, String symbolName, long startDateTimestamp, long endDateTimestamp, String resolution) {
         // Get symbol from database
         TV_Symbol symbol = TV_symboldatabase.symbolInfo(symbolName);
         if (symbol == null) {
@@ -163,12 +163,34 @@ public class TradingViewUDFTask implements Runnable {
                 return;
             }
         }
-
-        List<TickerItem_CandleBar> ret = ChannelServer.getInstance().getTickerTask().getTickerList_Candlestick(symbol.name.toLowerCase(), 0, time, symbol.exchange.toLowerCase(), startDateTimestamp);
+        
+        List<TickerItem_CandleBar> ret = null;
+        
+        // Estimate the amount of candles needed
+        final long timeDifference = endDateTimestamp - startDateTimestamp;
+        final int candlesRequested = (int) (timeDifference / (60 * time));
+        
+        int limit = 0;
+        if (time <= 3) {
+            limit = 6000;
+        } else if (time <= 15) {
+            limit = 3500;
+        } else if (time <= 240) {
+            limit = 3200; 
+        } else {
+            limit = 3000;
+        }
+ 
+        if (candlesRequested < limit) { // TV usually request 2041 at once... 
+            ret = ChannelServer.getInstance().getTickerTask().getTickerList_Candlestick(symbol.name.toLowerCase(), 0, time, symbol.exchange.toLowerCase(), startDateTimestamp, endDateTimestamp);
+        } else {
+            // should we auto ban?
+            
+        }
         // return result to client
         JSONObject json_main = new JSONObject();
 
-        if (ret.isEmpty()) {
+        if (ret == null || ret.isEmpty()) {
             json_main.put("s", "no_data"); // Status code. Expected values: “ok” | “error” | “incomplete” | “no_data”
             json_main.put("errmsg", "Not enough data, please wait."); // Status code. Expected values: “ok” | “error” | “incomplete” | “no_data”
         } else {

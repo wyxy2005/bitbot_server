@@ -25,7 +25,7 @@ public class Constants {
     public static final String CLIENT_KEY = "CLIENT";
     
     // server-server
-    public static final long PriceBetweenServerBroadcastDelay = 1000;
+    public static final long PriceBetweenServerBroadcastDelay = 0;
     
     // Socket
     public static final int SocketPortLegacy = 8080; // to provide compatibility for those on old version of the app
@@ -42,9 +42,9 @@ public class Constants {
     public static boolean tv_supports_group_request = false;
     public static boolean tv_supports_marks = false;
     
-    public static String[] tv_exchange_value = { "",                "BTCe", "Bitfinex", "Bitstamp", "Okcoin", "BTCChina", "Coinbase", "CoinbaseExchange", "Campbx", "Itbit", "Cryptsy", "_796", "Fybsg", "Fybse", "Kraken", "CexIO", "Dgex"};
-    public static String[] tv_exchange_name = { "All Exchanges",    "BTCe", "Bitfinex", "Bitstamp", "Okcoin", "BTCChina", "Coinbase", "CoinbaseExchange", "Campbx", "Itbit", "Cryptsy", "_796", "Fybsg", "Fybse", "Kraken", "CexIO", "Dgex"};
-    public static String[] tv_exchange_desc = { "",                 "BTCe", "Bitfinex", "Bitstamp", "Okcoin", "BTCChina", "Coinbase", "CoinbaseExchange", "Campbx", "Itbit", "Cryptsy", "_796", "Fybsg", "Fybse", "Kraken", "CexIO", "Dgex"};
+    public static String[] tv_exchange_value = { "",                "BTCe", "Bitfinex", "Bitstamp", "Okcoin", "BTCChina", "Coinbase", "CoinbaseExchange", "Campbx", "Itbit", "Cryptsy", "_796", "Fybsg", "Fybse", "Kraken", "CexIO", "Dgex", "BitVC"};
+    public static String[] tv_exchange_name = { "All Exchanges",    "BTCe", "Bitfinex", "Bitstamp", "Okcoin", "BTCChina", "Coinbase", "CoinbaseExchange", "Campbx", "Itbit", "Cryptsy", "_796", "Fybsg", "Fybse", "Kraken", "CexIO", "Dgex", "BitVC"};
+    public static String[] tv_exchange_desc = { "",                 "BTCe", "Bitfinex", "Bitstamp", "Okcoin", "BTCChina", "Coinbase", "CoinbaseExchange", "Campbx", "Itbit", "Cryptsy", "_796", "Fybsg", "Fybse", "Kraken", "CexIO", "Dgex", "BitVC"};
     
 
     public static String[] tv_symbolType1 = { "All types", "Bitcoin", "Stock", "Index"};

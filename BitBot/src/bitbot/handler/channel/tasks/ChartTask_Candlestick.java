@@ -98,7 +98,7 @@ public class ChartTask_Candlestick implements Runnable {
                 _ResponseHeader.addBasicResponseHeader(response);
 
                 if (isAuthorized) {
-                    List<TickerItem_CandleBar> ret = ChannelServer.getInstance().getTickerTask().getTickerList_Candlestick(currencypair, hours, interval, ExchangeSite, ServerTimeFrom);
+                    List<TickerItem_CandleBar> ret = ChannelServer.getInstance().getTickerTask().getTickerList_Candlestick(currencypair, hours, interval, ExchangeSite, ServerTimeFrom, Long.MAX_VALUE);
 
                     switch (APIVersion) {
                         /*case 1: {

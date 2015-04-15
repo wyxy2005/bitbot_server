@@ -104,7 +104,7 @@ public class ChartTask implements Runnable {
 
                 if (isAuthorized) {
                     if (IsIntervalBased) {
-                        List<TickerItem_CandleBar> ret = ChannelServer.getInstance().getTickerTask().getTickerList_Candlestick(currencypair, hours, depth, ExchangeSite, ServerTimeFrom);
+                        List<TickerItem_CandleBar> ret = ChannelServer.getInstance().getTickerTask().getTickerList_Candlestick(currencypair, hours, depth, ExchangeSite, ServerTimeFrom, Long.MAX_VALUE);
 
                         switch (returnFileFormat) {
                             case "json": {

@@ -22,6 +22,7 @@ import bitbot.graph.ExponentialMovingAverage;
 import bitbot.graph.ExponentialMovingAverageData;
 import bitbot.handler.channel.ChannelServer;
 import bitbot.Constants;
+import bitbot.cache.tickers.HTTP.TickerHistory_BitVC;
 import bitbot.server.threads.LoggingSaveRunnable;
 import bitbot.server.threads.TimerManager;
 import java.io.BufferedReader;
@@ -30,7 +31,6 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.nio.file.CopyOption;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -95,6 +95,10 @@ public class TickerCacheTask {
                 if (ExchangeCurrencyPair.contains("huobi")) {
                     history = new TickerHistory_Huobi();
                     UpdateTime_Millis = 500;
+                    
+                } else if (ExchangeCurrencyPair.contains("bitvc")) {
+                    history = new TickerHistory_BitVC();
+                    UpdateTime_Millis = 10000;
 
                 } else if (ExchangeCurrencyPair.contains("btce")) {
                     history = new TickerHistory_BTCe();
@@ -203,7 +207,7 @@ public class TickerCacheTask {
         return currentList.get(0);
     }
 
-    public List<TickerItem_CandleBar> getTickerList_Candlestick(final String ticker, final int backtestHours, int intervalMinutes, String ExchangeSite, long ServerTimeFrom) {
+    public List<TickerItem_CandleBar> getTickerList_Candlestick(final String ticker, final int backtestHours, int intervalMinutes, String ExchangeSite, long ServerTimeFrom, long ServerTimeEnd) {
         final List<TickerItem_CandleBar> list_chart = new ArrayList(); // create a new array first
         final String dataSet = ExchangeSite + "-" + ticker;
 
@@ -224,6 +228,8 @@ public class TickerCacheTask {
         float high = 0, low = Float.MAX_VALUE, open = -1, lastPriceSet = 0;
         double Volume = 0, VolumeCur = 0;
         float buysell_ratio_Total = 0, buysellratio_sets = 1;
+        
+        intervalMinutes *= 60; // convert to seconds
 
         // No need to lock this thread, if we are creating a new ArrayList off existing.
         // Its a copy :)
@@ -244,28 +250,28 @@ public class TickerCacheTask {
                 dtCal.setTimeInMillis(item.getServerTime());
 
                 int truncateField = -1;
-                if (intervalMinutes < 60) { // below 1 hour
+              /* if (intervalMinutes < 60) { // below 1 hour
                     truncateField = Calendar.HOUR;
-                } else if (intervalMinutes < 60 * 24) { // below 1 day
+                } else */if (intervalMinutes < 60 * 60 * 24) { // below 1 day
                     truncateField = Calendar.DATE;
-                } else if (intervalMinutes < 60 * 24 * 30) { // below 30 days
+                } else if (intervalMinutes < 60 * 60 * 24 * 30) { // below 30 days
                     truncateField = Calendar.MONTH;
-                } else if (intervalMinutes < 60 * 24 * 30 * 12 * 100) { // below 100 years
+                } else if (intervalMinutes < 60 * 60 * 24 * 30 * 12 * 100) { // below 100 years
                     truncateField = Calendar.YEAR;
                 } else { // wtf
                     truncateField = Calendar.ERA;
                 }
                 LastUsedTime = DateUtils.truncate(dtCal, truncateField).getTimeInMillis();
                 while (LastUsedTime < item.getServerTime()) { // no data available prior to this.
-                    LastUsedTime += (intervalMinutes * 60);
+                    LastUsedTime += intervalMinutes;
                 }
             }
 
             // Check if last added tick is above the threshold 'intervalMinutes'
-            if (LastUsedTime + (intervalMinutes * 60) < item.getServerTime()) {
+            if (LastUsedTime + intervalMinutes < item.getServerTime()) {
                 boolean isInstanceValueAdded = false;
 
-                while (LastUsedTime + (intervalMinutes * 60) < item.getServerTime()) {
+                while (LastUsedTime + intervalMinutes < item.getServerTime()) {
                     if (item.getServerTime() > startTime) {
                         // If there's not enough data available..
                         if (!isInstanceValueAdded) {
@@ -306,9 +312,10 @@ public class TickerCacheTask {
                             }
                         }
                         // Add to list
+                        final long DataTime = LastUsedTime + intervalMinutes;
                         list_chart.add(
                                 new TickerItem_CandleBar(
-                                        LastUsedTime + (intervalMinutes * 60),
+                                        DataTime,
                                         (float) item.getClose() == 0 ? item.getOpen() : item.getClose(),
                                         (float) high,
                                         (float) low,
@@ -318,6 +325,11 @@ public class TickerCacheTask {
                                         (buysell_ratio_Total == 0 ? 1 : buysell_ratio_Total) / buysellratio_sets, false)); // TODO: Fix buy/sell ratio here, 0 / something > 1 returns null on JSON result
 
                         isInstanceValueAdded = true;
+                        
+                        // all we need here.
+                        if (DataTime > ServerTimeEnd) {
+                            return list_chart;
+                        }
                     }
                     // reset
                     high = 0;
@@ -332,7 +344,7 @@ public class TickerCacheTask {
                     if (LastUsedTime == 0) {
                         LastUsedTime = item.getServerTime();
                     }
-                    LastUsedTime += (intervalMinutes * 60);
+                    LastUsedTime += intervalMinutes;
                 }
             } else {
                 high = Math.max(item.getHigh(), high);
@@ -353,11 +365,12 @@ public class TickerCacheTask {
             }
         }
         // For unmatured chart
-        if (high != 0 && low != Float.MAX_VALUE && open != -1 && LastUsedTime != 0 && lastPriceSet != 0) {
+        final long UnmaturedDataTime = LastUsedTime + intervalMinutes;
+        if (high != 0 && low != Float.MAX_VALUE && open != -1 && LastUsedTime != 0 && lastPriceSet != 0 && UnmaturedDataTime < ServerTimeEnd) {
             // Add to list
             list_chart.add(
                     new TickerItem_CandleBar(
-                            LastUsedTime + (intervalMinutes * 60),
+                            UnmaturedDataTime,
                             (float) lastPriceSet, // last
                             (float) high,
                             (float) low,
@@ -810,7 +823,7 @@ public class TickerCacheTask {
                         fis = new FileInputStream(f_data);
                         reader = new BufferedReader(new InputStreamReader(fis));
 
-                        String line = null;
+                        String line;
                         while ((line = reader.readLine()) != null) {
                             String[] LineSplit = line.split(",");
 
@@ -861,9 +874,8 @@ public class TickerCacheTask {
                 
                 File f_target = new File(f, ExchangeCurrencyPair);
                 
-                
                 synchronized (localStorageReadWriteMutex) { // not enough memory to run everything concurrently 
-                    // Create a new ArrayList to prevent threading issue
+                    // Create a new ArrayList here to prevent threading issue
                     // create here so we dont create unnecessary memory allocation until this synchronized block is called
                     List<TickerItemData> currentList = new ArrayList(list_mssql.get(ExchangeCurrencyPair));
                     
@@ -871,8 +883,9 @@ public class TickerCacheTask {
                     FileOutputStream out = null;
                     try {
                         out = new FileOutputStream(f_data, false);
+                        
                         final StringBuilder sb = new StringBuilder();
-
+                        
                         for (TickerItemData data : currentList) {
                             sb.append(data.getClose()).append(',');
                             sb.append(data.getOpen()).append(',');
@@ -883,10 +896,10 @@ public class TickerCacheTask {
                             sb.append(data.getVol_Cur()).append(',');
                             sb.append(data.getBuySell_Ratio()).append(',');
                             sb.append("\r\n");
+                            
+                            out.write(sb.toString().getBytes()); // don't keep too many unnecessary stuff in memory, due to system constraints.
+                            sb.delete(0, sb.length()); // don't keep too many unnecessary stuff in memory, due to system constraints.
                         }
-                        out.write(sb.toString().getBytes());
-
-                        sb.delete(0, sb.length());
                     } catch (Exception error) {
                         // data is corrupted?
                         f_data.delete();
