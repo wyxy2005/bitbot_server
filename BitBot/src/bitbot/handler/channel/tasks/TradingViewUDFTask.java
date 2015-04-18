@@ -182,7 +182,8 @@ public class TradingViewUDFTask implements Runnable {
         }
  
         if (candlesRequested < limit) { // TV usually request 2041 at once... 
-            ret = ChannelServer.getInstance().getTickerTask().getTickerList_Candlestick(symbol.name.toLowerCase(), 0, time, symbol.exchange.toLowerCase(), startDateTimestamp, endDateTimestamp);
+            ret = ChannelServer.getInstance().getTickerTask().getTickerList_Candlestick(
+                    symbol.name.toLowerCase(), 0, time, symbol.exchange.toLowerCase(), startDateTimestamp, Math.min(System.currentTimeMillis() / 1000, endDateTimestamp), false);
         } else {
             // should we auto ban?
             
@@ -254,13 +255,13 @@ public class TradingViewUDFTask implements Runnable {
         json_main.put("has_daily", true);
         //json_main.put("has_fractional_volume", true); // obselete
         json_main.put("has_weekly_and_monthly", true);
-        json_main.put("has_empty_bars", true);
+        json_main.put("has_empty_bars", false);
         json_main.put("has_no_volume", false);
         json_main.put("listed_exchange", symbol.exchange); // listed and traded exchange for bitcoin is the same
         json_main.put("exchange", symbol.exchange); // listed and traded exchange for bitcoin is the same
         json_main.put("ticker", symbol.exchange + ":" + symbol.name);
         json_main.put("description", symbol.description);
-        json_main.put("type", "UTC");
+        json_main.put("type", symbol.type);
 
         // Contract expiration
         boolean expiredContract = false;

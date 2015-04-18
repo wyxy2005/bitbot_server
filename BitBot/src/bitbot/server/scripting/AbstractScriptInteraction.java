@@ -104,7 +104,7 @@ public class AbstractScriptInteraction {
 
 
     public List<TickerItem_CandleBar> getTickerList_Candlestick(final String ticker, final int backtestHours, int intervalMinutes, String ExchangeSite, long ServerTimeFrom) {
-        List<TickerItem_CandleBar> ret = ChannelServer.getInstance().getTickerTask().getTickerList_Candlestick(ticker, backtestHours, intervalMinutes, ExchangeSite, ServerTimeFrom, Long.MAX_VALUE);
+        List<TickerItem_CandleBar> ret = ChannelServer.getInstance().getTickerTask().getTickerList_Candlestick(ticker, backtestHours, intervalMinutes, ExchangeSite, ServerTimeFrom, System.currentTimeMillis() / 1000, true);
         if (ret.isEmpty()) {
             throw new RuntimeException("Not enough data available.");
         }

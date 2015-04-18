@@ -38,7 +38,7 @@ public class TickerItemData implements TickerItem {
         this.close = close;
         this.vol = volume;
         this.vol_cur = volume_cur;
-        this. buysell_ratio = buysell_ratio;
+        this.buysell_ratio = buysell_ratio;
         this.unmatured_data = unmatured_data;
         
         //System.out.println("server_time at: " + server_time.toString());
