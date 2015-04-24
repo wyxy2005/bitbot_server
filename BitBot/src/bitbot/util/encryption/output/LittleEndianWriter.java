@@ -46,7 +46,7 @@ public interface LittleEndianWriter {
      * @param i The integer to write.
      */
     public void writeInt(int i);
-    public void writeInt(long i);
+    public void writeUnsignedInt(long i);
 
     /**
      * Write a short integer to the sequence.

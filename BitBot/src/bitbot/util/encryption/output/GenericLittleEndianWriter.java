@@ -120,7 +120,7 @@ public class GenericLittleEndianWriter implements LittleEndianWriter {
     }
 
     @Override
-    public void writeInt(long i) {
+    public void writeUnsignedInt(long i) {
 	write((byte) (i & 0xFF));
 	write((byte) ((i >>> 8) & 0xFF));
 	write((byte) ((i >>> 16) & 0xFF));

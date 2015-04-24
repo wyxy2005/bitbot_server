@@ -8,6 +8,10 @@ import bitbot.server.threads.TimerManager;
 import bitbot.util.BitcoinWisdomReader;
 import bitbot.util.MT4CVSReader;
 import bitbot.util.encryption.CustomXorEncryption;
+import bitbot.util.encryption.input.ByteArrayByteStream;
+import bitbot.util.encryption.input.GenericSeekableLittleEndianAccessor;
+import bitbot.util.encryption.input.SeekableLittleEndianAccessor;
+import bitbot.util.encryption.output.PacketLittleEndianWriter;
 import java.security.cert.X509Certificate;
 import java.util.Calendar;
 import javax.net.ssl.HostnameVerifier;
@@ -141,6 +145,21 @@ public class Main {
                 final Calendar dtCal_final = Calendar.getInstance();
                 dtCal_final.setTimeInMillis(LastUsedTime);
                 System.out.println(dtCal_final.getTime().toString());
+                break;
+            }
+            case "testbits": {
+                double val = 5540.5464d;
+                
+                PacketLittleEndianWriter mplew = new PacketLittleEndianWriter();
+                mplew.writeDouble(val);
+                
+                byte[] packetdata = mplew.getPacket();
+                
+                final SeekableLittleEndianAccessor slea = new GenericSeekableLittleEndianAccessor(new ByteArrayByteStream(packetdata));
+                
+                double val2 = slea.readDouble();
+                
+                System.out.println((float)val2);
                 break;
             }
             default: {

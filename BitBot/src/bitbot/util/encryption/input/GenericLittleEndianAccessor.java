@@ -6,7 +6,7 @@ import java.io.ByteArrayOutputStream;
 
 /**
  * Provides a generic interface to a Little Endian stream of bytes.
- * 
+ *
  * @version 1.0
  * @author Frz
  * @since Revision 323
@@ -21,7 +21,7 @@ public class GenericLittleEndianAccessor implements LittleEndianAccessor {
      * @param bs The byte stream to wrap the accessor around.
      */
     public GenericLittleEndianAccessor(final ByteInputStream bs) {
-	this.bs = bs;
+        this.bs = bs;
     }
 
     /**
@@ -32,7 +32,7 @@ public class GenericLittleEndianAccessor implements LittleEndianAccessor {
      */
     @Override
     public final byte readByte() {
-	return (byte) bs.readByte();
+        return (byte) bs.readByte();
     }
 
     /**
@@ -42,20 +42,20 @@ public class GenericLittleEndianAccessor implements LittleEndianAccessor {
      */
     @Override
     public final int readInt() {
-	final int byte1 = bs.readByte();
-	final int byte2 = bs.readByte();
-	final int byte3 = bs.readByte();
-	final int byte4 = bs.readByte();
-	return (byte4 << 24) + (byte3 << 16) + (byte2 << 8) + byte1;
+        final int byte1 = bs.readByte();
+        final int byte2 = bs.readByte();
+        final int byte3 = bs.readByte();
+        final int byte4 = bs.readByte();
+        return (byte4 << 24) + (byte3 << 16) + (byte2 << 8) + byte1;
     }
 
     @Override
     public final long readInt2() {
-	final int byte1 = bs.readByte();
-	final int byte2 = bs.readByte();
-	final int byte3 = bs.readByte();
-	final int byte4 = bs.readByte();
-	return (long) ((byte4 << 24) + (byte3 << 16) + (byte2 << 8) + byte1);
+        final int byte1 = bs.readByte();
+        final int byte2 = bs.readByte();
+        final int byte3 = bs.readByte();
+        final int byte4 = bs.readByte();
+        return (long) ((byte4 << 24) + (byte3 << 16) + (byte2 << 8) + byte1);
     }
 
     /**
@@ -65,16 +65,16 @@ public class GenericLittleEndianAccessor implements LittleEndianAccessor {
      */
     @Override
     public final short readShort() {
-	final int byte1 = bs.readByte();
-	final int byte2 = bs.readByte();
-	return (short) ((byte2 << 8) + byte1);
+        final int byte1 = bs.readByte();
+        final int byte2 = bs.readByte();
+        return (short) ((byte2 << 8) + byte1);
     }
 
     @Override
     public final int readShort2() {
-	final int byte1 = bs.readByte();
-	final int byte2 = bs.readByte();
-	return ((byte2 << 8) + byte1);
+        final int byte1 = bs.readByte();
+        final int byte2 = bs.readByte();
+        return ((byte2 << 8) + byte1);
     }
 
     /**
@@ -84,7 +84,7 @@ public class GenericLittleEndianAccessor implements LittleEndianAccessor {
      */
     @Override
     public final char readChar() {
-	return (char) readShort();
+        return (char) readShort();
     }
 
     /**
@@ -94,16 +94,16 @@ public class GenericLittleEndianAccessor implements LittleEndianAccessor {
      */
     @Override
     public final long readLong() {
-	final int byte1 = bs.readByte();
-	final int byte2 = bs.readByte();
-	final int byte3 = bs.readByte();
-	final int byte4 = bs.readByte();
-	final int byte5 = bs.readByte();
-	final int byte6 = bs.readByte();
-	final int byte7 = bs.readByte();
-	final int byte8 = bs.readByte();
+        final int byte1 = bs.readByte();
+        final int byte2 = bs.readByte();
+        final int byte3 = bs.readByte();
+        final int byte4 = bs.readByte();
+        final int byte5 = bs.readByte();
+        final int byte6 = bs.readByte();
+        final int byte7 = bs.readByte();
+        final int byte8 = bs.readByte();
 
-	return (byte8 << 56) + (byte7 << 48) + (byte6 << 40) + (byte5 << 32) + (byte4 << 24) + (byte3 << 16)
+        return (byte8 << 56) + (byte7 << 48) + (byte6 << 40) + (byte5 << 32) + (byte4 << 24) + (byte3 << 16)
 		+ (byte2 << 8) + byte1;
     }
 
@@ -114,7 +114,7 @@ public class GenericLittleEndianAccessor implements LittleEndianAccessor {
      */
     @Override
     public final float readFloat() {
-	return Float.intBitsToFloat(readInt());
+        return Float.intBitsToFloat(readInt());
     }
 
     /**
@@ -124,7 +124,25 @@ public class GenericLittleEndianAccessor implements LittleEndianAccessor {
      */
     @Override
     public final double readDouble() {
-	return Double.longBitsToDouble(readLong());
+        final long byte1 = bs.readByte();
+        final long byte2 = bs.readByte();
+        final long byte3 = bs.readByte();
+        final long byte4 = bs.readByte();
+        final long byte5 = bs.readByte();
+        final long byte6 = bs.readByte();
+        final long byte7 = bs.readByte();
+        final long byte8 = bs.readByte();
+
+        long value = (long) ((byte8 << 56)
+                + (byte7 << 48)
+                + (byte6 << 40)
+                + (byte5 << 32)
+                + (byte4 << 24)
+                + (byte3 << 16)
+                + (byte2 << 8)
+                + byte1);
+        
+        return Double.longBitsToDouble(value);
     }
 
     /**
@@ -134,13 +152,13 @@ public class GenericLittleEndianAccessor implements LittleEndianAccessor {
      * @return The string read.
      */
     public final String readAsciiString(final int n) {
-	final char ret[] = new char[n];
-	byte c;
-	for (int i = 0; i < n; i++) {
-	    c = readByte();
-	    ret[i] = (c >= 32 && c <= 126) ? ((char) c) : ((char) 42);
-	}
-	return new String(ret);
+        final char ret[] = new char[n];
+        byte c;
+        for (int i = 0; i < n; i++) {
+            c = readByte();
+            ret[i] = (c >= 32 && c <= 126) ? ((char) c) : ((char) 42);
+        }
+        return new String(ret);
     }
 
     /**
@@ -149,18 +167,18 @@ public class GenericLittleEndianAccessor implements LittleEndianAccessor {
      * @return The string read.
      */
     public final String readNullTerminatedAsciiString() {
-	final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-	byte b = 1;
-	while (b != 0) {
-	    b = readByte();
-	    baos.write(b);
-	}
-	final byte[] buf = baos.toByteArray();
-	final char[] chrBuf = new char[buf.length];
-	for (int x = 0; x < buf.length; x++) {
-	    chrBuf[x] = (char) buf[x];
-	}
-	return new String(chrBuf);
+        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        byte b = 1;
+        while (b != 0) {
+            b = readByte();
+            baos.write(b);
+        }
+        final byte[] buf = baos.toByteArray();
+        final char[] chrBuf = new char[buf.length];
+        for (int x = 0; x < buf.length; x++) {
+            chrBuf[x] = (char) buf[x];
+        }
+        return new String(chrBuf);
     }
 
     /**
@@ -170,43 +188,42 @@ public class GenericLittleEndianAccessor implements LittleEndianAccessor {
      * @see net.sf.odinms.tools.data.input.ByteInputStream#getBytesRead()
      */
     public final long getBytesRead() {
-	return bs.getBytesRead();
+        return bs.getBytesRead();
     }
 
     /**
-     * Reads a MapleStory convention lengthed ASCII string.
-     * This consists of a short integer telling the length of the string,
-     * then the string itself.
+     * Reads a MapleStory convention lengthed ASCII string. This consists of a
+     * short integer telling the length of the string, then the string itself.
      *
      * @return The string read.
      */
     @Override
     public final String readMapleAsciiString() {
-	return readAsciiString(readShort());
+        return readAsciiString(readShort());
     }
-    
+
     @Override
     public final String readByteToStringAsciiString() {
-	int len = readShort();
-	StringBuilder sb = new StringBuilder();
-	
-	for (int i = 0; i < len; i++) {
-	    sb.append(Integer.toHexString(readByte()));
-	}
-	return sb.toString();
+        int len = readShort();
+        StringBuilder sb = new StringBuilder();
+
+        for (int i = 0; i < len; i++) {
+            sb.append(Integer.toHexString(readByte()));
+        }
+        return sb.toString();
     }
 
     /**
-     * Reads a MapleStory Position information.
-     * This consists of 2 short integer.
+     * Reads a MapleStory Position information. This consists of 2 short
+     * integer.
      *
      * @return The Position read.
      */
     @Override
     public final Point readPos() {
-	final int x = readShort();
-	final int y = readShort();
-	return new Point(x, y);
+        final int x = readShort();
+        final int y = readShort();
+        return new Point(x, y);
     }
 
     /**
@@ -217,11 +234,11 @@ public class GenericLittleEndianAccessor implements LittleEndianAccessor {
      */
     @Override
     public final byte[] read(final int num) {
-	byte[] ret = new byte[num];
-	for (int x = 0; x < num; x++) {
-	    ret[x] = readByte();
-	}
-	return ret;
+        byte[] ret = new byte[num];
+        for (int x = 0; x < num; x++) {
+            ret[x] = readByte();
+        }
+        return ret;
     }
 
     /**
@@ -231,9 +248,9 @@ public class GenericLittleEndianAccessor implements LittleEndianAccessor {
      */
     @Override
     public void skip(final int num) {
-	for (int x = 0; x < num; x++) {
-	    readByte();
-	}
+        for (int x = 0; x < num; x++) {
+            readByte();
+        }
     }
 
     /**
@@ -241,7 +258,7 @@ public class GenericLittleEndianAccessor implements LittleEndianAccessor {
      */
     @Override
     public final long available() {
-	return bs.available();
+        return bs.available();
     }
 
     /**
@@ -249,20 +266,20 @@ public class GenericLittleEndianAccessor implements LittleEndianAccessor {
      */
     @Override
     public final String toString() {
-	return bs.toString();
+        return bs.toString();
     }
 
     @Override
     public void Print(int count) {
-	if (bs.available() > 0) {
-	    System.out.println(HexTool.toString(read(Math.min((int) available(), count))));
-	}
+        if (bs.available() > 0) {
+            System.out.println(HexTool.toString(read(Math.min((int) available(), count))));
+        }
     }
 
     @Override
     public void PrintAll() {
-	if (bs.available() > 0) {
-	    System.out.println(HexTool.toString(read((int) available())));
-	}
+        if (bs.available() > 0) {
+            System.out.println(HexTool.toString(read((int) available())));
+        }
     }
 }
