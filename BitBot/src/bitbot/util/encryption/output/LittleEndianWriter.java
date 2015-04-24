@@ -90,6 +90,20 @@ public interface LittleEndianWriter {
      */
     void writeMapleAsciiString(String s);
     void writeMapleAsciiString(String s, int max, char end);
+    
+    /**
+     * Writes a float to the sequence
+     * 
+     * @param l the float value to write
+    */
+    void writeFloat(float l);
+    
+        /**
+     * Writes a double to the sequence
+     * 
+     * @param l the double value to write
+    */
+    void writeDouble(double l);
 
     void writeHex(String hex);
 }

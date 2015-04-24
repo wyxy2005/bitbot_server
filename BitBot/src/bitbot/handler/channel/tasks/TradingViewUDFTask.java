@@ -76,6 +76,7 @@ public class TradingViewUDFTask implements Runnable {
                         break;
                 }
             } catch (Exception exp) {
+                exp.printStackTrace();
                 sendError(body, "wrong_request_format");
             } finally {
                 body.close();
@@ -118,6 +119,9 @@ public class TradingViewUDFTask implements Runnable {
         TV_Symbol symbol = TV_symboldatabase.symbolInfo(symbolName);
         if (symbol == null) {
             sendError(body, "unknown_symbol");
+            return;
+        } else if (startDateTimestamp <= 0 || endDateTimestamp <= 0) {
+            sendError(body, "invalid entry");
             return;
         }
         //System.out.println("[History] Symbol: " + symbolName + ", date: " + startDateTimestamp + ", res: " + resolution);
@@ -167,11 +171,19 @@ public class TradingViewUDFTask implements Runnable {
         List<TickerItem_CandleBar> ret = null;
         
         // Estimate the amount of candles needed
+        //long datesRangeRight = Math.round(System.currentTimeMillis() / 1000); 
+        //long datesRangeLeft = datesRangeRight - periodLengthSeconds(resolution); //	BEWARE: please note we really need 2 bars, not the only last one see the explanation below. `10` is the `large enough` value to work around holidays
+
         final long timeDifference = endDateTimestamp - startDateTimestamp;
         final int candlesRequested = (int) (timeDifference / (60 * time));
         
+        //System.out.println(timeDifference + " server diff: " + (datesRangeLeft - datesRangeRight));
+        
         int limit = 0;
-        if (time <= 3) {
+        if (time <= 0) {
+            sendError(body, "invalid entry");
+            return;
+        } else if (time <= 3) {
             limit = 6000;
         } else if (time <= 15) {
             limit = 3500;
@@ -183,7 +195,7 @@ public class TradingViewUDFTask implements Runnable {
  
         if (candlesRequested < limit) { // TV usually request 2041 at once... 
             ret = ChannelServer.getInstance().getTickerTask().getTickerList_Candlestick(
-                    symbol.name.toLowerCase(), 0, time, symbol.exchange.toLowerCase(), startDateTimestamp, Math.min(System.currentTimeMillis() / 1000, endDateTimestamp), false);
+                    symbol.name.toLowerCase(), 0, time, symbol.exchange.toLowerCase(), startDateTimestamp, Math.min(System.currentTimeMillis() / 1000, endDateTimestamp), true);
         } else {
             // should we auto ban?
             
@@ -226,6 +238,25 @@ public class TradingViewUDFTask implements Runnable {
         body.print(retstr);
     }
 
+   /* private int periodLengthSeconds(String resolution) {
+	int daysCount = 0;
+        final int requiredPeriodsCount = 10;
+
+	if (resolution.endsWith("D")) {
+            daysCount = requiredPeriodsCount;
+	}
+	else if (resolution.endsWith("M")) {
+            daysCount = 31 * requiredPeriodsCount;
+	}
+	else if (resolution.endsWith("W")) {
+            daysCount = 7 * requiredPeriodsCount;
+	}
+	else {
+            daysCount = requiredPeriodsCount * Integer.parseInt(resolution) / (24 * 60);
+	}
+	return daysCount * 24 * 60 * 60;
+}*/
+    
     private void sendSymbolInfo(PrintStream body, String symbolName) {
         TV_Symbol symbol = TV_symboldatabase.symbolInfo(symbolName);
         if (symbol == null) {

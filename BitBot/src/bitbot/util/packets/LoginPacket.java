@@ -2,7 +2,7 @@ package bitbot.util.packets;
 
 import bitbot.handler.SendPacketOpcode;
 import bitbot.Constants;
-import bitbot.util.encryption.output.MaplePacketLittleEndianWriter;
+import bitbot.util.encryption.output.PacketLittleEndianWriter;
 
 /**
  *
@@ -11,7 +11,7 @@ import bitbot.util.encryption.output.MaplePacketLittleEndianWriter;
 public class LoginPacket {
 
     public static final byte[] getHello(final short version, final byte[] sendIv, final byte[] recvIv) {
-        final MaplePacketLittleEndianWriter mplew = new MaplePacketLittleEndianWriter();
+        final PacketLittleEndianWriter mplew = new PacketLittleEndianWriter();
 
         mplew.writeShort(version);
         mplew.writeMapleAsciiString(Constants.ServerClientMinorPatchVer);
@@ -22,7 +22,7 @@ public class LoginPacket {
     }
 
     public static final byte[] getPing() {
-        final MaplePacketLittleEndianWriter mplew = new MaplePacketLittleEndianWriter();
+        final PacketLittleEndianWriter mplew = new PacketLittleEndianWriter();
 
         mplew.writeShort(SendPacketOpcode.PING.getValue());
 

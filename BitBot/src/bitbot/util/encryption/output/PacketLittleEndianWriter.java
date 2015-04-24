@@ -10,12 +10,12 @@ import java.io.ByteArrayOutputStream;
  * @version 1.0
  * @since Revision 352
  */
-public class MaplePacketLittleEndianWriter extends GenericLittleEndianWriter {
+public class PacketLittleEndianWriter extends GenericLittleEndianWriter {
 
     /**
      * Constructor - initializes this stream with a default size.
      */
-    public MaplePacketLittleEndianWriter() {
+    public PacketLittleEndianWriter() {
 	this(20);
     }
 
@@ -24,7 +24,7 @@ public class MaplePacketLittleEndianWriter extends GenericLittleEndianWriter {
      *
      * @param size The size of the underlying stream.
      */
-    public MaplePacketLittleEndianWriter(int size) {
+    public PacketLittleEndianWriter(int size) {
 	ByteArrayOutputStream baos = new ByteArrayOutputStream(size);
 
 	setByteOutputStream(baos);

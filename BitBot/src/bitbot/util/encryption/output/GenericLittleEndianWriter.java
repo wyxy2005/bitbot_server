@@ -201,6 +201,16 @@ public class GenericLittleEndianWriter implements LittleEndianWriter {
 	write((byte) ((l >>> 48) & 0xFF));
 	write((byte) ((l >>> 56) & 0xFF));
     }
+    
+    @Override
+    public void writeFloat(float l) {
+        this.writeInt(Float.floatToIntBits(l));
+    }
+    
+    @Override
+    public void writeDouble(double l) {
+        this.writeLong(Double.doubleToLongBits(l));
+    }
 
     @Override
     public void writeHex(String hex) {

@@ -25,6 +25,10 @@ import bitbot.Constants;
 import bitbot.cache.tickers.HTTP.TickerHistory_BitVC;
 import bitbot.server.threads.LoggingSaveRunnable;
 import bitbot.server.threads.TimerManager;
+import bitbot.util.encryption.input.ByteArrayByteStream;
+import bitbot.util.encryption.input.GenericSeekableLittleEndianAccessor;
+import bitbot.util.encryption.input.SeekableLittleEndianAccessor;
+import bitbot.util.encryption.output.PacketLittleEndianWriter;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -41,6 +45,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 import org.apache.commons.lang3.time.DateUtils;
 
 /**
@@ -224,54 +229,59 @@ public class TickerCacheTask {
         final boolean includeVolumeData = !ExchangeSite.equalsIgnoreCase("coinbase");
 
         final long cTime = cTime_Millis / 1000;
-        final long startTime;
+
+        // Determine where to start the candlestick
+        final long LastUsedTime_;
         long LastUsedTime = 0;
         if (backtestHours == 0) { // tradingview
-            LastUsedTime = ServerTimeFrom - intervalMinutes;
-            startTime = ServerTimeFrom;
+            LastUsedTime_ = ServerTimeFrom;
         } else {
-            LastUsedTime = 0;
-            startTime = cTime - (60l * 60l * backtestHours);
+            LastUsedTime_ = cTime - (60l * 60l * backtestHours);
         }
+        LastUsedTime = LastUsedTime_;
 
         float high = 0, low = Float.MAX_VALUE, open = -1, lastPriceSet = 0;
         double Volume = 0, VolumeCur = 0;
         float buysell_ratio_Total = 0, buysellratio_sets = 1;
 
-        // No need to lock this thread, if we are creating a new ArrayList off existing.
+        // No need to lock this thread, if we are creating a new ArrayList off existing since its a copy :)
         // Its a copy :)
-        //List<TickerItemData> currentList = new LinkedList(list_mssql.get(dataSet));
-        //Iterator<TickerItemData> itr = currentList.iterator();
-        final List<TickerItemData> currentList = list_mssql.get(dataSet);
-        final Iterator<TickerItemData> items = currentList.stream().
-                filter((data) -> (data.getServerTime() > ServerTimeFrom) && (data.getServerTime() > startTime)).
-                sorted(TickerItemComparator).
-                iterator();
+        final Stream<TickerItemData> items_stream = list_mssql.get(dataSet).stream().
+                filter((data) -> (data.getServerTime() > LastUsedTime_)).
+                sorted(TickerItemComparator);
 
+        boolean isPostProcessCompleted = false;
+        // Now we create the candle data chain
+        final Iterator<TickerItemData> items = items_stream.iterator();
         while (items.hasNext()) {
             TickerItemData item = items.next();
 
-            // round the last used time to best possible time for the chart period
-            if (LastUsedTime == 0) {
-                final Calendar dtCal = Calendar.getInstance();
-                dtCal.setTimeInMillis(item.getServerTime());
+            if (!isPostProcessCompleted) {
+                isPostProcessCompleted = true;
 
-                int truncateField = -1;
-                /* if (intervalMinutes < 60) { // below 1 hour
-                 truncateField = Calendar.HOUR;
-                 } else */
-                if (intervalMinutes < 60 * 60 * 24) { // below 1 day
-                    truncateField = Calendar.DATE;
-                } else if (intervalMinutes < 60 * 60 * 24 * 30) { // below 30 days
-                    truncateField = Calendar.MONTH;
-                } else if (intervalMinutes < 60 * 60 * 24 * 30 * 12 * 100) { // below 100 years
-                    truncateField = Calendar.YEAR;
-                } else { // wtf
-                    truncateField = Calendar.ERA;
-                }
-                LastUsedTime = DateUtils.truncate(dtCal, truncateField).getTimeInMillis();
-                while (LastUsedTime < item.getServerTime()) { // no data available prior to this.
-                    LastUsedTime += intervalMinutes;
+                if (backtestHours != 0) { // not tradingview
+                    // Post process, for the variables and stuff
+                    // round the last used time to best possible time for the chart period
+                    final Calendar dtCal = Calendar.getInstance();
+                    dtCal.setTimeInMillis(Math.min(LastUsedTime, item.getServerTime()));
+
+                    int truncateField;
+                    if (intervalMinutes < 60) { // below 1 hour
+                        truncateField = Calendar.HOUR;
+                    } else if (intervalMinutes < 60 * 60 * 24) { // below 1 day
+                        truncateField = Calendar.DATE;
+                    } else if (intervalMinutes < 60 * 60 * 24 * 30) { // below 30 days
+                        truncateField = Calendar.MONTH;
+                    } else if (intervalMinutes < 60 * 60 * 24 * 30 * 12 * 100) { // below 100 years
+                        truncateField = Calendar.YEAR;
+                    } else { // wtf
+                        truncateField = Calendar.ERA;
+                    }
+                    LastUsedTime = DateUtils.truncate(dtCal, truncateField).getTimeInMillis();
+
+                    while (LastUsedTime < item.getServerTime()) {
+                        LastUsedTime += intervalMinutes;
+                    }
                 }
             }
 
@@ -280,66 +290,65 @@ public class TickerCacheTask {
                 boolean isInstanceValueAdded = false;
 
                 while (LastUsedTime + intervalMinutes < item.getServerTime()) {
-                    if (item.getServerTime() > startTime) {
-                        // If there's not enough data available..
-                        if (!isInstanceValueAdded) {
-                            if (high == 0) {
-                                high = item.getHigh();
+                    // If there's not enough data available..
+                    if (!isInstanceValueAdded) {
+                        if (high == 0) {
+                            high = item.getHigh();
+                        }
+                        if (low == Float.MAX_VALUE) {
+                            low = item.getLow();
+                        }
+                        if (open == -1) {
+                            open = item.getOpen();
+                        }
+                        if (LastUsedTime == 0) {
+                            LastUsedTime = item.getServerTime();
+                        }
+                        if (includeVolumeData) {
+                            if (Volume == 0) {
+                                Volume = item.getVol();
                             }
-                            if (low == Float.MAX_VALUE) {
-                                low = item.getLow();
-                            }
-                            if (open == -1) {
-                                open = item.getOpen();
-                            }
-                            if (LastUsedTime == 0) {
-                                LastUsedTime = item.getServerTime();
-                            }
-                            if (includeVolumeData) {
-                                if (Volume == 0) {
-                                    Volume = item.getVol();
-                                }
-                                if (VolumeCur == 0) {
-                                    VolumeCur = item.getVol_Cur();
-                                }
-                            }
-                        } else {
-                            // price = close because there are no trading during this time, so its based on the last closing price
-                            if (high == 0) {
-                                high = item.getClose();
-                            }
-                            if (low == Float.MAX_VALUE) {
-                                low = item.getClose();
-                            }
-                            if (open == -1) {
-                                open = item.getClose();
-                            }
-                            if (LastUsedTime == 0) {
-                                LastUsedTime = item.getServerTime();
+                            if (VolumeCur == 0) {
+                                VolumeCur = item.getVol_Cur();
                             }
                         }
-                        lastPriceSet = item.getClose();
-
-                        // Add to list
-                        final long DataTime = LastUsedTime + intervalMinutes;
-                        list_chart.add(
-                                new TickerItem_CandleBar(
-                                        DataTime,
-                                        (float) item.getClose() == 0 ? item.getOpen() : item.getClose(),
-                                        (float) high,
-                                        (float) low,
-                                        (float) open,
-                                        Volume,
-                                        VolumeCur,
-                                        (buysell_ratio_Total == 0 ? 1 : buysell_ratio_Total) / buysellratio_sets, false)); // TODO: Fix buy/sell ratio here, 0 / something > 1 returns null on JSON result
-
-                        isInstanceValueAdded = true;
-
-                        // all we need here.
-                        if (DataTime > ServerTimeEnd) {
-                            return list_chart;
+                    } else {
+                        // price = close because there are no trading during this time, so its based on the last closing price
+                        if (high == 0) {
+                            high = item.getClose();
+                        }
+                        if (low == Float.MAX_VALUE) {
+                            low = item.getClose();
+                        }
+                        if (open == -1) {
+                            open = item.getClose();
+                        }
+                        if (LastUsedTime == 0) {
+                            LastUsedTime = item.getServerTime();
                         }
                     }
+                    lastPriceSet = item.getClose();
+
+                    // Add to list
+                    final long DataTime = LastUsedTime + intervalMinutes;
+                    list_chart.add(
+                            new TickerItem_CandleBar(
+                                    DataTime,
+                                    (float) item.getClose() == 0 ? item.getOpen() : item.getClose(),
+                                    (float) high,
+                                    (float) low,
+                                    (float) open,
+                                    Volume,
+                                    VolumeCur,
+                                    (buysell_ratio_Total == 0 ? 1 : buysell_ratio_Total) / buysellratio_sets, false)); // TODO: Fix buy/sell ratio here, 0 / something > 1 returns null on JSON result
+
+                    isInstanceValueAdded = true;
+
+                    // all we need here.
+                    if (DataTime > ServerTimeEnd) {
+                        return list_chart;
+                    }
+
                     // reset
                     high = 0;
                     low = Float.MAX_VALUE;
@@ -823,6 +832,9 @@ public class TickerCacheTask {
             System.out.println("[Info] Stopped caching " + ExchangeCurrencyPair + " data from MSSQL");
         }
 
+        private static final boolean readRegular = false; // support for legacy code
+        private static final boolean writeRegular = false; // support for legacy code
+
         private void ReadFromFileStorage(List<TickerItemData> list_newItems) {
             // Start saving to local file
             File f = new File("CachedPrice");
@@ -839,32 +851,72 @@ public class TickerCacheTask {
                     BufferedReader reader = null;
                     try {
                         fis = new FileInputStream(f_data);
-                        reader = new BufferedReader(new InputStreamReader(fis));
 
-                        String line;
-                        while ((line = reader.readLine()) != null) {
-                            String[] LineSplit = line.split(",");
+                        if (readRegular) { // support for legacy code
+                            reader = new BufferedReader(new InputStreamReader(fis));
 
-                            float close = Float.parseFloat(LineSplit[0]);
-                            float open = Float.parseFloat(LineSplit[1]);
-                            float high = Float.parseFloat(LineSplit[2]);
-                            float low = Float.parseFloat(LineSplit[3]);
-                            long servertime = Long.parseLong(LineSplit[4]);
-                            double volume = Double.parseDouble(LineSplit[5]);
-                            double volume_cur = Double.parseDouble(LineSplit[6]);
-                            float ratio = Float.parseFloat(LineSplit[7]);
+                            String line;
+                            while ((line = reader.readLine()) != null) {
+                                String[] LineSplit = line.split(",");
 
-                            TickerItemData data = new TickerItemData(servertime, close, high, low, open, volume, volume_cur, ratio, false);
+                                float close = Float.parseFloat(LineSplit[0]);
+                                float open = Float.parseFloat(LineSplit[1]);
+                                float high = Float.parseFloat(LineSplit[2]);
+                                float low = Float.parseFloat(LineSplit[3]);
+                                long servertime = Long.parseLong(LineSplit[4]);
+                                double volume = Double.parseDouble(LineSplit[5]);
+                                double volume_cur = Double.parseDouble(LineSplit[6]);
+                                float ratio = Float.parseFloat(LineSplit[7]);
 
-                            list_newItems.add(data);
+                                TickerItemData data = new TickerItemData(servertime, close, high, low, open, volume, volume_cur, ratio, false);
 
-                            // update max server time
-                            if (servertime > LastCachedTime) {
-                                LastCachedTime = servertime;
+                                list_newItems.add(data);
+
+                                // update max server time
+                                if (servertime > LastCachedTime) {
+                                    LastCachedTime = servertime;
+                                }
+                            }
+                        } else {
+                            byte[] byte_line = new byte[fis.available()];
+                            int readbytes = fis.read(byte_line, 0, fis.available());
+                            if (readbytes != -1) {
+                                final SeekableLittleEndianAccessor slea = new GenericSeekableLittleEndianAccessor(new ByteArrayByteStream(byte_line));
+
+                                while (slea.available() > 0) {
+                                    final byte startingMarker = slea.readByte();
+
+                                    float close = slea.readFloat();
+                                    float open = slea.readFloat();
+                                    float high = slea.readFloat();
+                                    float low = slea.readFloat();
+                                    long servertime = slea.readLong();
+                                    double volume = slea.readDouble();
+                                    double volume_cur = slea.readDouble();
+                                    float ratio = slea.readFloat();
+
+                                    final byte endingMarker = slea.readByte();
+
+                                   // System.out.println(close + " " + startingMarker + " " + endingMarker);
+                                    if (startingMarker != -1 || endingMarker != -1) {
+                                        // cleanup
+                                        list_newItems.clear();
+                                        return;
+                                    }
+
+                                    TickerItemData data = new TickerItemData(servertime, close, high, low, open, volume, volume_cur, ratio, false);
+                                    list_newItems.add(data);
+
+                                    // update max server time
+                                    if (servertime > LastCachedTime) {
+                                        LastCachedTime = servertime;
+                                    }
+                                }
                             }
                         }
                     } catch (Exception error) {
                         // data is corrupted?
+                        error.printStackTrace();
                         f_data.delete();
                     } finally {
                         if (reader != null) {
@@ -904,19 +956,42 @@ public class TickerCacheTask {
 
                         final StringBuilder sb = new StringBuilder();
 
-                        for (TickerItemData data : currentList) {
-                            sb.append(data.getClose()).append(',');
-                            sb.append(data.getOpen()).append(',');
-                            sb.append(data.getHigh()).append(',');
-                            sb.append(data.getLow()).append(',');
-                            sb.append(data.getServerTime()).append(',');
-                            sb.append(data.getVol()).append(',');
-                            sb.append(data.getVol_Cur()).append(',');
-                            sb.append(data.getBuySell_Ratio()).append(',');
-                            sb.append("\r\n");
+                        if (writeRegular) { // support for legacy code
+                            for (TickerItemData data : currentList) {
+                                sb.append(data.getClose()).append(',');
+                                sb.append(data.getOpen()).append(',');
+                                sb.append(data.getHigh()).append(',');
+                                sb.append(data.getLow()).append(',');
+                                sb.append(data.getServerTime()).append(',');
+                                sb.append(data.getVol()).append(',');
+                                sb.append(data.getVol_Cur()).append(',');
+                                sb.append(data.getBuySell_Ratio()).append(',');
+                                sb.append("\r\n");
 
-                            out.write(sb.toString().getBytes()); // don't keep too many unnecessary stuff in memory, due to system constraints.
-                            sb.delete(0, sb.length()); // don't keep too many unnecessary stuff in memory, due to system constraints.
+                                out.write(sb.toString().getBytes()); // don't keep too many unnecessary stuff in memory, due to system constraints.
+                                sb.delete(0, sb.length()); // don't keep too many unnecessary stuff in memory, due to system constraints.
+                            }
+                        } else {
+                            PacketLittleEndianWriter mplew = new PacketLittleEndianWriter();
+
+                            for (TickerItemData data : currentList) {
+                                mplew.write(-1); // starting marker
+
+                                mplew.writeFloat(data.getClose());
+                                mplew.writeFloat(data.getOpen());
+                                mplew.writeFloat(data.getHigh());
+                                mplew.writeFloat(data.getLow());
+                                mplew.writeLong(data.getServerTime());
+                                mplew.writeDouble(data.getVol());
+                                mplew.writeDouble(data.getVol_Cur());
+                                mplew.writeFloat(data.getBuySell_Ratio());
+
+                                mplew.write(-1); // ending marker
+                            }
+
+                            byte[] dataWrite = mplew.getPacket();
+
+                            out.write(dataWrite, 0, dataWrite.length);
                         }
                     } catch (Exception error) {
                         // data is corrupted?
