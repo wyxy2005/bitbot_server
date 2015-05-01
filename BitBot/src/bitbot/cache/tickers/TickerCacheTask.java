@@ -34,7 +34,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -233,7 +232,7 @@ public class TickerCacheTask {
         // Determine where to start the candlestick
         final long LastUsedTime_;
         long LastUsedTime = 0;
-        if (backtestHours == 0) { // tradingview
+        if (ServerTimeFrom != 0) { // tradingview
             LastUsedTime_ = ServerTimeFrom;
         } else {
             LastUsedTime_ = cTime - (60l * 60l * backtestHours);
@@ -259,7 +258,7 @@ public class TickerCacheTask {
             if (!isPostProcessCompleted) {
                 isPostProcessCompleted = true;
 
-                if (backtestHours != 0) { // not tradingview
+                if (backtestHours == 0 && ServerTimeFrom != 0) { // not tradingview
                     // Post process, for the variables and stuff
                     // round the last used time to best possible time for the chart period
                     final Calendar dtCal = Calendar.getInstance();
@@ -278,10 +277,9 @@ public class TickerCacheTask {
                         truncateField = Calendar.ERA;
                     }
                     LastUsedTime = DateUtils.truncate(dtCal, truncateField).getTimeInMillis();
-
-                    while (LastUsedTime < item.getServerTime()) {
-                        LastUsedTime += intervalMinutes;
-                    }
+                }
+                while (LastUsedTime < item.getServerTime()) {
+                    LastUsedTime += intervalMinutes;
                 }
             }
 
@@ -774,12 +772,18 @@ public class TickerCacheTask {
             }
             IsLoading = true;
 
+            final List<TickerItemData> currentList = list_mssql.get(ExchangeCurrencyPair);
+
             // First acquire from storage
-            List<TickerItemData> list_newItems = new ArrayList(); // create a new array first and replace later
+            final List<TickerItemData> list_newItems_storage = new ArrayList(); // create a new array first and replace later
             if (IsFirstDataAcquisition) {
                 System.out.println("Caching currency pair from Storage: " + ExchangeCurrencyPair);
 
-                ReadFromFileStorage(list_newItems);
+                ReadFromFileStorage(list_newItems_storage);
+
+                for (TickerItemData cur : list_newItems_storage) {
+                    currentList.add(cur);
+                }
 
                 IsFirstDataAcquisition = false;
             }
@@ -787,37 +791,24 @@ public class TickerCacheTask {
             // Try SQL
             System.out.println("Caching currency pair from SQLserv: " + ExchangeCurrencyPair);
 
-            long biggest_server_time_result = MicrosoftAzureDatabaseExt.selectGraphData(ExchangeSite, CurrencyPair_, 60000, 24, LastCachedTime, list_newItems);
-
-            if (biggest_server_time_result == -2) { // -2 = error
-                IsLoading = false;
-                return; // temporary network issue or unavailable
-            } else if (biggest_server_time_result == -1) { // no result available
-                IsLoading = false;
-                completedCaching(ExchangeCurrencyPair);
-                return;
-            }
-            // Set max server_time
-            if (biggest_server_time_result > LastCachedTime) {
-                LastCachedTime = biggest_server_time_result;
-            }
-
-            if (!list_newItems.isEmpty()) { // there's still something coming from the database, continue caching
-                if (!list_mssql.containsKey(ExchangeCurrencyPair)) { // First item, no sync needed
-                    list_mssql.put(ExchangeCurrencyPair, list_newItems);
-                } else {
-                    List<TickerItemData> currentList = list_mssql.get(ExchangeCurrencyPair);
-
-                    for (TickerItemData cur : list_newItems) {
-                        currentList.add(cur);
-                    }
+            final List<TickerItemData> list_newItems = new ArrayList(); // create a new array first and replace later
+            
+            final long biggest_server_time_result = MicrosoftAzureDatabaseExt.selectGraphData(ExchangeSite, CurrencyPair_, 60000, 24, LastCachedTime, list_newItems);
+            if (biggest_server_time_result != -2) { // is not an error
+                // Set max server_time
+                if (biggest_server_time_result > LastCachedTime) {
+                    LastCachedTime = biggest_server_time_result;
                 }
-            }
+                for (TickerItemData cur : list_newItems) {
+                    currentList.add(cur);
+                }
 
-            System.out.println("[Info] Caching price for " + ExchangeCurrencyPair + " --> " + list_newItems.size() + ", MaxServerTime:" + LastCachedTime);
+                System.out.println("[Info] Caching price for " + ExchangeCurrencyPair + " --> " + list_newItems.size() + ", MaxServerTime:" + LastCachedTime);
 
-            if (list_newItems.size() <= 5) { // Are we done caching yet?
-                completedCaching(ExchangeCurrencyPair);
+                // if SQL says fine/done, then done :D its the absolute thing...
+                if (list_newItems.size() <= 100 || biggest_server_time_result == -2) { // Are we done caching yet?
+                    completedCaching(ExchangeCurrencyPair);
+                }
             }
             IsLoading = false;
         }
@@ -831,9 +822,6 @@ public class TickerCacheTask {
 
             System.out.println("[Info] Stopped caching " + ExchangeCurrencyPair + " data from MSSQL");
         }
-
-        private static final boolean readRegular = false; // support for legacy code
-        private static final boolean writeRegular = false; // support for legacy code
 
         private void ReadFromFileStorage(List<TickerItemData> list_newItems) {
             // Start saving to local file
@@ -852,24 +840,32 @@ public class TickerCacheTask {
                     try {
                         fis = new FileInputStream(f_data);
 
-                        if (readRegular) { // support for legacy code
-                            reader = new BufferedReader(new InputStreamReader(fis));
+                        byte[] byte_line = new byte[fis.available()];
+                        int readbytes = fis.read(byte_line, 0, fis.available());
+                        if (readbytes != -1) {
+                            final SeekableLittleEndianAccessor slea = new GenericSeekableLittleEndianAccessor(new ByteArrayByteStream(byte_line));
 
-                            String line;
-                            while ((line = reader.readLine()) != null) {
-                                String[] LineSplit = line.split(",");
+                            int data_size = slea.readInt();
+                            for (int i = 0; i < data_size; i++) {
+                                final byte startingMarker = slea.readByte();
 
-                                float close = Float.parseFloat(LineSplit[0]);
-                                float open = Float.parseFloat(LineSplit[1]);
-                                float high = Float.parseFloat(LineSplit[2]);
-                                float low = Float.parseFloat(LineSplit[3]);
-                                long servertime = Long.parseLong(LineSplit[4]);
-                                double volume = Double.parseDouble(LineSplit[5]);
-                                double volume_cur = Double.parseDouble(LineSplit[6]);
-                                float ratio = Float.parseFloat(LineSplit[7]);
+                                // starting and ending marker to ensure simple checksum and the file integrity
+                                // if those markers are not -1, reload the entire one from Microsoft SQL database
+                                if (startingMarker != -1) {
+                                    // cleanup
+                                    list_newItems.clear();
+                                    return;
+                                }
+                                float close = slea.readFloat();
+                                float open = slea.readFloat();
+                                float high = slea.readFloat();
+                                float low = slea.readFloat();
+                                long servertime = slea.readLong();
+                                double volume = slea.readDouble();
+                                double volume_cur = slea.readDouble();
+                                float ratio = slea.readFloat();
 
                                 TickerItemData data = new TickerItemData(servertime, close, high, low, open, volume, volume_cur, ratio, false);
-
                                 list_newItems.add(data);
 
                                 // update max server time
@@ -877,47 +873,13 @@ public class TickerCacheTask {
                                     LastCachedTime = servertime;
                                 }
                             }
-                        } else {
-                            byte[] byte_line = new byte[fis.available()];
-                            int readbytes = fis.read(byte_line, 0, fis.available());
-                            if (readbytes != -1) {
-                                final SeekableLittleEndianAccessor slea = new GenericSeekableLittleEndianAccessor(new ByteArrayByteStream(byte_line));
-
-                                while (slea.available() > 0) {
-                                    final byte startingMarker = slea.readByte();
-
-                                    float close = slea.readFloat();
-                                    float open = slea.readFloat();
-                                    float high = slea.readFloat();
-                                    float low = slea.readFloat();
-                                    long servertime = slea.readLong();
-                                    double volume = slea.readDouble();
-                                    double volume_cur = slea.readDouble();
-                                    float ratio = slea.readFloat();
-
-                                    final byte endingMarker = slea.readByte();
-
-                                   // System.out.println(close + " " + startingMarker + " " + endingMarker);
-                                    if (startingMarker != -1 || endingMarker != -1) {
-                                        // cleanup
-                                        list_newItems.clear();
-                                        return;
-                                    }
-
-                                    TickerItemData data = new TickerItemData(servertime, close, high, low, open, volume, volume_cur, ratio, false);
-                                    list_newItems.add(data);
-
-                                    // update max server time
-                                    if (servertime > LastCachedTime) {
-                                        LastCachedTime = servertime;
-                                    }
-                                }
-                            }
                         }
                     } catch (Exception error) {
                         // data is corrupted?
                         error.printStackTrace();
                         f_data.delete();
+
+                        list_newItems.clear();
                     } finally {
                         if (reader != null) {
                             reader.close();
@@ -954,46 +916,33 @@ public class TickerCacheTask {
                     try {
                         out = new FileOutputStream(f_data, false);
 
-                        final StringBuilder sb = new StringBuilder();
+                        PacketLittleEndianWriter mplew = new PacketLittleEndianWriter();
+                        // Write packet data size
+                        mplew.writeInt(currentList.size());
 
-                        if (writeRegular) { // support for legacy code
-                            for (TickerItemData data : currentList) {
-                                sb.append(data.getClose()).append(',');
-                                sb.append(data.getOpen()).append(',');
-                                sb.append(data.getHigh()).append(',');
-                                sb.append(data.getLow()).append(',');
-                                sb.append(data.getServerTime()).append(',');
-                                sb.append(data.getVol()).append(',');
-                                sb.append(data.getVol_Cur()).append(',');
-                                sb.append(data.getBuySell_Ratio()).append(',');
-                                sb.append("\r\n");
+                        final byte[] dataWrite = mplew.getPacket();
+                        out.write(dataWrite, 0, dataWrite.length);
 
-                                out.write(sb.toString().getBytes()); // don't keep too many unnecessary stuff in memory, due to system constraints.
-                                sb.delete(0, sb.length()); // don't keep too many unnecessary stuff in memory, due to system constraints.
-                            }
-                        } else {
-                            PacketLittleEndianWriter mplew = new PacketLittleEndianWriter();
+                        // Loop through the data and write for each individual entry
+                        for (TickerItemData data : currentList) {
+                            PacketLittleEndianWriter mplew2 = new PacketLittleEndianWriter(); // using multiple mplews to assist garbage collection
+                            mplew2.write(-1); // starting marker
 
-                            for (TickerItemData data : currentList) {
-                                mplew.write(-1); // starting marker
+                            mplew2.writeFloat(data.getClose());
+                            mplew2.writeFloat(data.getOpen());
+                            mplew2.writeFloat(data.getHigh());
+                            mplew2.writeFloat(data.getLow());
+                            mplew2.writeLong(data.getServerTime());
+                            mplew2.writeDouble(data.getVol());
+                            mplew2.writeDouble(data.getVol_Cur());
+                            mplew2.writeFloat(data.getBuySell_Ratio());
 
-                                mplew.writeFloat(data.getClose());
-                                mplew.writeFloat(data.getOpen());
-                                mplew.writeFloat(data.getHigh());
-                                mplew.writeFloat(data.getLow());
-                                mplew.writeLong(data.getServerTime());
-                                mplew.writeDouble(data.getVol());
-                                mplew.writeDouble(data.getVol_Cur());
-                                mplew.writeFloat(data.getBuySell_Ratio());
-
-                                mplew.write(-1); // ending marker
-                            }
-
-                            byte[] dataWrite = mplew.getPacket();
-
-                            out.write(dataWrite, 0, dataWrite.length);
+                            final byte[] dataWrite2 = mplew2.getPacket();
+                            out.write(dataWrite2, 0, dataWrite2.length);
                         }
                     } catch (Exception error) {
+                        error.printStackTrace();
+
                         // data is corrupted?
                         f_data.delete();
                     } finally {

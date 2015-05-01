@@ -120,7 +120,7 @@ public class TradingViewUDFTask implements Runnable {
         if (symbol == null) {
             sendError(body, "unknown_symbol");
             return;
-        } else if (startDateTimestamp <= 0 || endDateTimestamp <= 0) {
+        } else if (startDateTimestamp < 0 || endDateTimestamp < 0) {
             sendError(body, "invalid entry");
             return;
         }
@@ -167,18 +167,16 @@ public class TradingViewUDFTask implements Runnable {
                 return;
             }
         }
-        
+
         List<TickerItem_CandleBar> ret = null;
-        
+
         // Estimate the amount of candles needed
         //long datesRangeRight = Math.round(System.currentTimeMillis() / 1000); 
         //long datesRangeLeft = datesRangeRight - periodLengthSeconds(resolution); //	BEWARE: please note we really need 2 bars, not the only last one see the explanation below. `10` is the `large enough` value to work around holidays
-
         final long timeDifference = endDateTimestamp - startDateTimestamp;
         final int candlesRequested = (int) (timeDifference / (60 * time));
-        
+
         //System.out.println(timeDifference + " server diff: " + (datesRangeLeft - datesRangeRight));
-        
         int limit = 0;
         if (time <= 0) {
             sendError(body, "invalid entry");
@@ -188,17 +186,17 @@ public class TradingViewUDFTask implements Runnable {
         } else if (time <= 15) {
             limit = 3500;
         } else if (time <= 240) {
-            limit = 3200; 
+            limit = 3200;
         } else {
             limit = 3000;
         }
- 
+
         if (candlesRequested < limit) { // TV usually request 2041 at once... 
             ret = ChannelServer.getInstance().getTickerTask().getTickerList_Candlestick(
                     symbol.name.toLowerCase(), 0, time, symbol.exchange.toLowerCase(), startDateTimestamp, Math.min(System.currentTimeMillis() / 1000, endDateTimestamp), true);
         } else {
             // should we auto ban?
-            
+
         }
         // return result to client
         JSONObject json_main = new JSONObject();
@@ -208,55 +206,53 @@ public class TradingViewUDFTask implements Runnable {
             json_main.put("errmsg", "Not enough data, please wait."); // Status code. Expected values: “ok” | “error” | “incomplete” | “no_data”
         } else {
             json_main.put("s", "ok");
+
+            JSONArray json_array_candlestick_t = new JSONArray();
+            JSONArray json_array_candlestick_c = new JSONArray();
+            JSONArray json_array_candlestick_o = new JSONArray();
+            JSONArray json_array_candlestick_h = new JSONArray();
+            JSONArray json_array_candlestick_l = new JSONArray();
+            JSONArray json_array_candlestick_v = new JSONArray();
+
+            for (TickerItem_CandleBar candle : ret) {
+                json_array_candlestick_t.add(candle.getServerTime());
+                json_array_candlestick_c.add(candle.getClose());
+                json_array_candlestick_o.add(candle.getOpen());
+                json_array_candlestick_h.add(candle.getHigh());
+                json_array_candlestick_l.add(candle.getLow());
+                json_array_candlestick_v.add(candle.getVol_Cur());
+            }
+            json_main.put("t", json_array_candlestick_t);
+            json_main.put("c", json_array_candlestick_c);
+            json_main.put("o", json_array_candlestick_o);
+            json_main.put("h", json_array_candlestick_h);
+            json_main.put("l", json_array_candlestick_l);
+            json_main.put("v", json_array_candlestick_v);
         }
-
-        JSONArray json_array_candlestick_t = new JSONArray();
-        JSONArray json_array_candlestick_c = new JSONArray();
-        JSONArray json_array_candlestick_o = new JSONArray();
-        JSONArray json_array_candlestick_h = new JSONArray();
-        JSONArray json_array_candlestick_l = new JSONArray();
-        JSONArray json_array_candlestick_v = new JSONArray();
-
-        for (TickerItem_CandleBar candle : ret) {
-            json_array_candlestick_t.add(candle.getServerTime());
-            json_array_candlestick_c.add(candle.getClose());
-            json_array_candlestick_o.add(candle.getOpen());
-            json_array_candlestick_h.add(candle.getHigh());
-            json_array_candlestick_l.add(candle.getLow());
-            json_array_candlestick_v.add(candle.getVol_Cur());
-        }
-        json_main.put("t", json_array_candlestick_t);
-        json_main.put("c", json_array_candlestick_c);
-        json_main.put("o", json_array_candlestick_o);
-        json_main.put("h", json_array_candlestick_h);
-        json_main.put("l", json_array_candlestick_l);
-        json_main.put("v", json_array_candlestick_v);
-
         String retstr = json_main.toJSONString();
 
         response.setContentLength(retstr.length());
         body.print(retstr);
     }
 
-   /* private int periodLengthSeconds(String resolution) {
-	int daysCount = 0;
-        final int requiredPeriodsCount = 10;
+    /* private int periodLengthSeconds(String resolution) {
+     int daysCount = 0;
+     final int requiredPeriodsCount = 10;
 
-	if (resolution.endsWith("D")) {
-            daysCount = requiredPeriodsCount;
-	}
-	else if (resolution.endsWith("M")) {
-            daysCount = 31 * requiredPeriodsCount;
-	}
-	else if (resolution.endsWith("W")) {
-            daysCount = 7 * requiredPeriodsCount;
-	}
-	else {
-            daysCount = requiredPeriodsCount * Integer.parseInt(resolution) / (24 * 60);
-	}
-	return daysCount * 24 * 60 * 60;
-}*/
-    
+     if (resolution.endsWith("D")) {
+     daysCount = requiredPeriodsCount;
+     }
+     else if (resolution.endsWith("M")) {
+     daysCount = 31 * requiredPeriodsCount;
+     }
+     else if (resolution.endsWith("W")) {
+     daysCount = 7 * requiredPeriodsCount;
+     }
+     else {
+     daysCount = requiredPeriodsCount * Integer.parseInt(resolution) / (24 * 60);
+     }
+     return daysCount * 24 * 60 * 60;
+     }*/
     private void sendSymbolInfo(PrintStream body, String symbolName) {
         TV_Symbol symbol = TV_symboldatabase.symbolInfo(symbolName);
         if (symbol == null) {

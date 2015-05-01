@@ -206,13 +206,9 @@ public class TickerHistoryData {
         try {
             final String ExchangeCurrencyPair = String.format("%s-%s", TmpExchangeSite, TmpcurrencyPair);
             ChannelServer.getInstance().getWorldInterface().broadcastNewGraphEntry(ExchangeCurrencyPair, LastPurchaseTime / 1000l, LastPrice, High, Low, Open, Volume, Volume_Cur, getBuySell_Ratio());
-        } catch (RemoteException exp) {
+        } catch (Exception exp) {
             ServerLog.RegisterForLoggingException(ServerLogType.RemoteError, exp);
             ChannelServer.getInstance().reconnectWorld(exp);
-        } catch (NoClassDefFoundError servError) {
-            // world server may have crashed or inactive :(
-            System.out.println("[Warning] World Server may be inacctive or crashed. Please restart.");
-            servError.printStackTrace();
         }
     }
 

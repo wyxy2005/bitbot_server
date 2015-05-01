@@ -61,8 +61,10 @@ public class MicrosoftAzureDatabaseExt {
                 }
                 return biggest_ServerTime;
             }
+            return -2;
         } catch (Exception e) { // catch exception instead of SQLException. Might throw SQLServerException.
             e.printStackTrace();
+            return -2;
         } finally {
             try {
                 if (ps != null) {
@@ -75,7 +77,6 @@ public class MicrosoftAzureDatabaseExt {
                 e.printStackTrace();
             }
         }
-        return -2;
     }
 
     /*   
