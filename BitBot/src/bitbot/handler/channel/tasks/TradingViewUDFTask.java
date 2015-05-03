@@ -193,7 +193,7 @@ public class TradingViewUDFTask implements Runnable {
 
         if (candlesRequested < limit) { // TV usually request 2041 at once... 
             ret = ChannelServer.getInstance().getTickerTask().getTickerList_Candlestick(
-                    symbol.name.toLowerCase(), 0, time, symbol.exchange.toLowerCase(), startDateTimestamp, Math.min(System.currentTimeMillis() / 1000, endDateTimestamp), true);
+                    symbol.name.toLowerCase(), 0, time, symbol.exchange.toLowerCase(), startDateTimestamp, endDateTimestamp, true);
         } else {
             // should we auto ban?
 

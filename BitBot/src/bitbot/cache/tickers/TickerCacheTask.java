@@ -211,8 +211,15 @@ public class TickerCacheTask {
         return currentList.get(currentList.size() - 1);
     }
 
-    public List<TickerItem_CandleBar> getTickerList_Candlestick(final String ticker, final int backtestHours, int intervalMinutes, String ExchangeSite, long ServerTimeFrom, long ServerTimeEnd,
+    public List<TickerItem_CandleBar> getTickerList_Candlestick(
+            final String ticker, 
+            final int backtestHours, 
+            int intervalMinutes, 
+            String ExchangeSite, 
+            long ServerTimeFrom, 
+            long ServerTimeEnd,
             boolean IncludeUnmaturedData) {
+        
         final List<TickerItem_CandleBar> list_chart = new ArrayList(); // create a new array first
         final String dataSet = ExchangeSite + "-" + ticker;
 
@@ -228,6 +235,10 @@ public class TickerCacheTask {
         final boolean includeVolumeData = !ExchangeSite.equalsIgnoreCase("coinbase");
 
         final long cTime = cTime_Millis / 1000;
+        
+        // truncate the ending time to max current time
+        // This could also prevent DOS
+        ServerTimeEnd = Math.min(cTime_Millis / 1000, ServerTimeEnd);
 
         // Determine where to start the candlestick
         final long LastUsedTime_;
@@ -258,7 +269,7 @@ public class TickerCacheTask {
             if (!isPostProcessCompleted) {
                 isPostProcessCompleted = true;
 
-                if (backtestHours == 0 && ServerTimeFrom != 0) { // not tradingview
+                if (backtestHours != 0) { // not tradingview
                     // Post process, for the variables and stuff
                     // round the last used time to best possible time for the chart period
                     final Calendar dtCal = Calendar.getInstance();

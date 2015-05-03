@@ -530,9 +530,9 @@ function check_price() {
     function sendEmail(subject, toEmail, context) {
         var sendgrid;
         if (Math.floor((Math.random() * 1) + 1) == 1) // double the amount of free shit.. lol
-            sendgrid = new SendGrid('azure_e61e429d81c4fef32ec4cbcbc312178b@azure.com', '5Jp4w8eCoFaW18w');
+            sendgrid = new SendGrid('azure_d44639a993ad34c480950382904b1ba8@azure.com', '7WaCk2st2Zn7Pyu');
         else
-            sendgrid = new SendGrid('azure_181d59c8dd3b490c0743d275a9ce272b@azure.com', '8SvQzlIZqoxd4EF');
+            sendgrid = new SendGrid('azure_98436b19da666fc83288cb45033966f2@azure.com', 'cj9X26r1R15SN7x');
 
         sendgrid.send({
             to: toEmail,
