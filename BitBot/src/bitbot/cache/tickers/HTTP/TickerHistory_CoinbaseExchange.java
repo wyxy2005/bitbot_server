@@ -21,16 +21,26 @@ import org.json.simple.parser.JSONParser;
  * @author zheng
  */
 public class TickerHistory_CoinbaseExchange implements TickerHistoryInterface {
-    // private static final TimeZone timeZone = TimeZone.getTimeZone("Etc/GMT+6");
+
+    private final boolean enableTrackTrades;
+
+    public TickerHistory_CoinbaseExchange(boolean enableTrackTrades) {
+        this.enableTrackTrades = enableTrackTrades;
+    }
+
+    @Override
+    public boolean enableTrackTrades() {
+        return enableTrackTrades;
+    }
 
     private static final DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-    
+
     static {
         df.setTimeZone(TimeZone.getTimeZone("GMT+0:00"));
     }
-    
+
     @Override
-    public TickerHistoryData connectAndParseHistoryResult(String ExchangeCurrencyPair, String CurrencyPair, long LastPurchaseTime, int LastTradeId) {
+    public TickerHistoryData connectAndParseHistoryResult(String ExchangeCurrencyPair, String ExchangeSite, String CurrencyPair, long LastPurchaseTime, int LastTradeId) {
         String Uri = String.format("https://api.exchange.coinbase.com/products/%s/trades", CurrencyPair.toUpperCase().replace("_", "-")); // 2015-01-29 10:58:56.370375+00
         String GetResult = HttpClient.httpsGet(Uri, "");
 
@@ -67,9 +77,9 @@ public class TickerHistory_CoinbaseExchange implements TickerHistoryInterface {
                     TradeHistoryBuySellEnum type = obj.get("side").toString().equals("sell") ? TradeHistoryBuySellEnum.Sell : TradeHistoryBuySellEnum.Buy; // bid ask
 
                     // parse coinbase's annoying date format
-                    Date dateobj =  df.parse(strdate); // 2015-01-30 11:00:44.583563+00
+                    Date dateobj = df.parse(strdate); // 2015-01-30 11:00:44.583563+00
                     long date = dateobj.getTime();
-                    
+
                     // Initialize last purchase time if neccessary
                     if (LastPurchaseTime == 0) {
                         LastPurchaseTime = date - 1; // set default param
@@ -80,8 +90,12 @@ public class TickerHistory_CoinbaseExchange implements TickerHistoryInterface {
                     //System.out.println(String.format("[Trades history] Got  [%s], Price: %f, Sum: %f ", dateobj.toString(), price, amount));
                     // Assume things are read in ascending order
                     if (date > LastPurchaseTime) {
-                        //System.out.println(String.format("[Trades history] Added [%s], Price: %f, Sum: %f ", cal.getTime().toString(), price, amount));
+                        //System.out.println(String.format("[Trades history] Added [%s], Price: %f, Sum: %f ", date, price, amount));
                         ReturnData.merge(price, amount, date, tradeid, type);
+
+                        if (enableTrackTrades) {
+                            ReturnData.trackAndRecordLargeTrades(price, amount, LastPurchaseTime, type, ExchangeSite, CurrencyPair);
+                        }
                     }
                 }
             } catch (Exception parseExp) {

@@ -18,16 +18,26 @@ import org.json.simple.parser.JSONParser;
  * @author twili_000
  */
 public class TickerHistory_Cryptsy implements TickerHistoryInterface {
-    //private static final TimeZone timeZone = TimeZone.getTimeZone("Etc/GMT-6");
+
+    private final boolean enableTrackTrades;
+
+    public TickerHistory_Cryptsy(boolean enableTrackTrades) {
+        this.enableTrackTrades = enableTrackTrades;
+    }
 
     @Override
-    public TickerHistoryData connectAndParseHistoryResult(String ExchangeCurrencyPair, String CurrencyPair, long LastPurchaseTime, int LastTradeId) {
+    public boolean enableTrackTrades() {
+        return enableTrackTrades;
+    }
+
+    @Override
+    public TickerHistoryData connectAndParseHistoryResult(String ExchangeCurrencyPair, String ExchangeSite, String CurrencyPair, long LastPurchaseTime, int LastTradeId) {
         // General market data
         String Uri = String.format("http://pubapi.cryptsy.com/api.php?method=singlemarketdata&marketid=%d", getCryptsyMarketId(CurrencyPair));
         String GetResult = HttpClient.httpGet(Uri, "");
 
         long newPurchaseDate = LastPurchaseTime;
-        
+
         if (GetResult != null) {
             TickerHistoryData ReturnData = new TickerHistoryData(LastPurchaseTime, LastTradeId, 0, false);
 
@@ -102,7 +112,6 @@ public class TickerHistory_Cryptsy implements TickerHistoryInterface {
                         //http://tutorials.jenkov.com/java-date-time/java-util-timezone.html
                         // Timestamp for trades
                         //System.out.println(String.format("[Trades history] Got  [%s], Price: %f, Sum: %f ", cal.getTime().toString(), price, amount));
-
                         // Assume things are read in ascending order
                         if (cal.getTimeInMillis() > LastPurchaseTime) {
                             //System.out.println(String.format("[Trades history] Added [%s], Price: %f, Sum: %f ", cal.getTime().toString(), price, amount));
@@ -110,6 +119,10 @@ public class TickerHistory_Cryptsy implements TickerHistoryInterface {
 
                             // Update the biggest purchase time
                             newPurchaseDate = Math.max(LastPurchaseTime, cal.getTimeInMillis());
+
+                            if (enableTrackTrades) {
+                                ReturnData.trackAndRecordLargeTrades(price, amount, LastPurchaseTime, type, ExchangeSite, CurrencyPair);
+                            }
                         }
                     }
                 }
@@ -125,7 +138,6 @@ public class TickerHistory_Cryptsy implements TickerHistoryInterface {
     }
 
     // doge_btc cann_btc drk_btc rdd_btc uro_btc bc_btc btcd_btc
-    
     public static int getCryptsyMarketId(String pair) {
         switch (pair) {
             case "ltc_usd":

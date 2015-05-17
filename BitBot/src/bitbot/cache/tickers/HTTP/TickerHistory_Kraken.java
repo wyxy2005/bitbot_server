@@ -17,13 +17,22 @@ import org.json.simple.parser.JSONParser;
  */
 public class TickerHistory_Kraken implements TickerHistoryInterface {
 
-   // private static final TimeZone timeZone = TimeZone.getTimeZone("Etc/GMT+6");
+    private final boolean enableTrackTrades;
+
+    public TickerHistory_Kraken(boolean enableTrackTrades) {
+        this.enableTrackTrades = enableTrackTrades;
+    }
 
     @Override
-    public TickerHistoryData connectAndParseHistoryResult(String ExchangeCurrencyPair, String CurrencyPair, long LastPurchaseTime, int LastTradeId) {
+    public boolean enableTrackTrades() {
+        return enableTrackTrades;
+    }
+
+    @Override
+    public TickerHistoryData connectAndParseHistoryResult(String ExchangeCurrencyPair, String ExchangeSite, String CurrencyPair, long LastPurchaseTime, int LastTradeId) {
         String Uri = String.format("https://api.kraken.com/0/public/Trades?pair=%s", CurrencyPair.replace("_", "").toUpperCase());
         String GetResult = HttpClient.httpsGet(Uri, "");
-        
+
         if (GetResult != null) {
             TickerHistoryData ReturnData = new TickerHistoryData(LastPurchaseTime, LastTradeId, 0, false);
 
@@ -87,6 +96,10 @@ public class TickerHistory_Kraken implements TickerHistoryInterface {
                     if (date > LastPurchaseTime) {
                         //System.out.println(String.format("[Trades history] Added [%s], Price: %f, Sum: %f ", date, price, amount));
                         ReturnData.merge(price, amount, date, 0, type);
+
+                        if (enableTrackTrades) {
+                            ReturnData.trackAndRecordLargeTrades(price, amount, LastPurchaseTime, type, ExchangeSite, CurrencyPair);
+                        }
                     }
                 }
             } catch (Exception parseExp) {

@@ -17,10 +17,21 @@ import org.json.simple.parser.JSONParser;
  * @author z
  */
 public class TickerHistory_CexIo implements TickerHistoryInterface {
-   // private static final TimeZone timeZone = TimeZone.getTimeZone("Etc/GMT+6");
+    // private static final TimeZone timeZone = TimeZone.getTimeZone("Etc/GMT+6");
+
+    private boolean enableTrackTrades;
+
+    public TickerHistory_CexIo(boolean enableTrackTrades) {
+        this.enableTrackTrades = enableTrackTrades;
+    }
 
     @Override
-    public TickerHistoryData connectAndParseHistoryResult(String ExchangeCurrencyPair, String CurrencyPair, long LastPurchaseTime, int LastTradeId) {
+    public boolean enableTrackTrades() {
+        return enableTrackTrades;
+    }
+
+    @Override
+    public TickerHistoryData connectAndParseHistoryResult(String ExchangeCurrencyPair, String ExchangeSite, String CurrencyPair, long LastPurchaseTime, int LastTradeId) {
         String[] CurrencyPairSplit = CurrencyPair.toUpperCase().split("_");
         String Uri = String.format("https://cex.io/api/trade_history/%s/%s", CurrencyPairSplit[0], CurrencyPairSplit[1]);
         String GetResult = HttpClient.httpsGet(Uri, "");
@@ -85,6 +96,10 @@ public class TickerHistory_CexIo implements TickerHistoryInterface {
                     if (date > LastPurchaseTime) {
                         //System.out.println(String.format("[Trades history] Added [%s], Price: %f, Sum: %f ", cal.getTime().toString(), price, amount));
                         ReturnData.merge(price, amount, date, tradeid, type);
+
+                        if (enableTrackTrades) {
+                            ReturnData.trackAndRecordLargeTrades(price, amount, LastPurchaseTime, type, ExchangeSite, CurrencyPair);
+                        }
                     }
                 }
             } catch (Exception parseExp) {

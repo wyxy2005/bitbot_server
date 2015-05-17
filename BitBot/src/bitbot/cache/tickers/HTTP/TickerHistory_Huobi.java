@@ -20,8 +20,19 @@ public class TickerHistory_Huobi implements TickerHistoryInterface {
 
     private static final TimeZone timeZone = TimeZone.getTimeZone("Etc/GMT-8");
 
+    private final boolean enableTrackTrades;
+
+    public TickerHistory_Huobi(boolean enableTrackTrades) {
+        this.enableTrackTrades = enableTrackTrades;
+    }
+
     @Override
-    public TickerHistoryData connectAndParseHistoryResult(String ExchangeCurrencyPair, String CurrencyPair, long LastPurchaseTime, int LastTradeId) {
+    public boolean enableTrackTrades() {
+        return enableTrackTrades;
+    }
+
+    @Override
+    public TickerHistoryData connectAndParseHistoryResult(String ExchangeCurrencyPair, String ExchangeSite, String CurrencyPair, long LastPurchaseTime, int LastTradeId) {
         String Uri = String.format("https://market.huobi.com/staticmarket/detail%s.html", CurrencyPair.contains("btc") ? "" : "_ltc");
         String GetResult = HttpClient.httpGet(Uri, "");
 
@@ -80,7 +91,12 @@ public class TickerHistory_Huobi implements TickerHistoryInterface {
                         //System.out.println("[Trades history] Added: " + cal.getTime().toString());
                         ReturnData.merge(price, amount, cal.getTimeInMillis(), 0, type);
 
+                        if (enableTrackTrades) {
+                            ReturnData.trackAndRecordLargeTrades(price, amount, LastPurchaseTime, type, ExchangeSite, CurrencyPair);
+                        }
+
                         LastPurchaseTime = cal.getTimeInMillis();
+
                     }
                 }
             } catch (Exception parseExp) {

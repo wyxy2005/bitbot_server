@@ -17,10 +17,19 @@ import org.json.simple.parser.JSONParser;
  */
 public class TickerHistory_ItBit implements TickerHistoryInterface {
 
-   // private static final TimeZone timeZone = TimeZone.getTimeZone("Etc/GMT+6");
-    
+    private final boolean enableTrackTrades;
+
+    public TickerHistory_ItBit(boolean enableTrackTrades) {
+        this.enableTrackTrades = enableTrackTrades;
+    }
+
     @Override
-    public TickerHistoryData connectAndParseHistoryResult(String ExchangeCurrencyPair, String CurrencyPair, long LastPurchaseTime, int LastTradeId) {
+    public boolean enableTrackTrades() {
+        return enableTrackTrades;
+    }
+
+    @Override
+    public TickerHistoryData connectAndParseHistoryResult(String ExchangeCurrencyPair, String ExchangeSite, String CurrencyPair, long LastPurchaseTime, int LastTradeId) {
         String Uri = String.format("https://www.itbit.com/api/v2/markets/%s/trades?since=%d", CurrencyPair.replace("_", "").toUpperCase(), LastTradeId);
         String GetResult = HttpClient.httpsGet(Uri, "");
 
@@ -82,6 +91,10 @@ public class TickerHistory_ItBit implements TickerHistoryInterface {
                     if (date > LastPurchaseTime) {
                         //System.out.println(String.format("[Trades history] Added [%s], Price: %f, Sum: %f ", date, price, amount));
                         ReturnData.merge(price, amount, date, tradeid, type);
+
+                        if (enableTrackTrades) {
+                            ReturnData.trackAndRecordLargeTrades(price, amount, LastPurchaseTime, type, ExchangeSite, CurrencyPair);
+                        }
                     }
                     if (tradeid > ReturnData.getLastTradeId()) {
                         ReturnData.setLastTradeId(tradeid);

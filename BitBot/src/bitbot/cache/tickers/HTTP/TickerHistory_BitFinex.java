@@ -17,10 +17,19 @@ import org.json.simple.parser.JSONParser;
  */
 public class TickerHistory_BitFinex implements TickerHistoryInterface {
 
-    // private static final TimeZone timeZone = TimeZone.getTimeZone("Etc/GMT+6");
+    private final boolean enableTrackTrades;
+
+    public TickerHistory_BitFinex(boolean enableTrackTrades) {
+        this.enableTrackTrades = enableTrackTrades;
+    }
 
     @Override
-    public TickerHistoryData connectAndParseHistoryResult(String ExchangeCurrencyPair, String CurrencyPair, long LastPurchaseTime, int LastTradeId) {
+    public boolean enableTrackTrades() {
+        return enableTrackTrades;
+    }
+
+    @Override
+    public TickerHistoryData connectAndParseHistoryResult(String ExchangeCurrencyPair, String ExchangeSite, String CurrencyPair, long LastPurchaseTime, int LastTradeId) {
         String Uri = String.format("https://api.bitfinex.com/v1/trades/%s?timestamp=%d&limit_trades=%d", CurrencyPair.replace("_", ""), (LastPurchaseTime / 1000) + 1, 200);
         String GetResult = HttpClient.httpsGet(Uri, "");
 
@@ -52,14 +61,13 @@ public class TickerHistory_BitFinex implements TickerHistoryInterface {
                     float price = Float.parseFloat(obj.get("price").toString());
                     float amount = Float.parseFloat(obj.get("amount").toString());
                     TradeHistoryBuySellEnum type = obj.get("type").toString().equals("buy") ? TradeHistoryBuySellEnum.Buy : TradeHistoryBuySellEnum.Sell; // buy sell
-                    
+
                     /*tid (integer)
                      timestamp (time)
                      price (price)
                      amount (decimal)
                      exchange (string)
                      type (string) "sell" or "buy" (can be "" if undetermined)*/
-
                     // Initialize last purchase time if neccessary
                     if (LastPurchaseTime == 0) {
                         LastPurchaseTime = date - 1; // set default param
@@ -89,6 +97,10 @@ public class TickerHistory_BitFinex implements TickerHistoryInterface {
                     if (date > LastPurchaseTime) {
                         //System.out.println(String.format("[Trades history] Added [%s], Price: %f, Sum: %f ", cal.getTime().toString(), price, amount));
                         ReturnData.merge(price, amount, date, tradeid, type);
+
+                        if (enableTrackTrades) {
+                            ReturnData.trackAndRecordLargeTrades(price, amount, LastPurchaseTime, type, ExchangeSite, CurrencyPair);
+                        }
                     }
                 }
             } catch (Exception parseExp) {

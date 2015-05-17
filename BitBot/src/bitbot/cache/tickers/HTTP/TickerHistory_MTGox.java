@@ -2,7 +2,6 @@ package bitbot.cache.tickers.HTTP;
 
 import bitbot.cache.tickers.TickerHistoryInterface;
 import bitbot.cache.tickers.TickerHistoryData;
-import bitbot.Constants;
 
 /**
  *
@@ -10,10 +9,19 @@ import bitbot.Constants;
  */
 public class TickerHistory_MTGox implements TickerHistoryInterface {
 
-   // private static final TimeZone timeZone = TimeZone.getTimeZone("Etc/GMT+6");
+    private final boolean enableTrackTrades;
+
+    public TickerHistory_MTGox(boolean enableTrackTrades) {
+        this.enableTrackTrades = enableTrackTrades;
+    }
+
+    @Override
+    public boolean enableTrackTrades() {
+        return enableTrackTrades;
+    }
     
     @Override
-    public TickerHistoryData connectAndParseHistoryResult(String ExchangeCurrencyPair, String CurrencyPair, long LastPurchaseTime, int LastTradeId) {
+    public TickerHistoryData connectAndParseHistoryResult(String ExchangeCurrencyPair, String ExchangeSite, String CurrencyPair, long LastPurchaseTime, int LastTradeId) {
         return null;
     }
 }

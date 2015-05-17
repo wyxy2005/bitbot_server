@@ -18,10 +18,19 @@ import org.json.simple.parser.JSONParser;
  */
 public class TickerHistory_Dgex implements TickerHistoryInterface {
 
-   // private static final TimeZone timeZone = TimeZone.getTimeZone("Etc/GMT+6");
+    private final boolean enableTrackTrades;
+
+    public TickerHistory_Dgex(boolean enableTrackTrades) {
+        this.enableTrackTrades = enableTrackTrades;
+    }
 
     @Override
-    public TickerHistoryData connectAndParseHistoryResult(String ExchangeCurrencyPair, String CurrencyPair, long LastPurchaseTime, int LastTradeId) {
+    public boolean enableTrackTrades() {
+        return enableTrackTrades;
+    }
+
+    @Override
+    public TickerHistoryData connectAndParseHistoryResult(String ExchangeCurrencyPair, String ExchangeSite, String CurrencyPair, long LastPurchaseTime, int LastTradeId) {
         //String Uri = "https://dgex.com/API/trades.json";
         String Uri = "https://dgex.com/API/trades3h.json";
         String GetResult = HttpClient.httpsGet(Uri, "");
@@ -89,6 +98,10 @@ public class TickerHistory_Dgex implements TickerHistoryInterface {
                     if (date > LastPurchaseTime) {
                         //System.out.println(String.format("[Trades history] Added [%s], Price: %f, Sum: %f ", cal.getTime().toString(), price, amount));
                         ReturnData.merge(price, amount, date, tradeid, type);
+
+                        if (enableTrackTrades) {
+                            ReturnData.trackAndRecordLargeTrades(price, amount, LastPurchaseTime, type, ExchangeCurrencyPair, CurrencyPair);
+                        }
                     }
                 }
             } catch (Exception parseExp) {

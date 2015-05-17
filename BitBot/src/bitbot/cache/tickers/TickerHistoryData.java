@@ -6,7 +6,6 @@ import bitbot.logging.ServerLogType;
 import bitbot.util.database.DatabaseConnection;
 import bitbot.util.FileoutputUtil;
 import bitbot.util.database.DatabaseTablesConstants;
-import java.rmi.RemoteException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -91,8 +90,8 @@ public class TickerHistoryData {
         }
         PreparedStatement ps = null;
         final String query = String.format("INSERT INTO bitcoinbot.%s (\"high\", \"low\", \"vol\", \"vol_cur\", \"open\", \"close\", \"server_time\", \"buysell_ratio\") VALUES (?,?,?,?,?,?,?,?);",
-                    DatabaseTablesConstants.getDatabaseTableName(TmpExchangeSite, TmpcurrencyPair));
-        
+                DatabaseTablesConstants.getDatabaseTableName(TmpExchangeSite, TmpcurrencyPair));
+
         try {
             Connection con = DatabaseConnection.getConnection();
 
@@ -122,6 +121,25 @@ public class TickerHistoryData {
             }
         }
         return HistoryDatabaseCommitEnum.Ok;
+    }
+
+    /**
+     * Only tracking a couple of BTC pairs with massive volume
+     *
+     * @param price
+     * @param amount
+     * @param LastPurchaseTime
+     * @param type
+     * @param ExchangeSite
+     * @param currencyPair
+     */
+    public void trackAndRecordLargeTrades(float price, double amount, long LastPurchaseTime, TradeHistoryBuySellEnum type,
+            String ExchangeSite, String currencyPair) {
+        if (amount >= ChannelServer.getInstance().getRequiredTradeSizeForTradesLogging()) {
+            TickerTradesData data = new TickerTradesData(price, amount, LastPurchaseTime / 1000, type, ExchangeSite, currencyPair);
+            
+            data.registerForCommitQueue(); // no need to reference elsewhere else.. 
+        }
     }
 
     public void merge(TickerHistoryData dataNow) {

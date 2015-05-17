@@ -95,77 +95,79 @@ public class TickerCacheTask {
             if (ChannelServer.getInstance().isEnableTickerHistory()) {
                 TickerHistoryInterface history = null;
                 int UpdateTime_Millis = 10000;
+                
+                final boolean trackLargeTrades = ChannelServer.getInstance().getCurrencyPairsForLargeTrades().contains(ExchangeCurrencyPair);
 
                 if (ExchangeCurrencyPair.contains("huobi")) {
-                    history = new TickerHistory_Huobi();
+                    history = new TickerHistory_Huobi(trackLargeTrades);
                     UpdateTime_Millis = 500;
 
                 } else if (ExchangeCurrencyPair.contains("bitvc")) {
-                    history = new TickerHistory_BitVC();
+                    history = new TickerHistory_BitVC(trackLargeTrades);
                     UpdateTime_Millis = 10000;
 
                 } else if (ExchangeCurrencyPair.contains("btce")) {
-                    history = new TickerHistory_BTCe();
+                    history = new TickerHistory_BTCe(trackLargeTrades);
 
                 } else if (ExchangeCurrencyPair.contains("btcchina")) {
-                    history = new TickerHistory_BTCChina();
+                    history = new TickerHistory_BTCChina(trackLargeTrades);
                     UpdateTime_Millis = 1000;
 
                 } else if (ExchangeCurrencyPair.contains("bitstamp")) {
-                    history = new TickerHistory_Bitstamp();
+                    history = new TickerHistory_Bitstamp(trackLargeTrades);
                     UpdateTime_Millis = 2000;
 
                 } else if (ExchangeCurrencyPair.contains("kraken")) {
-                    history = new TickerHistory_Kraken();
+                    history = new TickerHistory_Kraken(trackLargeTrades);
 
                 } else if (ExchangeCurrencyPair.contains("okcoin")) {
                     if (ExchangeCurrencyPair.contains("okcoininternational")) {
-                        history = new TickerHistory_OkcoinInternational();
+                        history = new TickerHistory_OkcoinInternational(trackLargeTrades);
                         UpdateTime_Millis = 1000;
                     } else {
-                        history = new TickerHistory_Okcoin();
+                        history = new TickerHistory_Okcoin(trackLargeTrades);
                         UpdateTime_Millis = 500;
                     }
 
                 } else if (ExchangeCurrencyPair.contains("fybsg") || ExchangeCurrencyPair.contains("fybse")) {
-                    history = new TickerHistory_FybSGSE();
+                    history = new TickerHistory_FybSGSE(trackLargeTrades);
                     UpdateTime_Millis = 15000; // volume is still too low to make an impact
 
                 } else if (ExchangeCurrencyPair.contains("itbit")) { // may need more work
-                    history = new TickerHistory_ItBit();
+                    history = new TickerHistory_ItBit(trackLargeTrades);
 
                 } else if (ExchangeCurrencyPair.contains("coinbase")) {
                     if (ExchangeCurrencyPair.contains("coinbaseexchange")) {
-                        history = new TickerHistory_CoinbaseExchange();
+                        history = new TickerHistory_CoinbaseExchange(trackLargeTrades);
                         UpdateTime_Millis = 5000;
                     } else {
-                        history = new TickerHistory_Coinbase();
+                        history = new TickerHistory_Coinbase(trackLargeTrades);
                         UpdateTime_Millis = 15000; // Coinbase is just a broker....
                     }
 
                 } else if (ExchangeCurrencyPair.contains("cexio")) {
-                    history = new TickerHistory_CexIo();
+                    history = new TickerHistory_CexIo(trackLargeTrades);
 
                 } else if (ExchangeCurrencyPair.contains("campbx")) {
-                    history = new TickerHistory_CampBX();
+                    history = new TickerHistory_CampBX(trackLargeTrades);
 
                 } else if (ExchangeCurrencyPair.contains("bitfinex")) {
-                    history = new TickerHistory_BitFinex();
+                    history = new TickerHistory_BitFinex(trackLargeTrades);
                     UpdateTime_Millis = 1000;
 
                 } else if (ExchangeCurrencyPair.contains("dgex")) {
-                    history = new TickerHistory_Dgex();
+                    history = new TickerHistory_Dgex(trackLargeTrades);
                     UpdateTime_Millis = 15000; // volume is still too low to make an impact
 
                 } else if (ExchangeCurrencyPair.contains("cryptsy")) {
-                    history = new TickerHistory_Cryptsy();
+                    history = new TickerHistory_Cryptsy(trackLargeTrades);
 
                 } else if (ExchangeCurrencyPair.contains("796")) {
-                    history = new TickerHistory_796();
+                    history = new TickerHistory_796(trackLargeTrades);
                     UpdateTime_Millis = 1000;
 
                 } else if (ExchangeCurrencyPair.contains("mtgox")) { // goxxed
-                    //history = new TickerHistory_MTGox(); // died
+                    //history = new TickerHistory_MTGox(trackLargeTrades); // died
                 }
 
                 if (history != null) {
@@ -656,8 +658,8 @@ public class TickerCacheTask {
         }
 
         public TickerCacheTask_ExchangeHistory(String ExchangeSite, String CurrencyPair, String ExchangeCurrencyPair, TickerHistoryInterface HistoryConnector) {
-            this.CurrencyPair = CurrencyPair;
             this.ExchangeSite = ExchangeSite;
+            this.CurrencyPair = CurrencyPair;
             this.ExchangeCurrencyPair = ExchangeCurrencyPair;
             this.IsLoading = false;
             this.LastCommitTime = 0;
@@ -681,6 +683,7 @@ public class TickerCacheTask {
             try {
                 TickerHistoryData data = HistoryConnector.connectAndParseHistoryResult(
                         ExchangeCurrencyPair,
+                        ExchangeSite,
                         CurrencyPair,
                         HistoryData != null ? HistoryData.getLastPurchaseTime() : 0, // Read from buy/sell history
                         HistoryData != null ? HistoryData.getLastTradeId() : 0);

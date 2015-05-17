@@ -18,10 +18,19 @@ import org.json.simple.parser.JSONParser;
  */
 public class TickerHistory_BTCe implements TickerHistoryInterface {
 
-   // private static final TimeZone timeZone = TimeZone.getTimeZone("Etc/GMT+6");
+    private final boolean enableTrackTrades;
+
+    public TickerHistory_BTCe(boolean enableTrackTrades) {
+        this.enableTrackTrades = enableTrackTrades;
+    }
 
     @Override
-    public TickerHistoryData connectAndParseHistoryResult(String ExchangeCurrencyPair, String CurrencyPair, long LastPurchaseTime, int LastTradeId) {
+    public boolean enableTrackTrades() {
+        return enableTrackTrades;
+    }
+
+    @Override
+    public TickerHistoryData connectAndParseHistoryResult(String ExchangeCurrencyPair, String ExchangeSite, String CurrencyPair, long LastPurchaseTime, int LastTradeId) {
         String Uri = String.format("https://btc-e.com/api/2/%s/trades", CurrencyPair);
         String GetResult = HttpClient.httpsGet(Uri, "");
 
@@ -80,12 +89,15 @@ public class TickerHistory_BTCe implements TickerHistoryInterface {
                     
                      cal.add(Calendar.HOUR, -4); // BTC-e, time 
                      cal.add(Calendar.SECOND, (int) (date / 1000));*/
-                    
-                     //System.out.println(String.format("[Trades history] Got  [%s], Price: %f, Sum: %f ", cal.getTime().toString(), price, amount));
+                    //System.out.println(String.format("[Trades history] Got  [%s], Price: %f, Sum: %f ", cal.getTime().toString(), price, amount));
                     // Assume things are read in ascending order
                     if (date > LastPurchaseTime) {
                         //System.out.println(String.format("[Trades history] Added [%s], Price: %f, Sum: %f ", cal.getTime().toString(), price, amount));
                         ReturnData.merge(price, amount, date, tradeid, type);
+
+                        if (enableTrackTrades) {
+                            ReturnData.trackAndRecordLargeTrades(price, amount, LastPurchaseTime, type, ExchangeSite, CurrencyPair);
+                        }
                     }
                 }
             } catch (Exception parseExp) {

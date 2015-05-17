@@ -17,8 +17,19 @@ import org.json.simple.parser.JSONParser;
  */
 public class TickerHistory_Bitstamp implements TickerHistoryInterface {
 
+    private final boolean enableTrackTrades;
+
+    public TickerHistory_Bitstamp(boolean enableTrackTrades) {
+        this.enableTrackTrades = enableTrackTrades;
+    }
+
     @Override
-    public TickerHistoryData connectAndParseHistoryResult(String ExchangeCurrencyPair, String CurrencyPair, long LastPurchaseTime, int LastTradeId) {
+    public boolean enableTrackTrades() {
+        return enableTrackTrades;
+    }
+
+    @Override
+    public TickerHistoryData connectAndParseHistoryResult(String ExchangeCurrencyPair, String ExchangeSite, String CurrencyPair, long LastPurchaseTime, int LastTradeId) {
         String Uri = "https://www.bitstamp.net/api/transactions/?time=minute";
         String GetResult = HttpClient.httpsGet(Uri, "");
 
@@ -79,6 +90,10 @@ public class TickerHistory_Bitstamp implements TickerHistoryInterface {
                     if (date > LastPurchaseTime) {
                         //System.out.println(String.format("[Trades history] Added [%s], Price: %f, Sum: %f ", cal.getTime().toString(), price, amount));
                         ReturnData.merge(price, amount, date, tradeid, type);
+
+                        if (enableTrackTrades) {
+                            ReturnData.trackAndRecordLargeTrades(price, amount, LastPurchaseTime, type, ExchangeSite, CurrencyPair);
+                        }
                     }
                 }
             } catch (Exception parseExp) {

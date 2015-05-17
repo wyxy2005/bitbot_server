@@ -1,11 +1,4 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package bitbot.logging;
-
 /**
  *
  * @author z
@@ -26,6 +19,7 @@ public enum ServerLogType {
     SwapTask                ("server_info.SwapTask", ServerLogGroup.Warning),
     HistoryCacheTask	    ("server_info.HistoryCacheTask", ServerLogGroup.Warning),
     HistoryCacheTask_DB	    ("server_info.HistoryCacheTask_Database", ServerLogGroup.Warning),
+    HistoryTradesTask_DB    ("server_info.HistoryTradesTask_Database", ServerLogGroup.Warning),
     ;
     private String coutFile;
     private ServerLogGroup group;

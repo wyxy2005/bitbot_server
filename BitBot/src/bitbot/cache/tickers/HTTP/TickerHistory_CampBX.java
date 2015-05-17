@@ -17,9 +17,20 @@ import org.json.simple.parser.JSONParser;
  * @author z
  */
 public class TickerHistory_CampBX implements TickerHistoryInterface {
-    // private static final TimeZone timeZone = TimeZone.getTimeZone("Etc/GMT+6");
+
+    private final boolean enableTrackTrades;
+
+    public TickerHistory_CampBX(boolean enableTrackTrades) {
+        this.enableTrackTrades = enableTrackTrades;
+    }
+
     @Override
-    public TickerHistoryData connectAndParseHistoryResult(String ExchangeCurrencyPair, String CurrencyPair, long LastPurchaseTime, int LastTradeId) {
+    public boolean enableTrackTrades() {
+        return enableTrackTrades;
+    }
+
+    @Override
+    public TickerHistoryData connectAndParseHistoryResult(String ExchangeCurrencyPair, String ExchangeSite, String CurrencyPair, long LastPurchaseTime, int LastTradeId) {
         String Uri = "http://CampBX.com/api/xticker.php";
         String Result = HttpClient.httpGet(Uri, "");
 
@@ -50,7 +61,7 @@ public class TickerHistory_CampBX implements TickerHistoryInterface {
                 float buy = Float.parseFloat(Obj.get("Best Bid").toString());
                 float sell = Float.parseFloat(Obj.get("Best Ask").toString());
                 final TradeHistoryBuySellEnum type = TradeHistoryBuySellEnum.Unknown; // Campbx doesn't broadcast buy or sell
-                
+
                 final long cTime = System.currentTimeMillis();
 
                 //http://tutorials.jenkov.com/java-date-time/java-util-timezone.html

@@ -7,6 +7,7 @@ import bitbot.cache.swaps.BacklogCommitTask_Swaps;
 import bitbot.cache.swaps.SwapsCacheTask;
 import bitbot.cache.tickers.TickerCacheTask;
 import bitbot.cache.tickers.BacklogCommitTask_Tickers;
+import bitbot.cache.tickers.BacklogCommitTask_Trades;
 import bitbot.handler.ServerSocketExchangeHandler;
 import bitbot.remoteRMI.ChannelWorldInterface;
 import bitbot.remoteRMI.WorldChannelInterface;
@@ -53,30 +54,27 @@ public class ChannelServer {
     private TickerCacheTask tickerTask = null;
     private SwapsCacheTask swapTask = null;
     private NewsCacheTask newsTask = null;
-    
+
     private ServerSocketExchangeHandler serverSocketExchangeHandler = null;
 
     // Properties
     private static Properties props = null;
     private static boolean Props_EnforceCloudFlareNetwork = false,
-            
             Props_EnableTickerHistoryDatabaseCommit = false,
             Props_EnableTickerHistory = false,
             Props_EnableSQLDataAcquisition = false,
-            
             Props_EnableSwapsDatabaseCommit = false,
             Props_EnableSwaps = false,
             Props_EnableSwapsSQLDataAcquisition = false,
-            
             Props_EnableSocketStreaming = false,
             Props_EnableDebugSessionPrints = false;
-    private static String
-            Props_WorldIPAddress = "127.0.0.1",
+    private static String Props_WorldIPAddress = "127.0.0.1",
             Props_SelfIPAddress = "127.0.0.1",
             Props_WorldRMIHash = "";
-    private static short
-            Props_WorldRMIPort = 22155,
+    private static int Props_RequiredTradeSizeForLogging = 10;
+    private static short Props_WorldRMIPort = 22155,
             Props_HTTPPort = 80, Props_HTTPsPort = 443;
+    private static List<String> Props_CurrencyPairsForLargeTrades = new ArrayList();
 
     // Etc
     private final List<String> CachingCurrencyPair = new ArrayList();
@@ -124,11 +122,11 @@ public class ChannelServer {
                     }
                 }
                 Props_EnforceCloudFlareNetwork = Boolean.parseBoolean(props.getProperty("server.EnforceCloudFlareNetwork"));
-                
+
                 Props_EnableTickerHistory = Boolean.parseBoolean(props.getProperty("server.EnableTickerHistory"));
                 Props_EnableTickerHistoryDatabaseCommit = Boolean.parseBoolean(props.getProperty("server.EnableTickerHistoryDatabaseCommit"));
                 Props_EnableSQLDataAcquisition = Boolean.parseBoolean(props.getProperty("server.EnableSQLDataAcquisition"));
-                
+
                 Props_EnableSwapsDatabaseCommit = Boolean.parseBoolean(props.getProperty("server.EnableSwapsDatabaseCommit"));
                 Props_EnableSwaps = Boolean.parseBoolean(props.getProperty("server.EnableSwaps"));
                 Props_EnableSwapsSQLDataAcquisition = Boolean.parseBoolean(props.getProperty("server.EnableSwapsSQLDataAcquisition"));
@@ -141,7 +139,13 @@ public class ChannelServer {
                 Props_WorldRMIHash = SHA256.sha256(SHA256.sha256(props.getProperty("server.WorldRMIHash")));
                 Props_HTTPPort = Short.parseShort(props.getProperty("server.HTTPPort"));
                 Props_HTTPsPort = Short.parseShort(props.getProperty("server.HTTPsPort"));
-                
+
+                final String[] CurrencyPairsForLargeTrades = props.getProperty("server.trackTrades").split("---");
+                for (String str : CurrencyPairsForLargeTrades) {
+                    Props_CurrencyPairsForLargeTrades.add(str);
+                }
+                Props_RequiredTradeSizeForLogging = Integer.parseInt(props.getProperty("server.RequiredTradeSizeForLogging"));
+
                 // Establish RMI connection
                 System.out.println(String.format("[Info] Locating world server RMI connection at %s:%d..", Props_WorldIPAddress, Props_WorldRMIPort));
 
@@ -159,7 +163,7 @@ public class ChannelServer {
                 tickerTask = new TickerCacheTask(); // init automatically
                 newsTask = new NewsCacheTask();
                 swapTask = new SwapsCacheTask();
-                
+
                 if (isEnableSocketStreaming()) {
                     System.out.println("[Info] Loading sockets..");
                     serverSocketExchangeHandler = ServerSocketExchangeHandler.connect(Props_SelfIPAddress);
@@ -272,7 +276,7 @@ public class ChannelServer {
         } catch (IOException e) {
             System.out.println(e.toString() + " Error accessing file system to read currency pairs");
         }
-        
+
         // Swap currency pairs
         File f2 = new File(Constants.CurrencyPairSwapsFile);
         if (!f2.exists()) {
@@ -298,17 +302,25 @@ public class ChannelServer {
         } catch (IOException e) {
             System.out.println(e.toString() + " Error accessing file system to read swap currency pairs");
         }
-        
+
+    }
+
+    public int getRequiredTradeSizeForTradesLogging() {
+        return Props_RequiredTradeSizeForLogging;
+    }
+
+    public List<String> getCurrencyPairsForLargeTrades() {
+        return Props_CurrencyPairsForLargeTrades;
     }
 
     public List<String> getCachingCurrencyPair() {
         return CachingCurrencyPair;
     }
-    
+
     public List<String> getCachingSwapCurrencies() {
         return CachingSwapCurrencyPair;
     }
-    
+
     public ServerSocketExchangeHandler getServerSocketExchangeHandler() {
         return serverSocketExchangeHandler;
     }
@@ -320,7 +332,7 @@ public class ChannelServer {
     public NewsCacheTask getNewsTask() {
         return newsTask;
     }
-    
+
     public SwapsCacheTask getSwapsTask() {
         return swapTask;
     }
@@ -340,7 +352,7 @@ public class ChannelServer {
     public boolean isEnableSQLDataAcquisition() {
         return Props_EnableSQLDataAcquisition;
     }
-    
+
     public boolean isEnableEnableSwapsDatabaseCommit() {
         return Props_EnableSwapsDatabaseCommit;
     }
@@ -382,7 +394,7 @@ public class ChannelServer {
             wci.broadcastPriceChanges(ExchangeCurrencyPair, server_time, close, high, low, open, volume, volume_cur, buysell_ratio, last);
         } catch (RemoteException exp) {
             ServerLog.RegisterForLoggingException(ServerLogType.RemoteError, exp);
-            
+
             // attempt reconnect
             reconnectWorld(null);
         } catch (NoClassDefFoundError servError) {
@@ -391,14 +403,14 @@ public class ChannelServer {
             servError.printStackTrace();
         }
     }
-    
+
     public void broadcastSwapData(String ExchangeCurrency, float rate, float spot_price, double amount_lent, int timestamp) {
         try {
             wci.broadcastSwapData(ExchangeCurrency, rate, spot_price, amount_lent, timestamp);
-            
+
         } catch (RemoteException exp) {
             ServerLog.RegisterForLoggingException(ServerLogType.RemoteError, exp);
-            
+
             // attempt reconnect
             reconnectWorld(null);
         } catch (NoClassDefFoundError servError) {
@@ -414,11 +426,16 @@ public class ChannelServer {
         public void run() {
             System.out.println("Shutdown hook task.....");
 
+            // Candles
             BacklogCommitTask_Tickers.BacklogTimerPersistingTask();
             BacklogCommitTask_Tickers.ImmediateBacklogTimerPersistingTask();
-            
+
+            // Swaps data
             BacklogCommitTask_Swaps.BacklogTimerPersistingTask();
             BacklogCommitTask_Swaps.ImmediateBacklogTimerPersistingTask();
+
+            // Trades
+            BacklogCommitTask_Trades.BacklogTimerPersistingTask();
         }
     }
 }

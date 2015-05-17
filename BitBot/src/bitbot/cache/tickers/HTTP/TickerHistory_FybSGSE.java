@@ -17,8 +17,19 @@ import org.json.simple.parser.JSONParser;
  */
 public class TickerHistory_FybSGSE implements TickerHistoryInterface {
 
+    private final boolean enableTrackTrades;
+
+    public TickerHistory_FybSGSE(boolean enableTrackTrades) {
+        this.enableTrackTrades = enableTrackTrades;
+    }
+
     @Override
-    public TickerHistoryData connectAndParseHistoryResult(String ExchangeCurrencyPair, String CurrencyPair, long LastPurchaseTime, int LastTradeId) {
+    public boolean enableTrackTrades() {
+        return enableTrackTrades;
+    }
+
+    @Override
+    public TickerHistoryData connectAndParseHistoryResult(String ExchangeCurrencyPair, String ExchangeSite, String CurrencyPair, long LastPurchaseTime, int LastTradeId) {
         String[] split = CurrencyPair.split("_");
 
         boolean IsFybSG = CurrencyPair.contains("sgd");
@@ -29,7 +40,7 @@ public class TickerHistory_FybSGSE implements TickerHistoryInterface {
                 LastTradeId != 0 ? "?since=" + LastTradeId : "");
 
         String GetResult = HttpClient.httpsGet(Uri, "");
-        
+
         if (GetResult != null) {
             TickerHistoryData ReturnData = new TickerHistoryData(LastPurchaseTime, LastTradeId, 0, false);
 
@@ -89,6 +100,10 @@ public class TickerHistory_FybSGSE implements TickerHistoryInterface {
                     if (date > LastPurchaseTime) {
                         //System.out.println(String.format("[Trades history] Added [%s], Price: %f, Sum: %f ", cal.getTime().toString(), price, amount));
                         ReturnData.merge(price, amount, date, tradeid, type);
+
+                        if (enableTrackTrades) {
+                            ReturnData.trackAndRecordLargeTrades(price, amount, LastPurchaseTime, type, ExchangeSite, CurrencyPair);
+                        }
                     }
                     if (tradeid > ReturnData.getLastTradeId()) {
                         ReturnData.setLastTradeId(tradeid);

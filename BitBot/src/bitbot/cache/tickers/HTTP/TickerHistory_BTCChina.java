@@ -18,8 +18,19 @@ import org.json.simple.parser.JSONParser;
 public class TickerHistory_BTCChina implements TickerHistoryInterface {
     //private static final TimeZone timeZone = TimeZone.getTimeZone("Etc/GMT-6");
 
+    private final boolean enableTrackTrades;
+
+    public TickerHistory_BTCChina(boolean enableTrackTrades) {
+        this.enableTrackTrades = enableTrackTrades;
+    }
+
     @Override
-    public TickerHistoryData connectAndParseHistoryResult(String ExchangeCurrencyPair, String CurrencyPair, long LastPurchaseTime, int LastTradeId) {
+    public boolean enableTrackTrades() {
+        return enableTrackTrades;
+    }
+
+    @Override
+    public TickerHistoryData connectAndParseHistoryResult(String ExchangeCurrencyPair, String ExchangeSite, String CurrencyPair, long LastPurchaseTime, int LastTradeId) {
         String[] split = CurrencyPair.split("_");
 
         String Uri = String.format("https://data.btcchina.com/data/historydata?market=%s&since=%d", (split[1] + split[0]).toUpperCase(), LastTradeId);
@@ -68,7 +79,7 @@ public class TickerHistory_BTCChina implements TickerHistoryInterface {
 
                         LastPurchaseTime = date - 1;//cal_LastPurchaseTime.getTimeInMillis(); // set default param
                         ReturnData.setLastPurchaseTime(LastPurchaseTime);
-                        
+
                         LastTradeId = tradeid - 1;
                         ReturnData.setLastTradeId(LastTradeId);
                     }
@@ -81,12 +92,15 @@ public class TickerHistory_BTCChina implements TickerHistoryInterface {
                      cal.set(Calendar.DATE, 0);
 
                      cal.add(Calendar.SECOND, (int) (date / 1000));*/
-                    
                     // System.out.println(String.format("[Trades history] Got [%s], Price: %f, Sum: %f ", cal.getTime().toString(), price, amount));
                     // Assume things are read in ascending order
                     if (tradeid > LastTradeId) {
                         //System.out.println(String.format("[Trades history] Added [%s], Price: %f, Sum: %f ", cal.getTime().toString(), price, amount));
                         ReturnData.merge(price, amount, date, tradeid, type);
+
+                        if (enableTrackTrades) {
+                            ReturnData.trackAndRecordLargeTrades(price, amount, LastPurchaseTime, type, ExchangeSite, CurrencyPair);
+                        }
                     }
                 }
             } catch (Exception parseExp) {

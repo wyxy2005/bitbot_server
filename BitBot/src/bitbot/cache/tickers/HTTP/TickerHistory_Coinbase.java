@@ -17,10 +17,20 @@ import org.json.simple.parser.JSONParser;
  * @author z
  */
 public class TickerHistory_Coinbase implements TickerHistoryInterface {
-    // private static final TimeZone timeZone = TimeZone.getTimeZone("Etc/GMT+6");
+    
+    private final boolean enableTrackTrades;
+
+    public TickerHistory_Coinbase(boolean enableTrackTrades) {
+        this.enableTrackTrades = enableTrackTrades;
+    }
 
     @Override
-    public TickerHistoryData connectAndParseHistoryResult(String ExchangeCurrencyPair, String CurrencyPair, long LastPurchaseTime, int LastTradeId) {
+    public boolean enableTrackTrades() {
+        return enableTrackTrades;
+    }
+    
+    @Override
+    public TickerHistoryData connectAndParseHistoryResult(String ExchangeCurrencyPair, String ExchangeSite, String CurrencyPair, long LastPurchaseTime, int LastTradeId) {
         String UriSell = "https://coinbase.com/api/v1/prices/sell";
         String SellResult = HttpClient.httpsGet(UriSell, "");
 

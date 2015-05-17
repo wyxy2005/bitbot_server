@@ -17,13 +17,21 @@ import org.json.simple.parser.JSONParser;
  */
 public class TickerHistory_OkcoinInternational implements TickerHistoryInterface {
 
-   // private static final TimeZone timeZone = TimeZone.getTimeZone("Etc/GMT+6");
-    private long lastBroadcastedTime = 0;
+    private final boolean enableTrackTrades;
+
+    public TickerHistory_OkcoinInternational(boolean enableTrackTrades) {
+        this.enableTrackTrades = enableTrackTrades;
+    }
 
     @Override
-    public TickerHistoryData connectAndParseHistoryResult(String ExchangeCurrencyPair, String CurrencyPair, long LastPurchaseTime, int LastTradeId) {
+    public boolean enableTrackTrades() {
+        return enableTrackTrades;
+    }
+
+    @Override
+    public TickerHistoryData connectAndParseHistoryResult(String ExchangeCurrencyPair, String ExchangeSite, String CurrencyPair, long LastPurchaseTime, int LastTradeId) {
         String Uri;
-        
+
         if (CurrencyPair.contains("Futures")) {
             String[] split1 = CurrencyPair.split("_");
             String[] split2 = split1[0].split(" ");
@@ -35,7 +43,7 @@ public class TickerHistory_OkcoinInternational implements TickerHistoryInterface
         } else {
             Uri = String.format("https://www.okcoin.com/api/trades.do?symbol=%s&ok=1", CurrencyPair);
         }
-        
+
         String GetResult = HttpClient.httpsGet(Uri, "");
 
         if (GetResult != null) {
@@ -96,6 +104,10 @@ public class TickerHistory_OkcoinInternational implements TickerHistoryInterface
                     if (date > LastPurchaseTime) {
                         //System.out.println(String.format("[Trades history] Added [%s], Price: %f, Sum: %f ", cal.getTime().toString(), price, amount));
                         ReturnData.merge(price, amount, date, tid, type);
+
+                        if (enableTrackTrades) {
+                            ReturnData.trackAndRecordLargeTrades(price, amount, LastPurchaseTime, type, ExchangeSite, CurrencyPair);
+                        }
                     }
                 }
             } catch (Exception parseExp) {
