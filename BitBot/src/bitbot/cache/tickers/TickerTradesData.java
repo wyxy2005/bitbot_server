@@ -49,9 +49,9 @@ public class TickerTradesData {
 
     public HistoryDatabaseCommitEnum commitDatabase() {
         // Commit data to database
-    //    if (!ChannelServer.getInstance().isEnableTickerHistoryDatabaseCommit()) {
-    //        return HistoryDatabaseCommitEnum.Ok;
-     //   }
+        if (!ChannelServer.getInstance().isEnableTickerHistoryDatabaseCommit()) {
+            return HistoryDatabaseCommitEnum.Ok;
+        }
         PreparedStatement ps = null;
         final String query = String.format("INSERT INTO bitcoinbot.%s (\"price\", \"amount\", \"type\", \"LastPurchaseTime\") VALUES (?,?,?,?);",
                 DatabaseTablesConstants.getDatabaseTableName_Trades(ExchangeSite, currencyPair));

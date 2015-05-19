@@ -138,7 +138,7 @@ public class TickerHistoryData {
         if (amount >= ChannelServer.getInstance().getRequiredTradeSizeForTradesLogging()) {
             TickerTradesData data = new TickerTradesData(price, amount, LastPurchaseTime / 1000, type, ExchangeSite, currencyPair);
             
-            data.registerForCommitQueue(); // no need to reference elsewhere else.. 
+            data.registerForCommitQueue(); // no need to reference elsewhere
         }
     }
 

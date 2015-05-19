@@ -259,7 +259,7 @@ public class TickerCacheTask {
         // No need to lock this thread, if we are creating a new ArrayList off existing since its a copy :)
         // Its a copy :)
         final Stream<TickerItemData> items_stream = list_mssql.get(dataSet).stream().
-                filter((data) -> (data.getServerTime() > LastUsedTime_)).
+                filter((data) -> (data.getServerTime() >= LastUsedTime_)).
                 sorted(TickerItemComparator);
 
         boolean isPostProcessCompleted = false;
@@ -271,7 +271,7 @@ public class TickerCacheTask {
             if (!isPostProcessCompleted) {
                 isPostProcessCompleted = true;
 
-                if (backtestHours != 0) { // not tradingview
+               // if (backtestHours != 0) { // not tradingview
                     // Post process, for the variables and stuff
                     // round the last used time to best possible time for the chart period
                     final Calendar dtCal = Calendar.getInstance();
@@ -290,7 +290,7 @@ public class TickerCacheTask {
                         truncateField = Calendar.ERA;
                     }
                     LastUsedTime = DateUtils.truncate(dtCal, truncateField).getTimeInMillis();
-                }
+              //  }
                 while (LastUsedTime < item.getServerTime()) {
                     LastUsedTime += intervalMinutes;
                 }
@@ -620,6 +620,7 @@ public class TickerCacheTask {
          }*/
         return container;
     }
+    
 
     private static final Comparator<Object> TickerItemComparator = (Object obj1, Object obj2) -> {
         TickerItemData data1 = (TickerItemData) obj1;
@@ -939,19 +940,19 @@ public class TickerCacheTask {
 
                         // Loop through the data and write for each individual entry
                         for (TickerItemData data : currentList) {
-                            PacketLittleEndianWriter mplew2 = new PacketLittleEndianWriter(); // using multiple mplews to assist garbage collection
-                            mplew2.write(-1); // starting marker
+                            PacketLittleEndianWriter plew2 = new PacketLittleEndianWriter(); // using multiple mplews to assist garbage collection
+                            plew2.write(-1); // starting marker
 
-                            mplew2.writeFloat(data.getClose());
-                            mplew2.writeFloat(data.getOpen());
-                            mplew2.writeFloat(data.getHigh());
-                            mplew2.writeFloat(data.getLow());
-                            mplew2.writeLong(data.getServerTime());
-                            mplew2.writeDouble(data.getVol());
-                            mplew2.writeDouble(data.getVol_Cur());
-                            mplew2.writeFloat(data.getBuySell_Ratio());
+                            plew2.writeFloat(data.getClose());
+                            plew2.writeFloat(data.getOpen());
+                            plew2.writeFloat(data.getHigh());
+                            plew2.writeFloat(data.getLow());
+                            plew2.writeLong(data.getServerTime());
+                            plew2.writeDouble(data.getVol());
+                            plew2.writeDouble(data.getVol_Cur());
+                            plew2.writeFloat(data.getBuySell_Ratio());
 
-                            final byte[] dataWrite2 = mplew2.getPacket();
+                            final byte[] dataWrite2 = plew2.getPacket();
                             out.write(dataWrite2, 0, dataWrite2.length);
                         }
                     } catch (Exception error) {
