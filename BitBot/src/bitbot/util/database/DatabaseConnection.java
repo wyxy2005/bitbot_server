@@ -18,7 +18,7 @@ import java.util.concurrent.locks.ReentrantLock;
 public class DatabaseConnection {
 
     private static String DatabaseConnectionString
-            = "jdbc:sqlserver://fjoynp4lnu.database.windows.net:1433;database=BitCoinATpqACXAu;encrypt=true;hostNameInCertificate=*.database.windows.net;loginTimeout=300;socketTimeout=60;";
+           = "jdbc:sqlserver://fjoynp4lnu.database.secure.windows.net,1433;database=BitCoinATpqACXAu;encrypt=true;hostNameInCertificate=*.database.secure.windows.net;loginTimeout=300;socketTimeout=60;";
     private static String DecryptedDatabaseStrings_u = null;
     private static String DecryptedDatabaseStrings_p = null;
 
