@@ -60,12 +60,15 @@ public class TickerCacheTask {
     private final List<Integer> canAcceptNewInfoFromOtherPeers = new LinkedList(); // string = exchange+currency pair
     private final List<LoggingSaveRunnable> runnable_mssql = new ArrayList();
     private final Map<String, List<TickerItemData>> list_mssql;
+    private final Map<String, List<TickerItemData>> list_mssql_summary; // Create another dummy map for easy reference [summary]
 
     // Acquiring of data directly from the trades
     private final List<LoggingSaveRunnable> runnable_exchangeHistory = new ArrayList();
 
     public TickerCacheTask() {
         this.list_mssql = new LinkedHashMap<>();
+        this.list_mssql_summary = new LinkedHashMap<>();
+        
         StartScheduleTask();
     }
 
@@ -89,6 +92,8 @@ public class TickerCacheTask {
                 list_mssql.put(ExchangeCurrencyPair, arrays);
                 list_mssql.put(ExchangeCurrencyPair.toLowerCase(), arrays); // to fix for futures
                 list_mssql.put(ExchangeCurrencyPair.replace(" ", "").toLowerCase(), arrays); // and one without space, for hyperlinks
+                
+                list_mssql_summary.put(ExchangeCurrencyPair, arrays);
             }
 
             // History
@@ -542,16 +547,6 @@ public class TickerCacheTask {
         return profile;
     }
 
-    public Map<String, List<TickerItemData>> getBitcoinPriceIndex(final String ticker, final int backtestHours, int intervalMinutes, long ServerTimeFrom) {
-        final Map<String, List<TickerItemData>> listMaps = new HashMap();
-
-        list_mssql.entrySet().stream().filter((mapItem) -> (mapItem.getKey().contains(ticker))).forEach((mapItem) -> {
-            listMaps.put(mapItem.getKey(), mapItem.getValue());
-        });
-
-        return listMaps;
-    }
-
     /**
      * Returns the summary data of all exchange/pair ticker
      *
@@ -563,11 +558,12 @@ public class TickerCacheTask {
     public Map<String, TickerItemData> getExchangePriceSummaryData() {
         final Map<String, TickerItemData> mapPriceSummary = new HashMap();
 
-        list_mssql.entrySet().stream().forEach((mapItem) -> {
-            mapPriceSummary.put(mapItem.getKey(), mapItem.getValue().get(mapItem.getValue().size() - 1));
+        list_mssql_summary.entrySet().stream().forEach((mapItem) -> {
+            mapPriceSummary.put(mapItem.getKey(), 
+                    mapItem.getValue().size() > 0 ? mapItem.getValue().get(mapItem.getValue().size() - 1) : null);
         });
 
-        return null;
+        return mapPriceSummary;
     }
 
     public List<List<ExponentialMovingAverageData>> getExponentialMovingAverage(

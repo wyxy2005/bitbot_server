@@ -1,0 +1,4 @@
+ws://websocket.bitfinex.com:8086/WSGateway/
+
+reply:
+{"type":"anws_frame","m":0,"i":0,"n":"SubscribeLevel2","o":"{\"ExchangeID\":\"0\",\"ProductPairID\":\"1\",\"Depth\":\"2500\",\"RoundToDecimals\":\"2\"}"}
