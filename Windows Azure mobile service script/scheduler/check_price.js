@@ -69,7 +69,7 @@ function check_price() {
     fetchItem('btc_sgd', 'fybsg');
     fetchItem('btc_sek', 'fybse');
 
-    fetchItem('nxt_btc', 'dgex');
+//    fetchItem('nxt_btc', 'dgex');
 
     fetchItem('btc_usd', 'cryptsy');
     fetchItem('doge_usd', 'cryptsy');
