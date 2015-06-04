@@ -10,19 +10,19 @@ function check_price() {
     fetchItem('btc_usd', 'btce');
     fetchItem('btc_eur', 'btce');
     fetchItem('btc_rur', 'btce');
-    fetchItem('btc_cnh', 'btce');
-    fetchItem('btc_gbp', 'btce');
+    //fetchItem('btc_cnh', 'btce');
+    //fetchItem('btc_gbp', 'btce');
     fetchItem('ltc_btc', 'btce');
     fetchItem('ltc_usd', 'btce');
     fetchItem('ltc_rur', 'btce');
     fetchItem('ltc_eur', 'btce');
-    fetchItem('ltc_cnh', 'btce');
-    fetchItem('ltc_gbp', 'btce');
+    //fetchItem('ltc_cnh', 'btce');
+    //fetchItem('ltc_gbp', 'btce');
     fetchItem('nmc_usd', 'btce');
     fetchItem('nmc_btc', 'btce');
     fetchItem('usd_rur', 'btce');
-    fetchItem('usd_cnh', 'btce');
-    fetchItem('gbp_usd', 'btce');
+    //fetchItem('usd_cnh', 'btce');
+    //fetchItem('gbp_usd', 'btce');
     fetchItem('eur_usd', 'btce');
     fetchItem('nvc_usd', 'btce');
     fetchItem('nvc_btc', 'btce');
@@ -69,7 +69,7 @@ function check_price() {
     fetchItem('btc_sgd', 'fybsg');
     fetchItem('btc_sek', 'fybse');
 
-//    fetchItem('nxt_btc', 'dgex');
+    //fetchItem('nxt_btc', 'dgex');
 
     fetchItem('btc_usd', 'cryptsy');
     fetchItem('doge_usd', 'cryptsy');
@@ -92,70 +92,74 @@ function check_price() {
     fetchItem('ltc Futures_usd', '_796');
 
     function fetchItem(currencypair, source) {
-        if (source == 'btce') {
-            // reduce traffic on a single IP due to BTCe cloudflare
-            if (Math.floor((Math.random() * 1) + 1) == 1) {
-                fetchfromSource(currencypair, source, 'https://btc-e.com/api/2/' + currencypair + '/ticker');
-            } else {
-                fetchfromSource(currencypair, source, 'http://maaapersonalppace.azurewebsites.net/httprelay.php?url=' + escape('https://btc-e.com/api/2/' + currencypair + '/ticker'));
-            }
-        } else if (source == 'btcchina') {
-            fetchfromSource(currencypair, source,
-                currencypair == 'ltc_cny' ? 'https://data.btcchina.com/data/ticker?market=cnyltc' :
-                currencypair == 'btc_cny' ? 'https://data.btcchina.com/data/ticker?market=cnybtc' :
-                'https://data.btcchina.com/data/ticker?market=btcltc');
-        } else if (source == 'mtgox') {
-            fetchfromSource(currencypair, source, 'http://data.mtgox.com/api/2/BTCUSD/money/ticker');
-        } else if (source == 'okcoin') {
-            fetchfromSource(currencypair, source, 'https://www.okcoin.cn/api/ticker.do?symbol=' + currencypair);
-        } else if (source == 'okcoininternational') {
-            fetchfromSource(currencypair, source, 'https://www.okcoin.com/api/ticker.do?symbol=' + currencypair + '&ok=1');
-        } else if (source == 'coinbase') {
-            fetchfromSource(currencypair, source, 'https://coinbase.com/api/v1/prices/buy');
-        } else if (source == 'bitstamp') {
-            fetchfromSource(currencypair, source, 'https://www.bitstamp.net/api/ticker/');
-        } else if (source == 'itbit') {
-            fetchfromSource(currencypair, source, 'https://www.itbit.com/api/feeds/ticker/' + currencypair.toUpperCase().replace('_', ""));
-        } else if (source == 'kraken') {
-            var symbol = currencypair.toUpperCase().replace('_', "");
-            fetchfromSource(currencypair, source, 'https://api.kraken.com/0/public/Ticker?pair=' + symbol);
-        } else if (source == 'huobi') {
-            switch (currencypair) {
-                case 'btc':
-                    {
-                        fetchfromSource(currencypair, source, 'http://market.huobi.com/staticmarket/kline001.html');
-                        break;
-                    }
-                case 'ltc':
-                    {
-                        fetchfromSource(currencypair, source, 'http://market.huobi.com/staticmarket/kline_ltc001.html');
-                        break;
-                    }
-            }
-        } else if (source == '_796') {
-            if (currencypair.indexOf('cny') > -1) {
-                fetchfromSource(currencypair, source, 'http://api.796.com/v3/futures/ticker.html?type=btccnyweeklyfutures');
-            } else if (currencypair.indexOf('btc') > -1) {
-                fetchfromSource(currencypair, source, 'http://api.796.com/v3/futures/ticker.html?type=weekly');
-            } else {
-                fetchfromSource(currencypair, source, 'http://api.796.com/v3/futures/ticker.html?type=ltc');
-            }
-        } else if (source == 'campbx') {
-            fetchfromSource(currencypair, source, 'http://CampBX.com/api/xticker.php')
+        try {
+            if (source == 'btce') {
+                // reduce traffic on a single IP due to BTCe cloudflare
+                if (Math.floor((Math.random() * 1) + 1) == 1) {
+                    fetchfromSource(currencypair, source, 'https://btc-e.com/api/2/' + currencypair + '/ticker');
+                } else {
+                    fetchfromSource(currencypair, source, 'http://maaapersonalppace.azurewebsites.net/httprelay.php?url=' + escape('https://btc-e.com/api/2/' + currencypair + '/ticker'));
+                }
+            } else if (source == 'btcchina') {
+                fetchfromSource(currencypair, source,
+                    currencypair == 'ltc_cny' ? 'https://data.btcchina.com/data/ticker?market=cnyltc' :
+                    currencypair == 'btc_cny' ? 'https://data.btcchina.com/data/ticker?market=cnybtc' :
+                    'https://data.btcchina.com/data/ticker?market=btcltc');
+            } else if (source == 'mtgox') {
+                fetchfromSource(currencypair, source, 'http://data.mtgox.com/api/2/BTCUSD/money/ticker');
+            } else if (source == 'okcoin') {
+                fetchfromSource(currencypair, source, 'https://www.okcoin.cn/api/ticker.do?symbol=' + currencypair);
+            } else if (source == 'okcoininternational') {
+                fetchfromSource(currencypair, source, 'https://www.okcoin.com/api/ticker.do?symbol=' + currencypair + '&ok=1');
+            } else if (source == 'coinbase') {
+                fetchfromSource(currencypair, source, 'https://coinbase.com/api/v1/prices/buy');
+            } else if (source == 'bitstamp') {
+                fetchfromSource(currencypair, source, 'https://www.bitstamp.net/api/ticker/');
+            } else if (source == 'itbit') {
+                fetchfromSource(currencypair, source, 'https://www.itbit.com/api/feeds/ticker/' + currencypair.toUpperCase().replace('_', ""));
+            } else if (source == 'kraken') {
+                var symbol = currencypair.toUpperCase().replace('_', "");
+                fetchfromSource(currencypair, source, 'https://api.kraken.com/0/public/Ticker?pair=' + symbol);
+            } else if (source == 'huobi') {
+                switch (currencypair) {
+                    case 'btc':
+                        {
+                            fetchfromSource(currencypair, source, 'http://market.huobi.com/staticmarket/kline001.html');
+                            break;
+                        }
+                    case 'ltc':
+                        {
+                            fetchfromSource(currencypair, source, 'http://market.huobi.com/staticmarket/kline_ltc001.html');
+                            break;
+                        }
+                }
+            } else if (source == '_796') {
+                if (currencypair.indexOf('cny') > -1) {
+                    fetchfromSource(currencypair, source, 'http://api.796.com/v3/futures/ticker.html?type=btccnyweeklyfutures');
+                } else if (currencypair.indexOf('btc') > -1) {
+                    fetchfromSource(currencypair, source, 'http://api.796.com/v3/futures/ticker.html?type=weekly');
+                } else {
+                    fetchfromSource(currencypair, source, 'http://api.796.com/v3/futures/ticker.html?type=ltc');
+                }
+            } else if (source == 'campbx') {
+                fetchfromSource(currencypair, source, 'http://CampBX.com/api/xticker.php')
         } else if (source == 'bitfinex') {
-            var symbol = currencypair.replace('_', "");
-            fetchfromSource(currencypair, source, 'https://api.bitfinex.com/v1/ticker/' + symbol);
-        } else if (source == 'cexio') {
-            fetchfromSource(currencypair, source, 'https://cex.io/api/ticker/GHS/BTC');
-        } else if (source == 'fybsg') {
-            fetchfromSource(currencypair, source, 'https://www.fybsg.com/api/SGD/ticker.json');
-        } else if (source == 'fybse') {
-            fetchfromSource(currencypair, source, 'https://www.fybse.se/api/SEK/ticker.json');
-        } else if (source == 'dgex') {
-            fetchfromSource(currencypair, source, 'https://dgex.com/API/nxtprice.txt');
-        } else if (source == 'cryptsy') {
-            var marketid = GetCryptsyMarketId(currencypair);
-            fetchfromSource(currencypair, source, 'http://pubapi.cryptsy.com/api.php?method=singlemarketdata&marketid=' + marketid);
+                var symbol = currencypair.replace('_', "");
+                fetchfromSource(currencypair, source, 'https://api.bitfinex.com/v1/ticker/' + symbol);
+            } else if (source == 'cexio') {
+                fetchfromSource(currencypair, source, 'https://cex.io/api/ticker/GHS/BTC');
+            } else if (source == 'fybsg') {
+                fetchfromSource(currencypair, source, 'https://www.fybsg.com/api/SGD/ticker.json');
+            } else if (source == 'fybse') {
+                fetchfromSource(currencypair, source, 'https://www.fybse.se/api/SEK/ticker.json');
+            } else if (source == 'dgex') {
+                fetchfromSource(currencypair, source, 'https://dgex.com/API/nxtprice.txt');
+            } else if (source == 'cryptsy') {
+                var marketid = GetCryptsyMarketId(currencypair);
+                fetchfromSource(currencypair, source, 'http://pubapi.cryptsy.com/api.php?method=singlemarketdata&marketid=' + marketid);
+            }
+        } catch (ex) {
+            console.log(ex);
         }
     }
 
@@ -224,9 +228,9 @@ function check_price() {
                         case '_796':
                             {
                                 var tickerJson = returnJson.ticker;
-                                
+
                                 currentPrice = parseFloat(tickerJson.last);
-                                 average24Hrs = currentPrice / ((parseFloat(tickerJson.high) + parseFloat(tickerJson.low)) / 2) * 100 - 100;
+                                average24Hrs = currentPrice / ((parseFloat(tickerJson.high) + parseFloat(tickerJson.low)) / 2) * 100 - 100;
                                 break;
                             }
                         case 'cryptsy':
@@ -468,7 +472,7 @@ function check_price() {
 
             // Insert only if we've yet to support these exchange to cache at second interval
             // via an external VPS.
-            
+
             if (source == 'kraken') {
                 insertTickerData_Kraken(returnJson, currencypair, source);
             } else if (source == 'cexio') {
