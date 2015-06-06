@@ -136,7 +136,7 @@ public class TickerHistoryData {
     public void trackAndRecordLargeTrades(float price, double amount, long LastPurchaseTime, TradeHistoryBuySellEnum type,
             String ExchangeSite, String currencyPair) {
         if (amount >= ChannelServer.getInstance().getRequiredTradeSizeForTradesLogging()) {
-            TickerTradesData data = new TickerTradesData(price, amount, LastPurchaseTime / 1000, type, ExchangeSite, currencyPair);
+            final TickerTradesData data = new TickerTradesData(price, amount, LastPurchaseTime / 1000, type, ExchangeSite, currencyPair);
             
             data.registerForCommitQueue(); // no need to reference elsewhere
         }

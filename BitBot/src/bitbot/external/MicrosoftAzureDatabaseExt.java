@@ -84,14 +84,7 @@ public class MicrosoftAzureDatabaseExt {
     * @return long (biggest server time), -1 if error
     */
     public static long selectSwapsData(String ExchangeSite, String currency, int depthSelection, int hoursSelection, long start_server_time, List<SwapsItemData> list_items) {
-        // currencyPair = eg: btc_usd
-     /*   String parameters = String.format("nonce=%d&currencypair=%s&depth=%d&hours=%d&start_server_time=%d&exchangesite=%s",
-         System.currentTimeMillis(), currencyPair, depthSelection, hoursSelection, start_server_time, ExchangeSite);
-
-         return post("https://bitcoinbot.azure-mobile.net/api/btce_select_graph_data?", parameters, "");
-         */
-
-        String tableName = String.format("%s_swaps_%s", ExchangeSite, currency);
+        final String tableName = String.format("%s_swaps_%s", ExchangeSite, currency);
 
         PreparedStatement ps = null;
         ResultSet rs = null;
@@ -103,7 +96,7 @@ public class MicrosoftAzureDatabaseExt {
 
             rs = ps.executeQuery();
 
-            long biggest_ServerTime = -1;
+            long biggest_ServerTime = 0;
             if (rs != null) {
                 while (rs.next()) {
                     SwapsItemData item = new SwapsItemData(rs);

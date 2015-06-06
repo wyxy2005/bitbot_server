@@ -68,7 +68,7 @@ public class TickerCacheTask {
     public TickerCacheTask() {
         this.list_mssql = new LinkedHashMap<>();
         this.list_mssql_summary = new LinkedHashMap<>();
-        
+
         StartScheduleTask();
     }
 
@@ -92,7 +92,7 @@ public class TickerCacheTask {
                 list_mssql.put(ExchangeCurrencyPair, arrays);
                 list_mssql.put(ExchangeCurrencyPair.toLowerCase(), arrays); // to fix for futures
                 list_mssql.put(ExchangeCurrencyPair.replace(" ", "").toLowerCase(), arrays); // and one without space, for hyperlinks
-                
+
                 list_mssql_summary.put(ExchangeCurrencyPair, arrays);
             }
 
@@ -100,7 +100,7 @@ public class TickerCacheTask {
             if (ChannelServer.getInstance().isEnableTickerHistory()) {
                 TickerHistoryInterface history = null;
                 int UpdateTime_Millis = 10000;
-                
+
                 final boolean trackLargeTrades = ChannelServer.getInstance().getCurrencyPairsForLargeTrades().contains(ExchangeCurrencyPair);
 
                 if (ExchangeCurrencyPair.contains("huobi")) {
@@ -219,14 +219,14 @@ public class TickerCacheTask {
     }
 
     public List<TickerItem_CandleBar> getTickerList_Candlestick(
-            final String ticker, 
-            final int backtestHours, 
-            int intervalMinutes, 
-            String ExchangeSite, 
-            long ServerTimeFrom, 
+            final String ticker,
+            final int backtestHours,
+            int intervalMinutes,
+            String ExchangeSite,
+            long ServerTimeFrom,
             long ServerTimeEnd,
             boolean IncludeUnmaturedData) {
-        
+
         final List<TickerItem_CandleBar> list_chart = new ArrayList(); // create a new array first
         final String dataSet = ExchangeSite + "-" + ticker;
 
@@ -242,7 +242,7 @@ public class TickerCacheTask {
         final boolean includeVolumeData = !ExchangeSite.equalsIgnoreCase("coinbase");
 
         final long cTime = cTime_Millis / 1000;
-        
+
         // truncate the ending time to max current time
         // This could also prevent DOS
         ServerTimeEnd = Math.min(cTime_Millis / 1000, ServerTimeEnd);
@@ -277,25 +277,25 @@ public class TickerCacheTask {
                 isPostProcessCompleted = true;
 
                // if (backtestHours != 0) { // not tradingview
-                    // Post process, for the variables and stuff
-                    // round the last used time to best possible time for the chart period
-                    final Calendar dtCal = Calendar.getInstance();
-                    dtCal.setTimeInMillis(Math.min(LastUsedTime, item.getServerTime()));
+                // Post process, for the variables and stuff
+                // round the last used time to best possible time for the chart period
+                final Calendar dtCal = Calendar.getInstance();
+                dtCal.setTimeInMillis(Math.min(LastUsedTime, item.getServerTime()));
 
-                    int truncateField;
-                    if (intervalMinutes < 60) { // below 1 hour
-                        truncateField = Calendar.HOUR;
-                    } else if (intervalMinutes < 60 * 60 * 24) { // below 1 day
-                        truncateField = Calendar.DATE;
-                    } else if (intervalMinutes < 60 * 60 * 24 * 30) { // below 30 days
-                        truncateField = Calendar.MONTH;
-                    } else if (intervalMinutes < 60 * 60 * 24 * 30 * 12 * 100) { // below 100 years
-                        truncateField = Calendar.YEAR;
-                    } else { // wtf
-                        truncateField = Calendar.ERA;
-                    }
-                    LastUsedTime = DateUtils.truncate(dtCal, truncateField).getTimeInMillis();
-              //  }
+                int truncateField;
+                if (intervalMinutes < 60) { // below 1 hour
+                    truncateField = Calendar.HOUR;
+                } else if (intervalMinutes < 60 * 60 * 24) { // below 1 day
+                    truncateField = Calendar.DATE;
+                } else if (intervalMinutes < 60 * 60 * 24 * 30) { // below 30 days
+                    truncateField = Calendar.MONTH;
+                } else if (intervalMinutes < 60 * 60 * 24 * 30 * 12 * 100) { // below 100 years
+                    truncateField = Calendar.YEAR;
+                } else { // wtf
+                    truncateField = Calendar.ERA;
+                }
+                LastUsedTime = DateUtils.truncate(dtCal, truncateField).getTimeInMillis();
+                //  }
                 while (LastUsedTime < item.getServerTime()) {
                     LastUsedTime += intervalMinutes;
                 }
@@ -400,20 +400,22 @@ public class TickerCacheTask {
 
         if (IncludeUnmaturedData) {
             // For unmatured chart
-            while (LastUsedTime < ServerTimeEnd) {
+            boolean breakloop = false;
+
+            while (LastUsedTime < ServerTimeEnd && !breakloop) {
                 LastUsedTime += intervalMinutes;
 
                 if (LastUsedTime > ServerTimeEnd) { // check again
-                    break; // must not ever sent a candle over the current time!!
+                    breakloop = true;
                 }
 
                 list_chart.add(
                         new TickerItem_CandleBar(
-                                LastUsedTime,
+                                Math.min(ServerTimeEnd, LastUsedTime),
                                 (float) lastPriceSet, // last
-                                (float) lastPriceSet, // high
-                                (float) lastPriceSet, // low
-                                (float) lastPriceSet, // open
+                                (float) high, // high
+                                (float) low, // low
+                                (float) open, // open
                                 0,// volume
                                 0, // volume cur
                                 1, // buy sell ratio
@@ -559,7 +561,7 @@ public class TickerCacheTask {
         final Map<String, TickerItemData> mapPriceSummary = new HashMap();
 
         list_mssql_summary.entrySet().stream().forEach((mapItem) -> {
-            mapPriceSummary.put(mapItem.getKey(), 
+            mapPriceSummary.put(mapItem.getKey(),
                     mapItem.getValue().size() > 0 ? mapItem.getValue().get(mapItem.getValue().size() - 1) : null);
         });
 
@@ -616,7 +618,6 @@ public class TickerCacheTask {
          }*/
         return container;
     }
-    
 
     private static final Comparator<Object> TickerItemComparator = (Object obj1, Object obj2) -> {
         TickerItemData data1 = (TickerItemData) obj1;
@@ -803,7 +804,7 @@ public class TickerCacheTask {
             System.out.println("Caching currency pair from SQLserv: " + ExchangeCurrencyPair);
 
             final List<TickerItemData> list_newItems = new ArrayList(); // create a new array first and replace later
-            
+
             final long biggest_server_time_result = MicrosoftAzureDatabaseExt.selectGraphData(ExchangeSite, CurrencyPair_, 60000, 24, LastCachedTime, list_newItems);
             if (biggest_server_time_result != -2) { // is not an error
                 // Set max server_time

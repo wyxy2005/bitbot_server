@@ -1,12 +1,23 @@
 package bitbot.cache.swaps;
 
 import bitbot.cache.swaps.HTTP.Swaps_Bitfinex;
+import bitbot.cache.tickers.TickerItemData;
 import bitbot.external.MicrosoftAzureDatabaseExt;
 import bitbot.handler.channel.ChannelServer;
 import bitbot.logging.ServerLog;
 import bitbot.logging.ServerLogType;
 import bitbot.server.threads.LoggingSaveRunnable;
 import bitbot.server.threads.TimerManager;
+import bitbot.util.encryption.input.ByteArrayByteStream;
+import bitbot.util.encryption.input.GenericSeekableLittleEndianAccessor;
+import bitbot.util.encryption.input.SeekableLittleEndianAccessor;
+import bitbot.util.encryption.output.PacketLittleEndianWriter;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Iterator;
@@ -52,6 +63,9 @@ public class SwapsCacheTask {
                 tickercache.setLoggingSaveRunnable(runnable);
 
                 runnable_mssql.add(runnable);
+
+                List<SwapsItemData> arrays = new ArrayList(); // same reference
+                list_mssql.put(ExchangeCurrency, arrays);
             }
 
             // History
@@ -66,7 +80,7 @@ public class SwapsCacheTask {
                 if (swap != null) {
                     runnable_exchangeHistory.add(TimerManager.register(
                             new SwapsCacheTask_ExchangeHistory(ExchangeSite, Currency, ExchangeCurrency, swap),
-                            DefaultUpdateTime * 60000, 
+                            DefaultUpdateTime * 60000,
                             60000, // wait 60 seconds to start, as the spot_price might not been indexed on the world server
                             Integer.MAX_VALUE));
                 }
@@ -89,54 +103,54 @@ public class SwapsCacheTask {
             }
         }
     }
-    
+
     public List<List<SwapsItemData>> getSwapsData(String Exchange, String currencies, long ServerTimeFrom, final int backtestHours, int intervalMinutes) {
         final List<List<SwapsItemData>> list_chart = new ArrayList(); // create a new array first
 
         // currencies seperated by '-'
         String[] currenciesArray = currencies.split("-");
-        
+
         for (String currency : currenciesArray) {
             final String dataSet = String.format("%s-%s", Exchange, currency);
-            
-             // Is the data set available?
+
+            // Is the data set available?
             if (!list_mssql.containsKey(dataSet)) {
                 return list_chart;
             }
-            
+
             final Iterator<SwapsItemData> items_swapsDataset = list_mssql.get(dataSet).stream().
-                filter((data) -> (data.getTimestamp() > ServerTimeFrom)).
-                sorted(TickerItemComparator).
-                iterator();
-            
+                    filter((data) -> (data.getTimestamp() > ServerTimeFrom)).
+                    sorted(TickerItemComparator).
+                    iterator();
+
             list_chart.add(new ArrayList<>());
-            
-             getSwapsDataInternal(items_swapsDataset, backtestHours, intervalMinutes, list_chart.get(list_chart.size() - 1));
+
+            getSwapsDataInternal(items_swapsDataset, backtestHours, intervalMinutes, list_chart.get(list_chart.size() - 1));
         }
         return list_chart;
     }
-    
+
     private void getSwapsDataInternal(Iterator<SwapsItemData> items_swapsDataset, final int backtestHours, int intervalMinutes, List<SwapsItemData> outputData) {
         // Timestamp
         final long cTime = (System.currentTimeMillis() / 1000l);
         final long startTime = cTime - (60l * 60l * backtestHours);
         long LastUsedTime = 0;
-        
+
         float rate = 0, spot_price = 0;
         double amount_lent = 0;
-        
+
         while (items_swapsDataset.hasNext()) {
             SwapsItemData item = items_swapsDataset.next();
 
             // Check if last added tick is above the threshold 'intervalMinutes'
             if (LastUsedTime + (intervalMinutes * 60) < item.getTimestamp()) {
                 while (LastUsedTime + (intervalMinutes * 60) < item.getTimestamp()) {
-                    
+
                     if (item.getTimestamp() > startTime) {
                         rate = item.getRate();
                         spot_price = item.getSpotPrice();
                         amount_lent = item.getAmountLent();
-                            
+
                         // Add to list
                         outputData.add(
                                 new SwapsItemData(
@@ -149,7 +163,7 @@ public class SwapsCacheTask {
                     rate = 0;
                     spot_price = 0;
                     amount_lent = 0;
-                    
+
                     if (LastUsedTime == 0) {
                         LastUsedTime = item.getTimestamp();
                     }
@@ -168,7 +182,7 @@ public class SwapsCacheTask {
                             (int) (LastUsedTime + (intervalMinutes * 60))));
         }
     }
-    
+
     private static final Comparator<Object> TickerItemComparator = (Object obj1, Object obj2) -> {
         SwapsItemData data1 = (SwapsItemData) obj1;
         SwapsItemData data2 = (SwapsItemData) obj2;
@@ -180,7 +194,7 @@ public class SwapsCacheTask {
         }
         return -1;
     };
-    
+
     public void receivedNewGraphEntry_OtherPeers(String ExchangeCurrency, float rate, float spot_price, double amount_lent, int timestamp) {
         System.out.println(String.format("[Info] New swap info from other peers %s [%d], Rate: %f, spot_price: %f, amount_lent: %f, timestamp: %d", ExchangeCurrency, timestamp, rate, spot_price, amount_lent, timestamp));
 
@@ -225,7 +239,7 @@ public class SwapsCacheTask {
                 if (result != null) {
                     // doesn't matter without an external thread scheduling
                     // since its once per minute.
-                    
+
                     // This runs on a different thread executor, also it writes to disk/cached memory if database commit fails and retries every 5 minutes
                     BacklogCommitTask_Swaps.RegisterForImmediateLogging(result);
                 }
@@ -237,6 +251,8 @@ public class SwapsCacheTask {
         }
     }
 
+    private static final Object localStorageReadWriteMutex = new Object();
+
     public class SwapsCacheTask_MSSql implements Runnable {
 
         private final String Currency;
@@ -247,6 +263,8 @@ public class SwapsCacheTask {
         // Switching between MSSQL and data from other peers
         private LoggingSaveRunnable runnable = null;
         private boolean isDataAcquisitionFromMSSQL_Completed = false; // just for reference, not using it for now
+        private boolean IsFirstDataAcquisition = true; // Determines if this is the first time its acquiring data... [load from local storage]
+        private boolean IsLoading = false;
 
         public SwapsCacheTask_MSSql(String ExchangeSite, String Currency, String ExchangeCurrency) {
             this.Currency = Currency;
@@ -277,45 +295,190 @@ public class SwapsCacheTask {
 
         @Override
         public void run() {
-            if (isDataAcquisitionFromMSSQL_Completed) {
+            if (isDataAcquisitionFromMSSQL_Completed || IsLoading) {
                 return;
             }
+            IsLoading = true;
+
             System.out.println("[Info] Caching swaps from SQLserv: " + ExchangeSite + ":" + Currency);
 
-            List<SwapsItemData> list_newItems = new ArrayList(); // create a new array first and replace later
-            long biggest_server_time_result = MicrosoftAzureDatabaseExt.selectSwapsData(ExchangeSite, Currency, 999999, 24, LastCachedTime, list_newItems);
-            if (biggest_server_time_result == -1) {
-                return; // temporary network issue or unavailable
-            }
-            if (!list_newItems.isEmpty()) { // there's still something coming from the database, continue caching
-                if (!list_mssql.containsKey(ExchangeCurrency)) { // First item, no sync needed
-                    list_mssql.put(ExchangeCurrency, list_newItems);
-                } else {
-                    List<SwapsItemData> currentList = list_mssql.get(ExchangeCurrency);
-                    list_newItems.stream().filter((data) -> (data.getTimestamp() > LastCachedTime)).map((data) -> {
-                        currentList.add(data);
-                        return data;
-                    });
-                }
+            final List<SwapsItemData> currentList = list_mssql.get(ExchangeCurrency);
+            final List<SwapsItemData> list_newItems_storage = new ArrayList(); // create a new array first and replace later
 
+            // Load data from local storage
+            if (IsFirstDataAcquisition) {
+                System.out.println("Caching swap data from storage: " + ExchangeCurrency);
+
+                ReadFromFileStorage(list_newItems_storage);
+
+                for (SwapsItemData cur : list_newItems_storage) {
+                    currentList.add(cur);
+                }
+                IsFirstDataAcquisition = false;
+            }
+
+            final List<SwapsItemData> list_newItems = new ArrayList(); // create a new array first and replace later
+
+            // Load data from sql server
+            long biggest_server_time_result = MicrosoftAzureDatabaseExt.selectSwapsData(ExchangeSite, Currency, 60000, 24, LastCachedTime, list_newItems);
+            if (biggest_server_time_result != -1) { // temporary network issue or unavailable
                 // Set max server_time
                 if (biggest_server_time_result > LastCachedTime) {
                     LastCachedTime = biggest_server_time_result;
                 }
+                for (SwapsItemData cur : list_newItems) {
+                    currentList.add(cur);
+                }
+
+                System.out.println("[Info] Caching swap data for " + ExchangeCurrency + " --> " + list_newItems.size() + ", MaxServerTime:" + LastCachedTime);
+
+                if (list_newItems.size() <= 100) { // Are we done caching yet?
+                    completedCaching();
+                }
             }
-            System.out.println("[Info] Caching swap data for " + ExchangeCurrency + " --> " + list_newItems.size() + ", MaxServerTime:" + LastCachedTime);
 
-            if (list_newItems.size() <= 1) { // Are we done caching yet?
-                isDataAcquisitionFromMSSQL_Completed = true;
-                canAcceptNewInfoFromOtherPeers.add(ExchangeCurrency.hashCode());
-                runnable.getSchedule().cancel(false); // cancel this cache task completely.
+            IsLoading = false;
+        }
 
-                System.out.println("[Info] Stopped caching " + ExchangeCurrency + " swap data from MSSQL");
+        private void completedCaching() {
+            isDataAcquisitionFromMSSQL_Completed = true;
+            canAcceptNewInfoFromOtherPeers.add(ExchangeCurrency.hashCode());
+            runnable.getSchedule().cancel(false); // cancel this cache task completely.
+
+            commitToFileStorage();
+
+            System.out.println("[Info] Stopped caching " + ExchangeCurrency + " swap data from MSSQL");
+        }
+
+        private void ReadFromFileStorage(List<SwapsItemData> list_newItems) {
+            // Start saving to local file
+            File f = new File("CachedSwaps");
+            if (!f.exists()) {
+                f.mkdirs();
+            }
+            try {
+                File f_data = new File(f, ExchangeCurrency);
+                if (!f_data.exists()) {
+                    return;
+                }
+                synchronized (localStorageReadWriteMutex) { // not enough memory to run everything concurrently 
+                    FileInputStream fis = null;
+                    BufferedReader reader = null;
+                    try {
+                        fis = new FileInputStream(f_data);
+
+                        byte[] byte_line = new byte[fis.available()];
+                        int readbytes = fis.read(byte_line, 0, fis.available());
+                        if (readbytes != -1) {
+                            final SeekableLittleEndianAccessor slea = new GenericSeekableLittleEndianAccessor(new ByteArrayByteStream(byte_line));
+
+                            int data_size = slea.readInt();
+                            for (int i = 0; i < data_size; i++) {
+                                final byte startingMarker = slea.readByte();
+
+                                // starting and ending marker to ensure simple checksum and the file integrity
+                                // if those markers are not -1, reload the entire one from Microsoft SQL database
+                                if (startingMarker != -1) {
+                                    // cleanup
+                                    list_newItems.clear();
+                                    return;
+                                }
+                                float rate = slea.readFloat();
+                                float spot_price = slea.readFloat();
+                                int timestamp = slea.readInt();
+                                double amount = slea.readDouble();
+
+                                SwapsItemData data = new SwapsItemData(rate, spot_price, amount, timestamp);
+                                list_newItems.add(data);
+
+                                // update max server time
+                                if (timestamp > LastCachedTime) {
+                                    LastCachedTime = timestamp;
+                                }
+                            }
+                        }
+                    } catch (Exception error) {
+                        // data is corrupted?
+                        error.printStackTrace();
+                        f_data.delete();
+
+                        list_newItems.clear();
+                    } finally {
+                        if (reader != null) {
+                            reader.close();
+                        }
+                        if (fis != null) {
+                            fis.close();
+                        }
+                    }
+                }
+            } catch (IOException exp) {
+                exp.printStackTrace();
             }
         }
 
         private void commitToFileStorage() {
+            // Start saving to local file
+            File f = new File("CachedSwaps");
+            if (!f.exists()) {
+                f.mkdirs();
+            }
+            try {
+                File f_data = new File(f, ExchangeCurrency + ".temp");
+                f_data.createNewFile();
+
+                File f_target = new File(f, ExchangeCurrency);
+
+                synchronized (localStorageReadWriteMutex) { // not enough memory to run everything concurrently 
+                    // Create a new ArrayList here to prevent threading issue
+                    // create here so we dont create unnecessary memory allocation until this synchronized block is called
+                    List<SwapsItemData> currentList = new ArrayList(list_mssql.get(ExchangeCurrency));
+
+                    // override existing file if any.
+                    FileOutputStream out = null;
+                    try {
+                        out = new FileOutputStream(f_data, false);
+
+                        PacketLittleEndianWriter mplew = new PacketLittleEndianWriter();
+                        // Write packet data size
+                        mplew.writeInt(currentList.size());
+
+                        final byte[] dataWrite = mplew.getPacket();
+                        out.write(dataWrite, 0, dataWrite.length);
+
+                        // Loop through the data and write for each individual entry
+                        for (SwapsItemData data : currentList) {
+                            PacketLittleEndianWriter plew2 = new PacketLittleEndianWriter(); // using multiple mplews to assist garbage collection
+                            plew2.write(-1); // starting marker
+
+                            plew2.writeFloat(data.getRate());
+                            plew2.writeFloat(data.getSpotPrice());
+                            plew2.writeInt(data.getTimestamp());
+                            plew2.writeDouble(data.getAmountLent());
+
+                            final byte[] dataWrite2 = plew2.getPacket();
+                            out.write(dataWrite2, 0, dataWrite2.length);
+                        }
+                    } catch (Exception error) {
+                        error.printStackTrace();
+
+                        // data is corrupted?
+                        f_data.delete();
+                    } finally {
+                        if (out != null) {
+                            out.close();
+                        }
+                    }
+                    if (f_target.exists()) {
+                        f_target.delete();
+                    }
+                    Files.move(f_data.toPath(), f_target.toPath());
+                    f_data.delete();
+                }
+            } catch (IOException exp) {
+                exp.printStackTrace();
+            }
         }
     }
-   
+
 }
