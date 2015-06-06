@@ -13,6 +13,7 @@ public class ServerSocketExchangePacket {
     private static final String 
             Type_Connected = "ok",
             Type_PriceChanges = "instant",
+            Type_NewTrades = "trades",
             Type_Minute = "minute",
             Type_Ping = "ping";
     
@@ -34,6 +35,24 @@ public class ServerSocketExchangePacket {
         obj.put("status", "ok");
         obj.put("serv", Constants.Server_UserAgent);
         obj.put("info", "");
+        
+        return obj.toJSONString();
+    }
+    
+    public static final String getNewTrades(String ExchangeCurrencyPair, float price, double amount, long LastPurchaseTime, byte type) {
+        JSONObject obj = new JSONObject();
+
+        JSONArray array = new JSONArray();
+        array.add(ExchangeCurrencyPair);
+        
+        array.add(price);
+        array.add(amount);
+        array.add(LastPurchaseTime);
+        array.add(type);
+                
+        obj.put("data", array);
+        
+        obj.put("type", Type_NewTrades);
         
         return obj.toJSONString();
     }

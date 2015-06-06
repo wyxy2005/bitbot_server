@@ -1,6 +1,5 @@
 package bitbot.handler.channel.tasks;
 
-import bitbot.Constants;
 import java.io.IOException;
 import java.io.PrintStream;
 import org.simpleframework.http.Request;
@@ -26,7 +25,7 @@ public class EchoClientTask implements Runnable {
             try (PrintStream body = response.getPrintStream()) {
                 _ResponseHeader.addBasicResponseHeader(response);
 
-                String retString = "You are connected to BitBot server.";
+                final String retString = "Hey there :) What's up...";
 
                 response.setContentLength(retString.length());
                 body.print(retString);

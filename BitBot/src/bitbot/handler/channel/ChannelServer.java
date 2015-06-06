@@ -8,6 +8,7 @@ import bitbot.cache.swaps.SwapsCacheTask;
 import bitbot.cache.tickers.TickerCacheTask;
 import bitbot.cache.tickers.BacklogCommitTask_Tickers;
 import bitbot.cache.tickers.BacklogCommitTask_Trades;
+import bitbot.cache.trades.TradesCacheTask;
 import bitbot.handler.ServerSocketExchangeHandler;
 import bitbot.remoteRMI.ChannelWorldInterface;
 import bitbot.remoteRMI.WorldChannelInterface;
@@ -54,6 +55,7 @@ public class ChannelServer {
     private TickerCacheTask tickerTask = null;
     private SwapsCacheTask swapTask = null;
     private NewsCacheTask newsTask = null;
+    private TradesCacheTask tradesTask = null;
 
     private ServerSocketExchangeHandler serverSocketExchangeHandler = null;
 
@@ -67,14 +69,16 @@ public class ChannelServer {
             Props_EnableSwaps = false,
             Props_EnableSwapsSQLDataAcquisition = false,
             Props_EnableSocketStreaming = false,
-            Props_EnableDebugSessionPrints = false;
+            Props_EnableDebugSessionPrints = false,
+            Props_EnableTradesDatabaseCommit = false,
+            Props_EnableTradesSQLDataAcquisition = false;
     private static String Props_WorldIPAddress = "127.0.0.1",
             Props_SelfIPAddress = "127.0.0.1",
             Props_WorldRMIHash = "";
     private static int Props_RequiredTradeSizeForLogging = 10;
     private static short Props_WorldRMIPort = 22155,
             Props_HTTPPort = 80, Props_HTTPsPort = 443;
-    private static List<String> Props_CurrencyPairsForLargeTrades = new ArrayList();
+    private static final List<String> Props_CurrencyPairsForLargeTrades = new ArrayList();
 
     // Etc
     private final List<String> CachingCurrencyPair = new ArrayList();
@@ -131,6 +135,9 @@ public class ChannelServer {
                 Props_EnableSwaps = Boolean.parseBoolean(props.getProperty("server.EnableSwaps"));
                 Props_EnableSwapsSQLDataAcquisition = Boolean.parseBoolean(props.getProperty("server.EnableSwapsSQLDataAcquisition"));
 
+                Props_EnableTradesSQLDataAcquisition = Boolean.parseBoolean(props.getProperty("server.EnableTradesSQLDataAcquisition"));
+                Props_EnableTradesDatabaseCommit = Boolean.parseBoolean(props.getProperty("server.EnableTradesDatabaseCommit"));
+
                 Props_SelfIPAddress = props.getProperty("server.SelfIPAddress");
                 Props_EnableSocketStreaming = Boolean.parseBoolean(props.getProperty("server.EnableSocketStreaming"));
                 Props_EnableDebugSessionPrints = Boolean.parseBoolean(props.getProperty("server.EnableDebugSessionPrints"));
@@ -161,6 +168,7 @@ public class ChannelServer {
                 LoadCurrencyPairTables(false);
 
                 tickerTask = new TickerCacheTask(); // init automatically
+                tradesTask = new TradesCacheTask();
                 newsTask = new NewsCacheTask();
                 swapTask = new SwapsCacheTask();
 
@@ -325,6 +333,10 @@ public class ChannelServer {
         return serverSocketExchangeHandler;
     }
 
+    public TradesCacheTask getTradesTask() {
+        return tradesTask;
+    }
+    
     public TickerCacheTask getTickerTask() {
         return tickerTask;
     }
@@ -371,6 +383,14 @@ public class ChannelServer {
 
     public boolean isEnableDebugSessionPrints() {
         return Props_EnableDebugSessionPrints;
+    }
+
+    public boolean isEnableTradesDatabaseCommit() {
+        return Props_EnableTradesDatabaseCommit;
+    }
+
+    public boolean isEnableTradesSQLDataAcquisition() {
+        return Props_EnableTradesSQLDataAcquisition;
     }
 
     public boolean isShutdown() {

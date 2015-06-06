@@ -53,21 +53,30 @@ public class ChannelWorldInterfaceImpl extends UnicastRemoteObject implements Ch
     @Override
     public void broadcastPriceChanges(String ExchangeCurrencyPair, long server_time, float close, float high, float low, float open, double volume, double volume_cur, float buysell_ratio, float last) throws RemoteException {
         server.getTickerTask().recievedNewUnmaturedData(ExchangeCurrencyPair, server_time, close, high, low, open, volume, volume_cur, buysell_ratio, last);
-        
+
         //System.out.println(String.format("[Info] Latest info from other peers %s [%d], Price: %f, Amount: %f", ExchangeCurrencyPair, date, price, amount));
-        
-        if (ChannelServer.getInstance().isEnableSocketStreaming() && 
-                ChannelServer.getInstance().getServerSocketExchangeHandler() != null) {
+        if (ChannelServer.getInstance().isEnableSocketStreaming()
+                && ChannelServer.getInstance().getServerSocketExchangeHandler() != null) {
             ChannelServer.getInstance().getServerSocketExchangeHandler().broadcastMessage(ServerSocketExchangePacket.getPriceChanges(ExchangeCurrencyPair, server_time, close, high, low, open, volume, volume_cur, buysell_ratio, last));
+        }
+    }
+
+    @Override
+    public void broadcastNewTradesEntry(String ExchangeCurrency, float price, double amount, long LastPurchaseTime, byte type) {
+        server.getTradesTask().receivedNewTradesEntry_OtherPeers(ExchangeCurrency, price, amount, LastPurchaseTime, type);
+
+        if (ChannelServer.getInstance().isEnableSocketStreaming()
+                && ChannelServer.getInstance().getServerSocketExchangeHandler() != null) {
+            ChannelServer.getInstance().getServerSocketExchangeHandler().broadcastMessage(ServerSocketExchangePacket.getNewTrades(ExchangeCurrency, price, amount, LastPurchaseTime, type));
         }
     }
 
     @Override
     public void broadcastNewGraphEntry(String ExchangeCurrencyPair, long server_time, float close, float high, float low, float open, double volume, double volume_cur, float buysell_ratio) throws RemoteException {
         server.getTickerTask().receivedNewGraphEntry_OtherPeers(ExchangeCurrencyPair, server_time, close, high, low, open, volume, volume_cur, buysell_ratio);
-        
-          if (ChannelServer.getInstance().isEnableSocketStreaming() && 
-                ChannelServer.getInstance().getServerSocketExchangeHandler() != null) {
+
+        if (ChannelServer.getInstance().isEnableSocketStreaming()
+                && ChannelServer.getInstance().getServerSocketExchangeHandler() != null) {
             ChannelServer.getInstance().getServerSocketExchangeHandler().broadcastMessage(ServerSocketExchangePacket.getMinuteChanges(ExchangeCurrencyPair, server_time, close, high, low, open, volume, volume_cur, buysell_ratio));
         }
     }

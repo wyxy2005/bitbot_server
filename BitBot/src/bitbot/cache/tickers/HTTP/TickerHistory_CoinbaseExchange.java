@@ -2,7 +2,7 @@ package bitbot.cache.tickers.HTTP;
 
 import bitbot.cache.tickers.TickerHistoryData;
 import bitbot.cache.tickers.TickerHistoryInterface;
-import bitbot.cache.tickers.TradeHistoryBuySellEnum;
+import bitbot.cache.trades.TradeHistoryBuySellEnum;
 import bitbot.util.HttpClient;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;

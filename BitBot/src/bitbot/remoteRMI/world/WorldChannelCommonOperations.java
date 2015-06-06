@@ -14,5 +14,7 @@ public interface WorldChannelCommonOperations {
     
     public void broadcastNewGraphEntry(String ExchangeCurrencyPair, long server_time, float close, float high, float low, float open, double volume, double volume_cur, float buysell_ratio) throws RemoteException;
    
+    public void broadcastNewTradesEntry(String ExchangeCurrency, float price, double amount, long LastPurchaseTime, byte type)  throws RemoteException ;
+    
     public void broadcastSwapData(String ExchangeCurrency, float rate, float spot_price, double amount_lent, int timestamp) throws RemoteException;
 }

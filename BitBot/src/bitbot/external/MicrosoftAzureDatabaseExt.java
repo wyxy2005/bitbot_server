@@ -4,6 +4,7 @@ import bitbot.cache.swaps.SwapsItemData;
 import bitbot.Constants;
 import bitbot.util.database.DatabaseConnection;
 import bitbot.cache.tickers.TickerItemData;
+import bitbot.cache.trades.TradesItemData;
 import bitbot.util.database.DatabaseTablesConstants;
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
@@ -105,6 +106,49 @@ public class MicrosoftAzureDatabaseExt {
                     
                     if (item.getTimestamp() > biggest_ServerTime) {
                         biggest_ServerTime = item.getTimestamp();
+                    }
+                }
+                return biggest_ServerTime;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                if (ps != null) {
+                    ps.close();
+                }
+                if (rs != null) {
+                    rs.close();
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+        return -1;
+    }
+    
+    public static long selectTradesData(String ExchangeSite, String currency, int depthSelection, long start_server_time, List<TradesItemData> list_items) {
+        final String tableName = DatabaseTablesConstants.getDatabaseTableName_Trades(ExchangeSite, currency);
+
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+        try {
+            Connection con = DatabaseConnection.getConnection();
+
+            ps = con.prepareStatement("SELECT TOP " + depthSelection + "  \"price\", \"amount\", \"LastPurchaseTime\", \"type\" FROM BitCoinBot." + tableName + " WHERE LastPurchaseTime > ? ORDER BY LastPurchaseTime ASC;");
+            ps.setLong(1, start_server_time);
+
+            rs = ps.executeQuery();
+
+            long biggest_ServerTime = 0;
+            if (rs != null) {
+                while (rs.next()) {
+                    TradesItemData item = new TradesItemData(rs);
+
+                    list_items.add(item);
+                    
+                    if (item.getLastPurchaseTime() > biggest_ServerTime) {
+                        biggest_ServerTime = item.getLastPurchaseTime();
                     }
                 }
                 return biggest_ServerTime;

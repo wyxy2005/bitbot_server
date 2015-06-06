@@ -87,6 +87,10 @@ public class ServerHTTPExchangeHandler implements Container {
                         r = new ChartTask_Candlestick(request, response, query);
                         break;
                     }
+                    case "Trades": {
+                        r = new TradesListTask(request, response, query);
+                        break;
+                    }
                     case "Summary": {
                         r = new PriceSummaryTask(request, response, query);
                         break;

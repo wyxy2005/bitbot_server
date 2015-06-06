@@ -1,5 +1,6 @@
 package bitbot.cache.tickers;
 
+import bitbot.cache.trades.TickerTradesData;
 import bitbot.server.threads.LoggingSaveRunnable;
 import bitbot.server.threads.MultiThreadExecutor;
 import bitbot.server.threads.TimerManager;

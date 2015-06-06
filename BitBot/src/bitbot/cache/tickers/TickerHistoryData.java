@@ -1,5 +1,7 @@
 package bitbot.cache.tickers;
 
+import bitbot.cache.trades.TickerTradesData;
+import bitbot.cache.trades.TradeHistoryBuySellEnum;
 import bitbot.handler.channel.ChannelServer;
 import bitbot.logging.ServerLog;
 import bitbot.logging.ServerLogType;
@@ -135,10 +137,28 @@ public class TickerHistoryData {
      */
     public void trackAndRecordLargeTrades(float price, double amount, long LastPurchaseTime, TradeHistoryBuySellEnum type,
             String ExchangeSite, String currencyPair) {
-        if (amount >= ChannelServer.getInstance().getRequiredTradeSizeForTradesLogging()) {
-            final TickerTradesData data = new TickerTradesData(price, amount, LastPurchaseTime / 1000, type, ExchangeSite, currencyPair);
-            
-            data.registerForCommitQueue(); // no need to reference elsewhere
+
+        if (ChannelServer.getInstance().isEnableTradesDatabaseCommit()) {
+            if (amount >= ChannelServer.getInstance().getRequiredTradeSizeForTradesLogging()) {
+                final TickerTradesData data = new TickerTradesData(price, amount, LastPurchaseTime / 1000, type, ExchangeSite, currencyPair);
+
+                data.registerForCommitQueue(); // no need to reference elsewhere
+
+                // Broadcast trades data to peers on other servers
+                try {
+                    final String ExchangeCurrencyPair = String.format("%s-%s", ExchangeSite, currencyPair);
+                    
+                    ChannelServer.getInstance().getWorldInterface().broadcastNewTradesEntry(
+                            ExchangeCurrencyPair, 
+                            price, 
+                            amount, 
+                            LastPurchaseTime, 
+                            (byte)type.getValue());
+                } catch (Exception exp) {
+                    ServerLog.RegisterForLoggingException(ServerLogType.RemoteError, exp);
+                    ChannelServer.getInstance().reconnectWorld(exp);
+                }
+            }
         }
     }
 

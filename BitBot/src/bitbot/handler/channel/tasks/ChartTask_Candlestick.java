@@ -102,48 +102,6 @@ public class ChartTask_Candlestick implements Runnable {
                             currencypair, hours, interval, ExchangeSite, ServerTimeFrom, System.currentTimeMillis() / 1000, true);
 
                     switch (APIVersion) {
-                        /*case 1: {
-                         JSONArray array = new JSONArray();
-                            
-                         ret.stream().map((item) -> {
-                         JSONObject obj = new JSONObject();
-                         obj.put("server_time", item.getServerTime());
-                         obj.put("Open", item.getOpen());
-                         obj.put("Close", item.getClose());
-                         obj.put("High", item.getHigh());
-                         obj.put("Low", item.getLow());
-                         obj.put("Volume", item.getVol());
-                         obj.put("VolumeCur", item.getVol_Cur());
-                         obj.put("Ratio", item.getBuySell_Ratio());
-                         return obj;
-                         }).forEach((obj) -> {
-                         array.add(obj);
-                         });
-                         body.println(array.toJSONString());
-                         break;
-                         }
-                         case 2: { // better optimized for data
-                         JSONArray array = new JSONArray();
-                            
-                         ret.stream().map((item) -> {
-                         JSONArray obj_array = new JSONArray();
-
-                         obj_array.add(item.getServerTime());
-                         obj_array.add(item.getOpen());
-                         obj_array.add(item.getClose());
-                         obj_array.add(item.getHigh());
-                         obj_array.add(item.getLow());
-                         obj_array.add(item.getVol());
-                         obj_array.add(item.getVol_Cur());
-                         obj_array.add(item.getBuySell_Ratio());
-
-                         return obj_array;
-                         }).forEach((obj) -> {
-                         array.add(obj);
-                         });
-                         body.println(array.toJSONString());
-                         break;
-                         }*/
                         case 3: { // encrypted
                             JSONArray array = new JSONArray();
 
@@ -164,7 +122,7 @@ public class ChartTask_Candlestick implements Runnable {
                                 array.add(obj);
                             });
 
-                            String retString = CustomXorEncryption.custom_xor_encrypt(array.toJSONString(), nonce);
+                            final String retString = CustomXorEncryption.custom_xor_encrypt(array.toJSONString(), nonce);
 
                             response.setContentLength(retString.length());
                             body.print(retString);
