@@ -15,6 +15,7 @@ import bitbot.remoteRMI.WorldChannelInterface;
 import bitbot.remoteRMI.world.WorldRegistry;
 import bitbot.logging.ServerLog;
 import bitbot.logging.ServerLogType;
+import bitbot.telegram.TelegramBot;
 import bitbot.util.encryption.SHA256;
 import java.io.BufferedReader;
 import java.io.File;
@@ -56,6 +57,7 @@ public class ChannelServer {
     private SwapsCacheTask swapTask = null;
     private NewsCacheTask newsTask = null;
     private TradesCacheTask tradesTask = null;
+    private TelegramBot telegramBotTask = null;
 
     private ServerSocketExchangeHandler serverSocketExchangeHandler = null;
 
@@ -71,7 +73,8 @@ public class ChannelServer {
             Props_EnableSocketStreaming = false,
             Props_EnableDebugSessionPrints = false,
             Props_EnableTradesDatabaseCommit = false,
-            Props_EnableTradesSQLDataAcquisition = false;
+            Props_EnableTradesSQLDataAcquisition = false,
+            Props_EnableTelegramBot = false;
     private static String Props_WorldIPAddress = "127.0.0.1",
             Props_SelfIPAddress = "127.0.0.1",
             Props_WorldRMIHash = "";
@@ -135,6 +138,8 @@ public class ChannelServer {
                 Props_EnableSwaps = Boolean.parseBoolean(props.getProperty("server.EnableSwaps"));
                 Props_EnableSwapsSQLDataAcquisition = Boolean.parseBoolean(props.getProperty("server.EnableSwapsSQLDataAcquisition"));
 
+                Props_EnableTelegramBot = Boolean.parseBoolean(props.getProperty("server.EnableTelegramBot"));
+                
                 Props_EnableTradesSQLDataAcquisition = Boolean.parseBoolean(props.getProperty("server.EnableTradesSQLDataAcquisition"));
                 Props_EnableTradesDatabaseCommit = Boolean.parseBoolean(props.getProperty("server.EnableTradesDatabaseCommit"));
 
@@ -146,7 +151,7 @@ public class ChannelServer {
                 Props_WorldRMIHash = SHA256.sha256(SHA256.sha256(props.getProperty("server.WorldRMIHash")));
                 Props_HTTPPort = Short.parseShort(props.getProperty("server.HTTPPort"));
                 Props_HTTPsPort = Short.parseShort(props.getProperty("server.HTTPsPort"));
-
+                
                 final String[] CurrencyPairsForLargeTrades = props.getProperty("server.trackTrades").split("---");
                 for (String str : CurrencyPairsForLargeTrades) {
                     Props_CurrencyPairsForLargeTrades.add(str);
@@ -169,6 +174,9 @@ public class ChannelServer {
 
                 tickerTask = new TickerCacheTask(); // init automatically
                 tradesTask = new TradesCacheTask();
+                if (Props_EnableTelegramBot) {
+                    telegramBotTask = new TelegramBot();
+                }
                 newsTask = new NewsCacheTask();
                 swapTask = new SwapsCacheTask();
 
@@ -347,6 +355,10 @@ public class ChannelServer {
 
     public SwapsCacheTask getSwapsTask() {
         return swapTask;
+    }
+    
+    public TelegramBot getTelegramBotTask(){
+        return telegramBotTask;
     }
 
     public boolean isEnforceCloudFlareNetwork() {
