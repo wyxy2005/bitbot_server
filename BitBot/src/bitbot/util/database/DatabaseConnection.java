@@ -18,7 +18,7 @@ import java.util.concurrent.locks.ReentrantLock;
 public class DatabaseConnection {
 
     private static String DatabaseConnectionString
-            = "jdbc:sqlserver://fjoynp4lnu.database.windows.net:1433;database=BitCoinATpqACXAu;encrypt=true;hostNameInCertificate=*.database.windows.net;loginTimeout=300;socketTimeout=60;"; 
+            = "jdbc:sqlserver://fjoynp4lnu.database.windows.net:1433;database=BitCoinATpqACXAu;encrypt=true;hostNameInCertificate=*.database.windows.net;loginTimeout=300;socketTimeout=60;";
     private static String DecryptedDatabaseStrings_u = null;
     private static String DecryptedDatabaseStrings_p = null;
 
@@ -83,7 +83,14 @@ public class DatabaseConnection {
 
         @Override
         public void run() {
-            final Map<Long, ConWrapper> connections_cpy = new HashMap(connections);
+            final Map<Long, ConWrapper> connections_cpy;
+            mutex.lock();
+            try {
+                connections_cpy = new HashMap(connections); // might cause ConcurrentModificationException on rare occurance 
+            } finally {
+                mutex.unlock();
+            }
+            
             final List<Long> toRemove_con = new ArrayList();
 
             connections_cpy.entrySet().stream().filter((con) -> (con.getValue().isExpiredConnection())).map((con) -> {
