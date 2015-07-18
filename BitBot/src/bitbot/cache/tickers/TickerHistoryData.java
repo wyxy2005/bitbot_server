@@ -147,18 +147,27 @@ public class TickerHistoryData {
                 // Broadcast trades data to peers on other servers
                 try {
                     final String ExchangeCurrencyPair = String.format("%s-%s", ExchangeSite, currencyPair);
-                    
+
                     ChannelServer.getInstance().getWorldInterface().broadcastNewTradesEntry(
-                            ExchangeCurrencyPair, 
-                            price, 
-                            amount, 
-                            LastPurchaseTime, 
-                            (byte)type.getValue());
+                            ExchangeCurrencyPair,
+                            price,
+                            amount,
+                            LastPurchaseTime,
+                            (byte) type.getValue());
                 } catch (Exception exp) {
                     ServerLog.RegisterForLoggingException(ServerLogType.RemoteError, exp);
                     ChannelServer.getInstance().reconnectWorld(exp);
                 }
             }
+        }
+
+        // Debug
+        if (ChannelServer.getInstance().isEnableDebugSessionPrints()) {
+            Calendar cal = Calendar.getInstance();
+            cal.setTimeInMillis(LastPurchaseTime);
+            String outputLog = String.format("[dd:hh:mm = (%d:%d:%d)], Price: %f, Amount: %f, Time: %d, Type: %s",
+                    cal.get(Calendar.DAY_OF_MONTH), cal.get(Calendar.HOUR), cal.get(Calendar.MINUTE), price, amount, LastPurchaseTime, type.toString());
+            FileoutputUtil.log("//" + ExchangeSite + "-" + currencyPair + ".txt", outputLog);
         }
     }
 

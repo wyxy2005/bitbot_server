@@ -73,13 +73,16 @@ public class TradesCacheTask {
         }
     }
 
-    public List<TradesItemData> getTradesList(String ExchangeCurrency, float filterAbove, long timeAbove) {
+    public List<TradesItemData> getTradesList(String ExchangeCurrency, float filterAbove, long timeAbove, long timeBelow) {
         List<TradesItemData> array = new ArrayList();
 
         if (list_mssql.containsKey(ExchangeCurrency)) {
             final List<TradesItemData> currentList = list_mssql.get(ExchangeCurrency);
 
-            final Iterator<TradesItemData> streamMap = currentList.stream().filter((data) -> (data.getLastPurchaseTime() > timeAbove && data.getAmount() >= filterAbove))
+            final Iterator<TradesItemData> streamMap = currentList.stream().filter((data) -> (
+                            data.getLastPurchaseTime() > timeAbove && 
+                            data.getLastPurchaseTime() < timeBelow && 
+                            data.getAmount() >= filterAbove))
                     .sorted(TickerItemComparator)
                     .iterator();
             

@@ -39,15 +39,6 @@ public class TickerTradesData {
 
     public void registerForCommitQueue() {
         BacklogCommitTask_Trades.RegisterForLogging(this);
-
-        // Debug
-        if (ChannelServer.getInstance().isEnableDebugSessionPrints()) {
-            Calendar cal = Calendar.getInstance();
-            cal.setTimeInMillis(LastPurchaseTime);
-            String outputLog = String.format("[dd:hh:mm = (%d:%d:%d)], Price: %f, Amount: %f, Time: %d, Type: %s",
-                    cal.get(Calendar.DAY_OF_MONTH), cal.get(Calendar.HOUR), cal.get(Calendar.MINUTE), price, amount, LastPurchaseTime, type.toString());
-            FileoutputUtil.log("//" + ExchangeSite + "_" + currencyPair + ".txt", outputLog);
-        }
     }
 
     public HistoryDatabaseCommitEnum commitDatabase() {

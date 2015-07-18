@@ -1,15 +1,12 @@
 package bitbot.handler.channel.tasks;
 
-import bitbot.cache.tickers.TickerItemData;
 import bitbot.cache.trades.TradesItemData;
 import bitbot.handler.channel.ChannelServer;
 import bitbot.util.encryption.CustomXorEncryption;
 import bitbot.util.encryption.HMACSHA1;
 import java.io.PrintStream;
 import java.util.List;
-import java.util.Map;
 import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
 import org.simpleframework.http.Query;
 import org.simpleframework.http.Request;
 import org.simpleframework.http.Response;
@@ -93,7 +90,7 @@ public class TradesListTask implements Runnable {
 
                 if (isAuthorized) {
                     final List<TradesItemData> ret
-                            = ChannelServer.getInstance().getTradesTask().getTradesList(ExchangeCurrency, filterAbove, timeAbove);
+                            = ChannelServer.getInstance().getTradesTask().getTradesList(ExchangeCurrency, filterAbove, timeAbove, System.currentTimeMillis() / 1000);
 
                     JSONArray array = new JSONArray();
 

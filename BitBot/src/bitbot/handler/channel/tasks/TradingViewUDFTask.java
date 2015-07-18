@@ -4,6 +4,8 @@ import bitbot.cache.tickers.TickerItemData;
 import bitbot.cache.tickers.TickerItem_CandleBar;
 import bitbot.handler.channel.ChannelServer;
 import bitbot.Constants;
+import bitbot.cache.trades.TradeHistoryBuySellEnum;
+import bitbot.cache.trades.TradesItemData;
 import bitbot.tradingviewUDF.TV_Symbol;
 import bitbot.tradingviewUDF.TV_symboldatabase;
 import java.io.IOException;
@@ -60,8 +62,16 @@ public class TradingViewUDFTask implements Runnable {
                         break;
                     case "/quotes":
                         break;
-                    case "/marks":
+                    case "/marks": {
+                        final String symbol = query.get("symbol");
+                        final long from = Long.parseLong(query.get("from"));
+                        final long to = Long.parseLong(query.get("to"));
+                        final String resolution = query.get("resolution");
+                        // GET http://localhost:8888/marks?symbol=XOM&from=1401701400&to=2114352000&resolution=D HTTP/1.1
+
+                        this.sendMarks(body, symbol, from, to, resolution);
                         break;
+                    }
                     case "/symbol_info": {
                         /*     final String group = query.get("group"); // NYSE AMEX
 
@@ -184,16 +194,16 @@ public class TradingViewUDFTask implements Runnable {
         } else if (time <= 3) {
             limit = 6000;
         } else if (time <= 15) {
-            limit = 3500;
+            limit = 4500;
         } else if (time <= 240) {
-            limit = 3200;
+            limit = 4000;
         } else {
-            limit = 3000;
+            limit = 3500;
         }
 
         if (candlesRequested < limit) { // TV usually request 2041 at once... 
             ret = ChannelServer.getInstance().getTickerTask().getTickerList_Candlestick(
-                    symbol.name.toLowerCase(), 0, time, symbol.exchange.toLowerCase(), startDateTimestamp, endDateTimestamp, true);
+                    symbol.name.toLowerCase(), 0, time, symbol.exchange.toLowerCase(), startDateTimestamp, endDateTimestamp, false);
         } else {
             // should we auto ban?
 
@@ -253,6 +263,76 @@ public class TradingViewUDFTask implements Runnable {
      }
      return daysCount * 24 * 60 * 60;
      }*/
+    private void sendMarks(PrintStream body, String symbolName, long from, long to, String resolution) {
+        TV_Symbol symbol = TV_symboldatabase.symbolInfo(symbolName);
+        if (symbol == null) {
+            sendError(body, "unknown_symbol");
+            return;
+        }
+        /*
+         var marks = {
+         id: [0, 1, 2, 3, 4, 5],
+         time: [now, now - day * 4, now - day * 7, now - day * 7, now - day * 15, now - day * 30],
+         color: ["red", "blue", "green", "red", "blue", "green"],
+         text: ["Today", "4 days back", "7 days back + Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.", "7 days back once again", "15 days back", "30 days back"],
+         label: ["A", "B", "CORE", "D", "EURO", "F"],
+         labelFontColor: ["white", "white", "red", "#FFFFFF", "white", "#000"],
+         minSize: [14, 28, 7, 40, 7, 14]
+         };
+
+         */
+
+        int i = 0;
+        JSONObject json_main = new JSONObject();
+        
+        JSONArray json_array_id = new JSONArray();
+        JSONArray json_array_time = new JSONArray();
+        JSONArray json_array_color = new JSONArray();
+        JSONArray json_array_text = new JSONArray();
+        JSONArray json_array_label = new JSONArray();
+        JSONArray json_array_labelFontColor = new JSONArray();
+        JSONArray json_array_minSize = new JSONArray();
+        
+        final List<TradesItemData> ret = ChannelServer.getInstance().getTradesTask().getTradesList(String.format("%s-%s", symbol.exchange.toLowerCase(), symbol.name.toLowerCase()), 50, from, to);
+        for (TradesItemData data : ret) {
+            if (data.getAmount() >= 50) {
+                json_array_id.add(i);
+                json_array_time.add(data.getLastPurchaseTime());
+                json_array_text.add(String.format("%s %s", data.getAmount(), symbol.type));
+                json_array_label.add(data.getAmount());
+                json_array_labelFontColor.add("white");
+                json_array_minSize.add(Math.min(50, Math.max(7, data.getAmount() / 3)));
+                
+                switch (data.getType()) 
+                {
+                    case Buy:
+                        json_array_color.add("green");
+                        break;
+                    case Sell:
+                        json_array_color.add("red");
+                        break;
+                    case Unknown:
+                        json_array_color.add("gray");
+                        break;
+                }
+                        
+                i++;
+            }
+        }
+        json_main.put("id", json_array_id);
+        json_main.put("time", json_array_time);
+        json_main.put("color", json_array_color);
+        json_main.put("text", json_array_text);
+        json_main.put("label", json_array_label);
+        json_main.put("labelFontColor", json_array_labelFontColor);
+        json_main.put("minSize", json_array_minSize);
+
+        final String retstr = json_main.toJSONString();
+
+        response.setContentLength(retstr.length());
+        body.print(retstr);
+    }
+
     private void sendSymbolInfo(PrintStream body, String symbolName) {
         TV_Symbol symbol = TV_symboldatabase.symbolInfo(symbolName);
         if (symbol == null) {
