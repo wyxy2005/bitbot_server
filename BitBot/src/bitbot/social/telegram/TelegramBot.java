@@ -1,4 +1,4 @@
-package bitbot.telegram;
+package bitbot.social.telegram;
 
 import bitbot.cache.tickers.ReturnVolumeProfileData;
 import bitbot.cache.tickers.TickerItemData;

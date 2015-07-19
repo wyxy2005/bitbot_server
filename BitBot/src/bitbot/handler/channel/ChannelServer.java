@@ -15,7 +15,7 @@ import bitbot.remoteRMI.WorldChannelInterface;
 import bitbot.remoteRMI.world.WorldRegistry;
 import bitbot.logging.ServerLog;
 import bitbot.logging.ServerLogType;
-import bitbot.telegram.TelegramBot;
+import bitbot.social.telegram.TelegramBot;
 import bitbot.util.encryption.SHA256;
 import java.io.BufferedReader;
 import java.io.File;

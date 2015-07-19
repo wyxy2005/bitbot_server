@@ -1,4 +1,4 @@
-package bitbot.external;
+package bitbot.util.database;
 
 import bitbot.cache.swaps.SwapsItemData;
 import bitbot.Constants;

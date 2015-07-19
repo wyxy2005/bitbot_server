@@ -1,8 +1,7 @@
 package bitbot.cache.swaps;
 
 import bitbot.cache.swaps.HTTP.Swaps_Bitfinex;
-import bitbot.cache.tickers.TickerItemData;
-import bitbot.external.MicrosoftAzureDatabaseExt;
+import bitbot.util.database.MicrosoftAzureDatabaseExt;
 import bitbot.handler.channel.ChannelServer;
 import bitbot.logging.ServerLog;
 import bitbot.logging.ServerLogType;

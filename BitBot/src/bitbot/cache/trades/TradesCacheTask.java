@@ -1,6 +1,6 @@
 package bitbot.cache.trades;
 
-import bitbot.external.MicrosoftAzureDatabaseExt;
+import bitbot.util.database.MicrosoftAzureDatabaseExt;
 import bitbot.handler.channel.ChannelServer;
 import bitbot.server.threads.LoggingSaveRunnable;
 import bitbot.server.threads.TimerManager;

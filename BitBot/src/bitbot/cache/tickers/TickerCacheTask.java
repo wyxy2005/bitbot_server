@@ -17,7 +17,7 @@ import bitbot.cache.tickers.HTTP.TickerHistory_Bitstamp;
 import bitbot.cache.tickers.HTTP.TickerHistory_Cryptsy;
 import bitbot.cache.tickers.HTTP.TickerHistory_796;
 import bitbot.cache.tickers.HTTP.TickerHistory_CoinbaseExchange;
-import bitbot.external.MicrosoftAzureDatabaseExt;
+import bitbot.util.database.MicrosoftAzureDatabaseExt;
 import bitbot.graph.ExponentialMovingAverage;
 import bitbot.graph.ExponentialMovingAverageData;
 import bitbot.handler.channel.ChannelServer;
