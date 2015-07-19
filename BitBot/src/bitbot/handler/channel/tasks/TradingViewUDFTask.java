@@ -8,6 +8,7 @@ import bitbot.cache.trades.TradeHistoryBuySellEnum;
 import bitbot.cache.trades.TradesItemData;
 import bitbot.tradingviewUDF.TV_Symbol;
 import bitbot.tradingviewUDF.TV_symboldatabase;
+import bitbot.util.NumberUtil;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.List;
@@ -345,7 +346,7 @@ public class TradingViewUDFTask implements Runnable {
 //	for symbols with 10-based minimal movement value only
         String strPrice = summary_ret == null ? "1" : String.valueOf(summary_ret.getOpen());
         int integerPlaces = strPrice.indexOf('.');
-        int decimalPlaces = strPrice.length() - integerPlaces - 1;
+        int decimalPlaces = strPrice.length() - (integerPlaces == -1 ? 0 : integerPlaces) - 1;
 
         JSONObject json_main = new JSONObject();
 

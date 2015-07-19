@@ -45,7 +45,7 @@ public class SwapsCacheTask {
 
     public SwapsCacheTask() {
         this.list_mssql = new LinkedHashMap<>();
-        
+
         StartScheduleTask();
     }
 
@@ -303,41 +303,46 @@ public class SwapsCacheTask {
 
             System.out.println("[Info] Caching swaps from SQLserv: " + ExchangeSite + ":" + Currency);
 
-            final List<SwapsItemData> currentList = list_mssql.get(ExchangeCurrency);
-            final List<SwapsItemData> list_newItems_storage = new ArrayList(); // create a new array first and replace later
+            try {
+                final List<SwapsItemData> currentList = list_mssql.get(ExchangeCurrency);
+                final List<SwapsItemData> list_newItems_storage = new ArrayList(); // create a new array first and replace later
 
-            // Load data from local storage
-            if (IsFirstDataAcquisition) {
-                System.out.println("Caching swap data from storage: " + ExchangeCurrency);
+                // Load data from local storage
+                if (IsFirstDataAcquisition) {
+                    System.out.println("Caching swap data from storage: " + ExchangeCurrency);
 
-                ReadFromFileStorage(list_newItems_storage);
+                    ReadFromFileStorage(list_newItems_storage);
 
-                for (SwapsItemData cur : list_newItems_storage) {
-                    currentList.add(cur);
+                    for (SwapsItemData cur : list_newItems_storage) {
+                        currentList.add(cur);
+                    }
+                    IsFirstDataAcquisition = false;
                 }
-                IsFirstDataAcquisition = false;
+
+                final List<SwapsItemData> list_newItems = new ArrayList(); // create a new array first and replace later
+
+                // Load data from sql server
+                long biggest_server_time_result = MicrosoftAzureDatabaseExt.selectSwapsData(ExchangeSite, Currency, 60000, 24, LastCachedTime, list_newItems);
+                if (biggest_server_time_result != -1) { // temporary network issue or unavailable
+                    // Set max server_time
+                    if (biggest_server_time_result > LastCachedTime) {
+                        LastCachedTime = biggest_server_time_result;
+                    }
+                    for (SwapsItemData cur : list_newItems) {
+                        currentList.add(cur);
+                    }
+
+                    System.out.println("[Info] Caching swap data for " + ExchangeCurrency + " --> " + list_newItems.size() + ", MaxServerTime:" + LastCachedTime);
+
+                    if (list_newItems.size() <= 100) { // Are we done caching yet?
+                        completedCaching();
+                    }
+                }
+            } catch (Exception exp) {
+                ServerLog.RegisterForLoggingException(ServerLogType.SwapTask, exp);
+            } finally {
+                IsLoading = false;
             }
-
-            final List<SwapsItemData> list_newItems = new ArrayList(); // create a new array first and replace later
-
-            // Load data from sql server
-            long biggest_server_time_result = MicrosoftAzureDatabaseExt.selectSwapsData(ExchangeSite, Currency, 60000, 24, LastCachedTime, list_newItems);
-            if (biggest_server_time_result != -1) { // temporary network issue or unavailable
-                // Set max server_time
-                if (biggest_server_time_result > LastCachedTime) {
-                    LastCachedTime = biggest_server_time_result;
-                }
-                for (SwapsItemData cur : list_newItems) {
-                    currentList.add(cur);
-                }
-
-                System.out.println("[Info] Caching swap data for " + ExchangeCurrency + " --> " + list_newItems.size() + ", MaxServerTime:" + LastCachedTime);
-
-                if (list_newItems.size() <= 100) { // Are we done caching yet?
-                    completedCaching();
-                }
-            }
-            IsLoading = false;
         }
 
         private void completedCaching() {
