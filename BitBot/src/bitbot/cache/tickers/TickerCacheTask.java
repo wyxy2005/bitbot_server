@@ -301,6 +301,7 @@ public class TickerCacheTask {
                 }
             }
 
+            
             // Check if last added tick is above the threshold 'intervalMinutes'
             if (LastUsedTime + intervalMinutes < item.getServerTime()) {
                 boolean isInstanceValueAdded = false;

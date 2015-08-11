@@ -93,6 +93,9 @@ public class TV_symboldatabase {
         
         symbols.add(new TV_Symbol("NXT_BTC", "NXT/ Bitcoin", "Dgex", "bitcoin"));
         
+        symbols.add(new TV_Symbol("XBT_USD", "Bitcoin/ Dollar", "Kraken", "bitcoin"));
+        symbols.add(new TV_Symbol("XBT_EUR", "Bitcoin/ Euro", "Kraken", "bitcoin"));
+        symbols.add(new TV_Symbol("ETH_XBT", "Ethereum/ Bitcoin", "Kraken", "bitcoin"));
         //kraken-xbt_usd---kraken-xbt_eur---
         // test
        //symbols.add(new TV_Symbol("^NSEI", "CNX NIFTY", "NSE", "index"));

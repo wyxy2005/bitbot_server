@@ -33,6 +33,8 @@ public class TickerHistory_Kraken implements TickerHistoryInterface {
         String Uri = String.format("https://api.kraken.com/0/public/Trades?pair=%s", CurrencyPair.replace("_", "").toUpperCase());
         String GetResult = HttpClient.httpsGet(Uri, "");
 
+        boolean isEthereum = CurrencyPair.contains("eth");
+        
         if (GetResult != null) {
             TickerHistoryData ReturnData = new TickerHistoryData(LastPurchaseTime, LastTradeId, 0, false);
 
@@ -53,7 +55,7 @@ public class TickerHistory_Kraken implements TickerHistoryInterface {
                         return new LinkedHashMap();
                     }
                 };
-                String pairName2 = "X" + CurrencyPair.replace("_", "Z").toUpperCase();
+                String pairName2 = "X" + CurrencyPair.replace("_", isEthereum ? "X" : "Z" ).toUpperCase(); // XETHXXBT
 
                 LinkedHashMap tradesMainObj = (LinkedHashMap) parser.parse(GetResult, containerFactory);
                 LinkedList<LinkedList> resultMainObj = (LinkedList) ((LinkedHashMap) tradesMainObj.get("result")).get(pairName2);

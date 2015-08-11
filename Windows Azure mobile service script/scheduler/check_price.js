@@ -63,6 +63,7 @@ function check_price() {
 
     fetchItem('xbt_usd', 'kraken');
     fetchItem('xbt_eur', 'kraken');
+    fetchItem('eth_xbt', 'kraken');
 
     fetchItem('ghs_btc', 'cexio');
 
@@ -175,7 +176,7 @@ function check_price() {
             followRedirect: true,
             maxRedirects: 5,
             headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 6.3; Trident/7.0; rv:11.0) like Gecko'
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.9600'
             }
         }, function(error, response, body) {
                 if (!error && response.statusCode == 200) {
@@ -214,7 +215,8 @@ function check_price() {
                             break;
                         case 'kraken':
                             {
-                                var pairName2 = "X" + currencypair.replace("_", "Z").toUpperCase();
+                                var isKraken = currencypair.indexOf('eth') > -1;
+                                var pairName2 = "X" + currencypair.replace("_", isKraken ? "X" : "Z").toUpperCase();
                                 var pairresult = returnJson.result[pairName2];
 
                                 currentPrice = parseFloat(pairresult.b[0]);
@@ -319,8 +321,8 @@ function check_price() {
         var alertMsg_Toast =
             isPercentageNotification ? (currencypairStr + "+- " + average24Hrs.toFixed(2) + "%! [" + source + "]") :
 
-            (isFalling ? (currencypairStr + "? fell below " + clientLow + ". [" + source + "]") :
-            (currencypairStr + "? went above " + clientHigh + ". [" + source + "]"));
+            (isFalling ? (currencypairStr + "↓ fell below " + clientLow + ". [" + source + "]") :
+            (currencypairStr + "↑ went above " + clientHigh + ". [" + source + "]"));
         var alertMsg_Tile = (((isFalling ? clientLow : clientHigh) / currentPrice * 100 - 100) * -1).toFixed(5) +
             "% - " + currencypairStr + "\r\n\r\nPrice: $" + currentPrice;
 
@@ -465,7 +467,7 @@ function check_price() {
     }
 
     function insertTickerData(returnJson, currencypair, source) {
-        if (
+      /*  if (
             (source == 'kraken' && currencypair == 'xbt_usd') ||
             (source == 'kraken' && currencypair == 'xbt_eur')
             ) {
@@ -478,7 +480,7 @@ function check_price() {
             } else if (source == 'cexio') {
                 insertTickerData_CexIO(returnJson, currencypair, source);
             }
-        }
+        }*/
     }
 
 
