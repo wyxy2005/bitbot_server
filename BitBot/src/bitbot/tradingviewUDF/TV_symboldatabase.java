@@ -51,6 +51,8 @@ public class TV_symboldatabase {
         
         symbols.add(new TV_Symbol("BTC_CNY", "Bitcoin/ Chinese Yuan", "Okcoin", "bitcoin"));
         symbols.add(new TV_Symbol("LTC_CNY", "Litecoin/ Chinese Yuan", "Okcoin", "bitcoin"));
+        symbols.add(new TV_Symbol("BTC_CNY", "Bitcoin/ Chinese Yuan", "OkcoinInternational", "bitcoin"));
+        symbols.add(new TV_Symbol("LTC_CNY", "Litecoin/ Chinese Yuan", "OkcoinInternational", "bitcoin"));
 
         symbols.add(new TV_Symbol("BTC_CNY", "Bitcoin/ Chinese Yuan", "Huobi", "bitcoin"));
         symbols.add(new TV_Symbol("LTC_CNY", "Litecoin/ Chinese Yuan", "Huobi", "bitcoin"));
@@ -79,6 +81,7 @@ public class TV_symboldatabase {
         symbols.add(new TV_Symbol("LTC_USD", "Litecoin/ Dollar", "Cryptsy", "bitcoin"));
         symbols.add(new TV_Symbol("RDD_USD", "Reddcoin/ Dollar", "Cryptsy", "bitcoin"));
         symbols.add(new TV_Symbol("NXT_USD", "NXT/ Dollar", "Cryptsy", "bitcoin"));
+        symbols.add(new TV_Symbol("NXT_BTC", "NXT/ Bitcoin", "Cryptsy", "bitcoin"));
         symbols.add(new TV_Symbol("LTC_BTC", "Litecoin/ Bitcoin", "Cryptsy", "bitcoin"));
         
         symbols.add(new TV_Symbol("BTC Futures_USD", "Bitcoin Weekly Futures/ Dollar", "_796", "bitcoin"));
@@ -86,8 +89,8 @@ public class TV_symboldatabase {
         symbols.add(new TV_Symbol("BTC Futures Quarterly_USD", "Bitcoin Quarterly Futures/ Dollar", "_796", "bitcoin"));
         symbols.add(new TV_Symbol("LTC Futures_USD", "Litecoin Weekly Futures/ Dollar", "_796", "bitcoin"));
         
-        symbols.add(new TV_Symbol("BTC_SGD", "Bitcoin/ Singapore Dollar", "Fybse", "bitcoin"));
-        symbols.add(new TV_Symbol("BTC_SEK", "Bitcoin/ Swedish Krona", "Fybsg", "bitcoin"));
+        symbols.add(new TV_Symbol("BTC_SGD", "Bitcoin/ Singapore Dollar", "Fybsg", "bitcoin"));
+        symbols.add(new TV_Symbol("BTC_SEK", "Bitcoin/ Swedish Krona", "Fybse", "bitcoin"));
         
         symbols.add(new TV_Symbol("GHS_BTC", "Mining Gigahash/ Bitcoin", "CexIO", "bitcoin"));
         
