@@ -3,7 +3,7 @@
 		<title>Bitbot demo</title>
 
 		<!-- Fix for iOS Safari zooming bug -->
-		<meta name="viewport" content="width=800,initial-scale=1,maximum-scale=1,minimum-scale=1">
+		<meta name="viewport" content="width=500,initial-scale=1,maximum-scale=1,minimum-scale=1">
         <script type="text/javascript" src="//code.jquery.com/jquery-2.1.0.min.js"></script>
 
 		<script type="text/javascript" src="charting_library/charting_library.min.js"></script>
@@ -75,9 +75,13 @@
 					disabled_features: ["header_symbol_search"],
 					charts_storage_url: 'http://saveload.tradingview.com',
 					client_id: 'tradingview.com',
+					preset: "mobile",
 					user_id: param_uniqueid,
 					overrides: {
-						"symbolWatermarkProperties.transparency": 80,
+						"paneProperties.background": "#222222",
+						"paneProperties.gridProperties.color": "#454545",
+						"symbolWatermarkProperties.transparency": 0,
+						"scalesProperties.textColor" : "#AAA"
 					}
 				});
 			})
