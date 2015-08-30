@@ -57,7 +57,7 @@ public class Swaps_Bitfinex implements SwapsInterface {
                             try {
                                 spot_price = ChannelServer.getInstance().getWorldInterface().getInstantSpotPrice(spotPriceStrKey);
                             } catch (RemoteException exp) {
-                        // Needs to check if the world server does indeed if the data
+                                // Needs to check if the world server does indeed if the data
                                 // Also, needs some way to store the data in memory/disk if the database fails at this point in time
                                 // Exception is caught here if the world server is offline..
                             }

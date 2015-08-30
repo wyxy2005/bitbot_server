@@ -4,14 +4,13 @@ import bitbot.cache.tickers.TickerItemData;
 import bitbot.cache.tickers.TickerItem_CandleBar;
 import bitbot.handler.channel.ChannelServer;
 import bitbot.Constants;
-import bitbot.cache.trades.TradeHistoryBuySellEnum;
 import bitbot.cache.trades.TradesItemData;
 import bitbot.tradingviewUDF.TV_Symbol;
 import bitbot.tradingviewUDF.TV_symboldatabase;
-import bitbot.util.NumberUtil;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.List;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.simpleframework.http.Query;
@@ -57,10 +56,16 @@ public class TradingViewUDFTask implements Runnable {
                         this.sendSymbolSearchResults(body,
                                 query.get("query"), query.get("type"), query.get("exchange"), Integer.parseInt(query.get("limit")));
                         break;
-                    case "/history":
-                        this.sendSymbolHistory(body,
-                                query.get("symbol"), Long.parseLong(query.get("from")), Long.parseLong(query.get("to")), query.get("resolution"));
+                    case "/history": {
+                        final String symbol = query.get("symbol");
+                        final long from = Long.parseLong(query.get("from"));
+                        final long to = Long.parseLong(query.get("to"));
+                        final String res = query.get("resolution");
+                        final String hash = query.get("hash"); // custom
+
+                        this.sendSymbolHistory(body, symbol, from, to, res, hash);
                         break;
+                    }
                     case "/quotes":
                         break;
                     case "/marks": {
@@ -125,9 +130,16 @@ public class TradingViewUDFTask implements Runnable {
         body.print(ret);
     }
 
-    private void sendSymbolHistory(PrintStream body, String symbolName, long startDateTimestamp, long endDateTimestamp, String resolution) {
+    private void sendSymbolHistory(PrintStream body, String symbolName, long startDateTimestamp, long endDateTimestamp, String resolution, String hash) {
+        // Check hash first
+        final String sha256hex = DigestUtils.sha256Hex(symbolName + (startDateTimestamp & endDateTimestamp) + resolution);
+        if (!sha256hex.equals(hash)) {
+            sendError(body, "Invalid hash.");
+            return;
+        }
+
         // Get symbol from database
-        TV_Symbol symbol = TV_symboldatabase.symbolInfo(symbolName);
+        final TV_Symbol symbol = TV_symboldatabase.symbolInfo(symbolName);
         if (symbol == null) {
             sendError(body, "unknown_symbol");
             return;
@@ -285,7 +297,7 @@ public class TradingViewUDFTask implements Runnable {
 
         int i = 0;
         JSONObject json_main = new JSONObject();
-        
+
         JSONArray json_array_id = new JSONArray();
         JSONArray json_array_time = new JSONArray();
         JSONArray json_array_color = new JSONArray();
@@ -293,7 +305,7 @@ public class TradingViewUDFTask implements Runnable {
         JSONArray json_array_label = new JSONArray();
         JSONArray json_array_labelFontColor = new JSONArray();
         JSONArray json_array_minSize = new JSONArray();
-        
+
         final List<TradesItemData> ret = ChannelServer.getInstance().getTradesTask().getTradesList(String.format("%s-%s", symbol.exchange.toLowerCase(), symbol.name.toLowerCase()), 50, from, to);
         for (TradesItemData data : ret) {
             if (data.getAmount() >= 50) {
@@ -303,9 +315,8 @@ public class TradingViewUDFTask implements Runnable {
                 json_array_label.add(data.getAmount());
                 json_array_labelFontColor.add("white");
                 json_array_minSize.add(Math.min(50, Math.max(7, data.getAmount() / 3)));
-                
-                switch (data.getType()) 
-                {
+
+                switch (data.getType()) {
                     case Buy:
                         json_array_color.add("green");
                         break;
@@ -316,7 +327,7 @@ public class TradingViewUDFTask implements Runnable {
                         json_array_color.add("gray");
                         break;
                 }
-                        
+
                 i++;
             }
         }
@@ -350,9 +361,11 @@ public class TradingViewUDFTask implements Runnable {
 
         JSONObject json_main = new JSONObject();
 
+        // https://github.com/tradingview/charting_library/wiki/Symbology
         json_main.put("name", symbol.name);
         json_main.put("exchange-traded", true);
         json_main.put("exchange-listed", true);
+        json_main.put("fractional", true);
         json_main.put("minmov", 1);
         json_main.put("minmov2", 0);
         json_main.put("pricescale", Math.pow(10, decimalPlaces));
@@ -364,12 +377,15 @@ public class TradingViewUDFTask implements Runnable {
         //json_main.put("has_fractional_volume", true); // obselete
         json_main.put("has_weekly_and_monthly", true);
         json_main.put("has_empty_bars", false);
+        json_main.put("force_session_rebuild", true);
         json_main.put("has_no_volume", false);
+        json_main.put("volume_precision", 0); // 0 = volume is an integer, 1 = decimal
         json_main.put("listed_exchange", symbol.exchange); // listed and traded exchange for bitcoin is the same
         json_main.put("exchange", symbol.exchange); // listed and traded exchange for bitcoin is the same
         json_main.put("ticker", symbol.exchange + ":" + symbol.name);
         json_main.put("description", symbol.description);
         json_main.put("type", symbol.type);
+        json_main.put("data_status", "streaming"); // •streaming •endofday •pulsed •delayed_streaming
 
         // Contract expiration
         boolean expiredContract = false;
@@ -385,6 +401,10 @@ public class TradingViewUDFTask implements Runnable {
         }
         json_main.put("supported_resolutions", json_array_supportedres);
 
+        // intra-day multipliers
+        //  JSONArray json_array_intradayMultipliers = new JSONArray();
+        //json_array_intradayMultipliers.add(1);
+        //json_main.put("supported_resolutions", json_array_intradayMultipliers);
         String retstr = json_main.toJSONString();
 
         response.setContentLength(retstr.length());
