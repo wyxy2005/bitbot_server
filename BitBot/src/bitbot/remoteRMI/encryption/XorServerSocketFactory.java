@@ -9,10 +9,9 @@ import java.rmi.server.*;
  *
  * @author z
  */
-public class XorServerSocketFactory
-    implements RMIServerSocketFactory {
+public class XorServerSocketFactory implements RMIServerSocketFactory {
 
-    private byte pattern;
+    private final byte pattern;
     
     public XorServerSocketFactory() {
 	this.pattern = 0x5f;

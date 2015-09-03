@@ -60,10 +60,11 @@ public class TradingViewUDFTask implements Runnable {
                         final String symbol = query.get("symbol");
                         final long from = Long.parseLong(query.get("from"));
                         final long to = Long.parseLong(query.get("to"));
+                        final long nonce = Long.parseLong(query.get("nonce"));
                         final String res = query.get("resolution");
                         final String hash = query.get("hash"); // custom
 
-                        this.sendSymbolHistory(body, symbol, from, to, res, hash);
+                        this.sendSymbolHistory(body, symbol, from, to, res, hash, nonce);
                         break;
                     }
                     case "/quotes":
@@ -130,9 +131,25 @@ public class TradingViewUDFTask implements Runnable {
         body.print(ret);
     }
 
-    private void sendSymbolHistory(PrintStream body, String symbolName, long startDateTimestamp, long endDateTimestamp, String resolution, String hash) {
+    /**
+     *
+     * @param body
+     * @param symbolName
+     * @param startDateTimestamp
+     * @param endDateTimestamp
+     * @param resolution
+     * @param hash
+     * @param nonce - The number of seconds since 1970, epoch time
+     */
+    private void sendSymbolHistory(PrintStream body, String symbolName, long startDateTimestamp, long endDateTimestamp, String resolution, String hash, long nonce) {
         // Check hash first
-        final String sha256hex = DigestUtils.sha256Hex(symbolName + (startDateTimestamp & endDateTimestamp) + resolution);
+        final long cTime_Seconds = System.currentTimeMillis() / 1000;
+        if (cTime_Seconds - (60 * 60 * 24 * 1000) > nonce || cTime_Seconds + (60 * 60 * 24 * 1000) < nonce) {
+            sendError(body, "Invalid nonce.");
+            return;
+        }
+
+        final String sha256hex = DigestUtils.sha256Hex(symbolName + (startDateTimestamp & endDateTimestamp) + resolution + nonce);
         if (!sha256hex.equals(hash)) {
             sendError(body, "Invalid hash.");
             return;
