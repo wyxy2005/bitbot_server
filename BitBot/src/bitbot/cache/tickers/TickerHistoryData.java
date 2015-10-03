@@ -23,6 +23,7 @@ public class TickerHistoryData {
     private double Volume; // BTC * USD
     private double Volume_Cur; // BTC/USD, cur = BTC.
     private long LastPurchaseTime;
+    private long LastServerUTCTime = 0L;
     private int LastTradeId;
 
     private double TotalBuyVolume = 1, TotalSellVolume = 1;
@@ -61,15 +62,21 @@ public class TickerHistoryData {
                     TmpcurrencyPair = currencyPair;
                 }
                 isDatasetReadyForCommit = true;
+
+                // Check again, just in case
+                if (this.LastServerUTCTime == 0) {
+                    throw new RuntimeException("LastServerUTCTime is not set...");
+                }
+
                 BacklogCommitTask_Tickers.RegisterForImmediateLogging(this);
 
                 // Broadcast to peers on other servers
-                broadcastDataToPeers();
+                broadcastCompletedMinuteCandleDataToPeers();
 
                 // Debug
                 if (ChannelServer.getInstance().isEnableDebugSessionPrints()) {
                     Calendar cal = Calendar.getInstance();
-                    cal.setTimeInMillis(LastPurchaseTime);
+                    cal.setTimeInMillis(this.LastServerUTCTime);
                     String outputLog = String.format("[dd:hh:mm = (%d:%d:%d)], Open: %f, Close: %f, High: %f, Low: %f, Volume: %f, VolumeCur: %f, Ratio: %f",
                             cal.get(Calendar.DAY_OF_MONTH), cal.get(Calendar.HOUR), cal.get(Calendar.MINUTE), getOpen(), getLastPrice(), getHigh(), getLow(), getVolume(), getVolume_Cur(), TotalBuyVolume / TotalSellVolume);
                     FileoutputUtil.log("//" + ExchangeCurrencyPair + ".txt", outputLog);
@@ -104,7 +111,7 @@ public class TickerHistoryData {
             ps.setDouble(4, Volume_Cur);
             ps.setFloat(5, Open);
             ps.setFloat(6, LastPrice);
-            ps.setLong(7, (long) (LastPurchaseTime / 1000l));
+            ps.setLong(7, (long) (LastServerUTCTime / 1000l));
             ps.setFloat(8, getBuySell_Ratio()); // ratio
 
             ps.execute();
@@ -188,6 +195,7 @@ public class TickerHistoryData {
             this.TotalSellVolume += dataNow.TotalSellVolume;
         }
         this.LastPurchaseTime = dataNow.LastPurchaseTime;
+        this.LastServerUTCTime = dataNow.getLastServerUTCTime();
         if (dataNow.getLastTradeId() != 0) {
             this.LastTradeId = dataNow.getLastTradeId();
         }
@@ -248,11 +256,11 @@ public class TickerHistoryData {
         this.TotalBuyVolume = 1;
     }
 
-    public void broadcastDataToPeers() {
+    public void broadcastCompletedMinuteCandleDataToPeers() {
         // Broadcast to peers on other servers
         try {
             final String ExchangeCurrencyPair = String.format("%s-%s", TmpExchangeSite, TmpcurrencyPair);
-            ChannelServer.getInstance().getWorldInterface().broadcastNewGraphEntry(ExchangeCurrencyPair, LastPurchaseTime / 1000l, LastPrice, High, Low, Open, Volume, Volume_Cur, getBuySell_Ratio());
+            ChannelServer.getInstance().getWorldInterface().broadcastNewGraphEntry(ExchangeCurrencyPair, LastServerUTCTime / 1000l, LastPrice, High, Low, Open, Volume, Volume_Cur, getBuySell_Ratio());
         } catch (Exception exp) {
             ServerLog.RegisterForLoggingException(ServerLogType.RemoteError, exp);
             ChannelServer.getInstance().reconnectWorld(exp);
@@ -265,6 +273,14 @@ public class TickerHistoryData {
 
     public long getLastPurchaseTime() {
         return this.LastPurchaseTime;
+    }
+
+    public void setLastServerUTCTime(long LastServerUTCTime) {
+        this.LastServerUTCTime = LastServerUTCTime;
+    }
+
+    public long getLastServerUTCTime() {
+        return this.LastServerUTCTime;
     }
 
     public float getBuySell_Ratio() {

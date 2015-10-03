@@ -44,7 +44,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
+import java.util.TimeZone;
 import java.util.stream.Stream;
 import org.apache.commons.lang3.time.DateUtils;
 
@@ -652,6 +652,7 @@ public class TickerCacheTask {
         return -1;
     };
 
+    private static final TimeZone utc = TimeZone.getTimeZone("UTC");
     public class TickerCacheTask_ExchangeHistory implements Runnable {
 
         private final String CurrencyPair;
@@ -708,6 +709,10 @@ public class TickerCacheTask {
                         HistoryData != null ? HistoryData.getLastTradeId() : 0);
 
                 if (data != null) { // Network unavailable?
+                    // Set data to UTC time now.
+                    Calendar cal_UTC = Calendar.getInstance(utc);
+                    data.setLastServerUTCTime(cal_UTC.getTimeInMillis());
+                    
                     if (HistoryData != null) {
                         HistoryData.merge(data); // Merge high + lows, volume and set last date where it is read
                     } else {
@@ -719,7 +724,7 @@ public class TickerCacheTask {
                     if (HistoryData.getLastPrice() != 0 && readyToBroadcastPriceChanges()) {
                         ChannelServer.getInstance().broadcastPriceChanges(
                                 ExchangeCurrencyPair,
-                                HistoryData.getLastPurchaseTime() / 1000l,
+                                HistoryData.getLastServerUTCTime() / 1000l,
                                 HistoryData.getLastPrice(), // using last price as close since this isnt known yet
                                 HistoryData.getHigh(), HistoryData.getLow(), HistoryData.getOpen(),
                                 HistoryData.getVolume(), HistoryData.getVolume_Cur(),
@@ -732,7 +737,7 @@ public class TickerCacheTask {
                         case Ok: {
                             // Output
                             Calendar cal = Calendar.getInstance();
-                            cal.setTimeInMillis(HistoryData.getLastPurchaseTime());
+                            cal.setTimeInMillis(HistoryData.getLastServerUTCTime());
                             cal.set(Calendar.SECOND, 0);
 
                             System.out.println(String.format("[TH] %s Commited data hh:mm = (%s), High: %f, Low: %f, Volume: %f, VolumeCur: %f",
