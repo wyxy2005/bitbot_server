@@ -99,10 +99,6 @@ public class ServerHTTPExchangeHandler implements Container {
                         r = new BacktestTask(request, response, query);
                         break;
                     }
-                    case "EMA": {
-                        r = new ExponentialMovingAverageTask(request, response, query);
-                        break;
-                    }
                     case "Swaps": {
                         r = new SwapTask(request, response, query);
                         break;

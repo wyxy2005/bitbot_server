@@ -589,57 +589,6 @@ public class TickerCacheTask {
         return mapPriceSummary;
     }
 
-    public List<List<ExponentialMovingAverageData>> getExponentialMovingAverage(
-            final String ticker, final String ExchangeSite, int backtestHours, int intervalMinutes,
-            final int HighEMA, final int LowEMA) {
-        final String dataSet = ExchangeSite + "-" + ticker;
-
-        // check if exist
-        if (!list_mssql.containsKey(dataSet)) {
-            return null;
-        }
-        // add an extra 80% to the backtest hours to smooth out EMA at first
-        long cTime = (System.currentTimeMillis() / 1000l) - (60l * 60l * backtestHours);
-        long cTime_Track = cTime - ((long) (60l * 60l * backtestHours * 0.8d));
-        long LastUsedTime = 0;
-
-        // Gets the current array from cache
-        final List<TickerItem> currentList = new ArrayList(list_mssql.get(dataSet));
-
-        // Create a new array to add things within our range we are looking for.
-        final List<TickerItem> selectedList = new ArrayList();
-
-        Iterator<TickerItem> itr = currentList.iterator();
-        while (itr.hasNext()) { // Loop through things in proper sequence
-            TickerItem item = itr.next();
-
-            long itemTime = item.getServerTime();
-
-            if (cTime_Track <= itemTime && LastUsedTime + (intervalMinutes * 60) < item.getServerTime()) {
-                selectedList.add(item);
-
-                if (LastUsedTime == 0) {
-                    LastUsedTime = item.getServerTime();
-                }
-                LastUsedTime = LastUsedTime + (intervalMinutes * 60); // item.getServerTime();
-            }
-        }
-
-        final List<List<ExponentialMovingAverageData>> container = new ArrayList<>();
-        container.add(ExponentialMovingAverage.CalculateEMA(selectedList, HighEMA, cTime));
-        container.add(ExponentialMovingAverage.CalculateEMA(selectedList, LowEMA, cTime));
-
-        /* System.out.println("High EMA");
-         for (ExponentialMovingAverageData highEMA : container.get(0)) {
-         System.out.println(highEMA.EMA);
-         }
-         System.out.println("Low EMA");
-         for (ExponentialMovingAverageData highEMA : container.get(1)) {
-         System.out.println(highEMA.EMA);
-         }*/
-        return container;
-    }
-
     private static final Comparator<Object> TickerItemComparator = (Object obj1, Object obj2) -> {
         TickerItemData data1 = (TickerItemData) obj1;
         TickerItemData data2 = (TickerItemData) obj2;
