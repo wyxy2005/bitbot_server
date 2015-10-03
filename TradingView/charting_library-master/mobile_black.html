@@ -1,18 +1,25 @@
 <html>
-	<head>
 
-		<title>Bitbot Demo</title>
+<head>
 
-		<!-- Fix for iOS Safari zooming bug -->
-		<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,minimum-scale=1.0">
+	<title>Bitbot Demo</title>
 
-		<script type="text/javascript" src="charting_library/charting_library.min.js"></script>
-		<script type="text/javascript" src="charting_library/datafeed/udf/datafeed.js"></script>
+	<!-- Fix for iOS Safari zooming bug -->
+	<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,minimum-scale=1.0">
 
-		<script type="text/javascript" src="//code.jquery.com/jquery-2.1.0.min.js"></script>
+	<script type="text/javascript" src="charting_library/charting_library.min.js"></script>
+	<script type="text/javascript" src="charting_library/datafeed/udf/datafeed.js"></script>
 
-		<script type="text/javascript">
+	<script type="text/javascript" src="https://code.jquery.com/jquery-1.11.2.min.js"></script>
 
+	<script type="text/javascript">
+		function getParameterByName(name) {
+				name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
+				var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
+						results = regex.exec(location.search);
+				return results === null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
+			}
+			
 			TradingView.onready(function()
 			{
 				var widget = new TradingView.widget({
@@ -21,12 +28,14 @@
 					interval: 'D',
 					container_id: "tv_chart_container",
 					//	BEWARE: no trailing slash is expected in feed URL
-					datafeed: new Datafeeds.UDFCompatibleDatafeed("http://bitbotlive.com"),
+					datafeed: new Datafeeds.UDFCompatibleDatafeed("https://bitbot.newcurrency.co/"),
 					library_path: "charting_library/",
-					locale: "en",
+					locale: getParameterByName('lang') || "en",
 					//	Regression Trend-related functionality is not implemented yet, so it's hidden for a while
 					drawings_access: { type: 'black', tools: [ { name: "Regression Trend" } ] },
 					disabled_features: ["use_localstorage_for_settings"],
+					charts_storage_url: 'http://saveload.tradingview.com',
+					charts_storage_api_version: "1.1", 
 					preset: "mobile",
 					overrides: {
 						"paneProperties.background": "#222222",
@@ -38,13 +47,12 @@
 					}
 				});
 			})
+	</script>
 
-		</script>
+</head>
 
-	</head>
-
-	<body style="margin:0px;">
-		<div id="tv_chart_container"></div>
-	</body>
+<body style="margin:0px;">
+	<div id="tv_chart_container"></div>
+</body>
 
 </html>
