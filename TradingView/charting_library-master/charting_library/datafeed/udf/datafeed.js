@@ -331,6 +331,7 @@ Datafeeds.UDFCompatibleDatafeed.prototype.getBars = function(symbolInfo, resolut
 	var that = this;
 
 	var requestStartTime = Date.now();
+	var nonce = Math.floor(requestStartTime / 1000);
 	
 	var reqsymbol = symbolInfo.ticker.toUpperCase();
 	this._send(this._datafeedURL + this._historyURL, {
@@ -338,7 +339,8 @@ Datafeeds.UDFCompatibleDatafeed.prototype.getBars = function(symbolInfo, resolut
 			resolution: resolution,
 			from: rangeStartDate,
 			to: rangeEndDate,
-			hash: SHA256(reqsymbol + (rangeStartDate & rangeEndDate) + resolution)
+			nonce: nonce,
+			hash: SHA256(reqsymbol + (rangeStartDate & rangeEndDate) + resolution + nonce)
 	})
 	.done(function (response) {
 

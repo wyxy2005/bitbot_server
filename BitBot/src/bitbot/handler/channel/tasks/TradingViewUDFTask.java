@@ -382,7 +382,7 @@ public class TradingViewUDFTask implements Runnable {
         json_main.put("name", symbol.name);
         json_main.put("exchange-traded", true);
         json_main.put("exchange-listed", true);
-        json_main.put("fractional", true);
+        json_main.put("fractional", false);
         json_main.put("minmov", 1);
         json_main.put("minmov2", 0);
         json_main.put("pricescale", Math.pow(10, decimalPlaces));
@@ -393,7 +393,7 @@ public class TradingViewUDFTask implements Runnable {
         json_main.put("has_daily", true);
         //json_main.put("has_fractional_volume", true); // obselete
         json_main.put("has_weekly_and_monthly", true);
-        json_main.put("has_empty_bars", false);
+        json_main.put("has_empty_bars", true);
         json_main.put("force_session_rebuild", true);
         json_main.put("has_no_volume", false);
         json_main.put("volume_precision", 0); // 0 = volume is an integer, 1 = decimal
