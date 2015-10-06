@@ -201,10 +201,6 @@ public class TickerCacheTask {
         }
     }
 
-    public List<TickerItemData> getListBTCe(final String ticker, String ExchangeSite) {
-        return new ArrayList(list_mssql.get(ExchangeSite + "-" + ticker));
-    }
-
     public TickerItemData getTickerSummary(final String ticker, String ExchangeSite) {
         final String dataSet = ExchangeSite + "-" + ticker;
 
@@ -216,7 +212,9 @@ public class TickerCacheTask {
         if (currentList.isEmpty()) {
             return null;
         }
-        return currentList.get(currentList.size() - 1);
+        synchronized (currentList) {
+            return currentList.get(currentList.size() - 1);
+        }
     }
 
     public List<TickerItem_CandleBar> getTickerList_Candlestick(
@@ -274,138 +272,137 @@ public class TickerCacheTask {
         final List<TickerItemData> currentList = list_mssql.get(dataSet);
         final Stream<TickerItemData> items_stream;
         synchronized (currentList) {
-            items_stream = list_mssql.get(dataSet).stream().
+            items_stream = currentList.stream().
                     filter((data) -> (data.getServerTime() >= (LastUsedTime_))).
                     sorted(TickerItemComparator);         // No need to lock this thread, if we are creating a new ArrayList off existing since its a copy :)
-        }
 
-        boolean processedTime = false;
-        TickerItem_CandleBar firstData = null;
+            boolean processedTime = false;
+            TickerItem_CandleBar firstData = null;
 
-        // Now we create the candle data chain
-        final Iterator<TickerItemData> items = items_stream.iterator();
-        while (items.hasNext()) {
-            // Loop through the entire data chain, which each data representing 1 minute of the snapshot.
-            // However if that minute does not have any trading activity, the data will not be present. We detect this missing data by its time.
-            final TickerItemData item = items.next();
+            // Now we create the candle data chain
+            final Iterator<TickerItemData> items = items_stream.iterator();
+            while (items.hasNext()) {
+                // Loop through the entire data chain, which each data representing 1 minute of the snapshot.
+                // However if that minute does not have any trading activity, the data will not be present. We detect this missing data by its time.
+                final TickerItemData item = items.next();
 
-            // Get the first element and re-calibrate the time to be used 
-            // to start processing the return data
-            if (!processedTime && !isTradingViewData) {
-                // if (backtestHours != 0) { // not tradingview
-                // Post process, for the variables and stuff
-                // round the last used time to best possible time for the chart period
-                final Calendar dtCal = Calendar.getInstance();
-                dtCal.setTimeInMillis(Math.min(LastUsedTime, item.getServerTime()));
+                // Get the first element and re-calibrate the time to be used 
+                // to start processing the return data
+                if (!processedTime && !isTradingViewData) {
+                    // if (backtestHours != 0) { // not tradingview
+                    // Post process, for the variables and stuff
+                    // round the last used time to best possible time for the chart period
+                    final Calendar dtCal = Calendar.getInstance();
+                    dtCal.setTimeInMillis(Math.min(LastUsedTime, item.getServerTime()));
 
-                int truncateField;
-                if (intervalMinutes < 60) { // below 1 hour
-                    truncateField = Calendar.HOUR;
-                } else if (intervalMinutes < 60 * 60 * 24) { // below 1 day
-                    truncateField = Calendar.DATE;
-                } else if (intervalMinutes < 60 * 60 * 24 * 30) { // below 30 days
-                    truncateField = Calendar.MONTH;
-                } else if (intervalMinutes < 60 * 60 * 24 * 30 * 12 * 100) { // below 100 years
-                    truncateField = Calendar.YEAR;
-                } else { // wtf
-                    truncateField = Calendar.ERA;
-                }
-                LastUsedTime = DateUtils.truncate(dtCal, truncateField).getTimeInMillis();
-                //  }
-                while (LastUsedTime < item.getServerTime()) {
-                    LastUsedTime += intervalMinutes;
-                }
-                processedTime = true;
-            }
-
-            // Real stuff here
-            final long endCandleTime = LastUsedTime + (long) intervalMinutes;
-            
-            if (item.getServerTime() > endCandleTime) {
-                long endCandleTime2 = endCandleTime;
-                boolean isEmptyBar = false;
-                
-                while (item.getServerTime() > endCandleTime2) {
-                    TickerItem_CandleBar item_ret;
-                    if (!isEmptyBar) {
-                        item_ret = new TickerItem_CandleBar(
-                                endCandleTime2, 
-                                lastPriceSet == -1.0f ? item.getOpen() : lastPriceSet, 
-                                high, 
-                                low, 
-                                open, 
-                                Volume, 
-                                VolumeCur, 
-                                (buysell_ratio_Total == 0.0f ? 1.0f : buysell_ratio_Total) / buysellratio_sets, 
-                                false);
-                    } else {
-                        item_ret = 
-                                new TickerItem_CandleBar(
-                                        endCandleTime2, 
-                                        lastPriceSet, 
-                                        lastPriceSet, 
-                                        lastPriceSet, 
-                                        lastPriceSet, 
-                                        0.0, 
-                                        0.0, 
-                                        1.0f, 
-                                        false);
+                    int truncateField;
+                    if (intervalMinutes < 60) { // below 1 hour
+                        truncateField = Calendar.HOUR;
+                    } else if (intervalMinutes < 60 * 60 * 24) { // below 1 day
+                        truncateField = Calendar.DATE;
+                    } else if (intervalMinutes < 60 * 60 * 24 * 30) { // below 30 days
+                        truncateField = Calendar.MONTH;
+                    } else if (intervalMinutes < 60 * 60 * 24 * 30 * 12 * 100) { // below 100 years
+                        truncateField = Calendar.YEAR;
+                    } else { // wtf
+                        truncateField = Calendar.ERA;
                     }
-
-                    list_chart.add(item_ret);
-                    if (firstData == null) { // Debug stuff
-                        firstData = item_ret;
+                    LastUsedTime = DateUtils.truncate(dtCal, truncateField).getTimeInMillis();
+                    //  }
+                    while (LastUsedTime < item.getServerTime()) {
+                        LastUsedTime += intervalMinutes;
                     }
-                    high = item.getHigh();
-                    low = item.getLow();
-                    open = item.getOpen();
-                    
+                    processedTime = true;
+                }
+
+                // Real stuff here
+                final long endCandleTime = LastUsedTime + (long) intervalMinutes;
+
+                if (item.getServerTime() > endCandleTime) {
+                    long endCandleTime2 = endCandleTime;
+                    boolean isEmptyBar = false;
+
+                    while (item.getServerTime() > endCandleTime2) {
+                        TickerItem_CandleBar item_ret;
+                        if (!isEmptyBar) {
+                            item_ret = new TickerItem_CandleBar(
+                                    endCandleTime2,
+                                    lastPriceSet == -1.0f ? item.getOpen() : lastPriceSet,
+                                    high,
+                                    low,
+                                    open,
+                                    Volume,
+                                    VolumeCur,
+                                    (buysell_ratio_Total == 0.0f ? 1.0f : buysell_ratio_Total) / buysellratio_sets,
+                                    false);
+                        } else {
+                            item_ret
+                                    = new TickerItem_CandleBar(
+                                            endCandleTime2,
+                                            lastPriceSet,
+                                            lastPriceSet,
+                                            lastPriceSet,
+                                            lastPriceSet,
+                                            0.0,
+                                            0.0,
+                                            1.0f,
+                                            false);
+                        }
+
+                        list_chart.add(item_ret);
+                        if (firstData == null) { // Debug stuff
+                            firstData = item_ret;
+                        }
+                        high = item.getHigh();
+                        low = item.getLow();
+                        open = item.getOpen();
+
+                        if (includeVolumeData) {
+                            Volume = item.getVol();
+                            VolumeCur = item.getVol_Cur();
+                        }
+
+                        LastUsedTime = endCandleTime2;
+                        endCandleTime2 = LastUsedTime + (long) intervalMinutes;
+
+                        // Reset emptybar data
+                        isEmptyBar = true;
+                    }
+                } else if (item.getServerTime() <= endCandleTime) {
+                    high = Math.max(item.getHigh(), high);
+                    low = Math.min(item.getLow(), low);
+                    if (open == -1.0f) {
+                        open = item.getOpen();
+                    }
                     if (includeVolumeData) {
-                        Volume = item.getVol();
-                        VolumeCur = item.getVol_Cur();
+                        Volume += item.getVol();
+                        VolumeCur += item.getVol_Cur();
                     }
-                    
-                    LastUsedTime = endCandleTime2;
-                    endCandleTime2 = LastUsedTime + (long) intervalMinutes;
-                    
-                    // Reset emptybar data
-                    isEmptyBar = true;
+                    buysell_ratio_Total += item.getBuySell_Ratio();
+                    buysellratio_sets += 1.0f;
                 }
-            } else if (item.getServerTime() <= endCandleTime) {
-                high = Math.max(item.getHigh(), high);
-                low = Math.min(item.getLow(), low);
-                if (open == -1.0f) {
-                    open = item.getOpen();
-                }
-                if (includeVolumeData) {
-                    Volume += item.getVol();
-                    VolumeCur += item.getVol_Cur();
-                }
-                buysell_ratio_Total += item.getBuySell_Ratio();
-                buysellratio_sets += 1.0f;
+                lastPriceSet = item.getClose();
             }
-            lastPriceSet = item.getClose();
         }
-        
-        
+
         for (int i = 0; i < 100; ++i) {
             if (LastUsedTime > ServerTimeEnd) {
                 break;
             }
             final long endCandleTime = Math.min(ServerTimeEnd, LastUsedTime + (long) intervalMinutes);
-            final TickerItem_CandleBar item_ret_last = 
-                    new TickerItem_CandleBar(
-                            endCandleTime, 
-                            lastPriceSet, 
-                            high, 
-                            low, 
-                            open, 
-                            Volume, 
-                            VolumeCur, 
-                            (buysell_ratio_Total == 0.0f ? 1.0f : buysell_ratio_Total) / buysellratio_sets, 
+            final TickerItem_CandleBar item_ret_last
+                    = new TickerItem_CandleBar(
+                            endCandleTime,
+                            lastPriceSet,
+                            high,
+                            low,
+                            open,
+                            Volume,
+                            VolumeCur,
+                            (buysell_ratio_Total == 0.0f ? 1.0f : buysell_ratio_Total) / buysellratio_sets,
                             false);
             list_chart.add(item_ret_last);
-            
+
             high = lastPriceSet;
             low = lastPriceSet;
             open = lastPriceSet;
@@ -413,7 +410,7 @@ public class TickerCacheTask {
             VolumeCur = 0.0;
             buysell_ratio_Total = 0.0f;
             LastUsedTime += (long) intervalMinutes;
-            
+
             if (endCandleTime == ServerTimeEnd) {
                 break;
             }
@@ -471,27 +468,27 @@ public class TickerCacheTask {
                     filter((data) -> (data.getServerTime() > startTime)).
                     sorted(TickerItemComparator).
                     iterator();
-        }
 
-        while (items.hasNext()) {
-            TickerItemData item = items.next();
+            while (items.hasNext()) {
+                TickerItemData item = items.next();
 //System.out.println("["+item.getServerTime()+"] " + item.getBuySell_Ratio());
-            if (item.getBuySell_Ratio() != 0f && item.getBuySell_Ratio() != 1.0f) {
-                float buyAndSellRatio = item.getBuySell_Ratio() + 1.0f;
+                if (item.getBuySell_Ratio() != 0f && item.getBuySell_Ratio() != 1.0f) {
+                    float buyAndSellRatio = item.getBuySell_Ratio() + 1.0f;
 
-                // volume cur
-                double buyVolumeCur = (item.getVol_Cur() / buyAndSellRatio) * item.getBuySell_Ratio();
-                double sellVolumeCur = item.getVol_Cur() - buyVolumeCur;
+                    // volume cur
+                    double buyVolumeCur = (item.getVol_Cur() / buyAndSellRatio) * item.getBuySell_Ratio();
+                    double sellVolumeCur = item.getVol_Cur() - buyVolumeCur;
 
-                totalBuyVolume_Cur += buyVolumeCur;
-                totalSellVolume_Cur += sellVolumeCur;
+                    totalBuyVolume_Cur += buyVolumeCur;
+                    totalSellVolume_Cur += sellVolumeCur;
 
-                // volume
-                double buyVolume = (item.getVol() / buyAndSellRatio) * item.getBuySell_Ratio();
-                double sellVolume = item.getVol() - buyVolume;
+                    // volume
+                    double buyVolume = (item.getVol() / buyAndSellRatio) * item.getBuySell_Ratio();
+                    double sellVolume = item.getVol() - buyVolume;
 
-                totalBuyVolume += buyVolume;
-                totalSellVolume += sellVolume;
+                    totalBuyVolume += buyVolume;
+                    totalSellVolume += sellVolume;
+                }
             }
         }
         profile.TotalBuyVolume_Cur = totalBuyVolume_Cur;
@@ -530,27 +527,27 @@ public class TickerCacheTask {
                     filter((data) -> (data.getServerTime() > startTime)).
                     sorted(TickerItemComparator).
                     iterator();
-        }
 
-        while (items.hasNext()) {
-            TickerItemData item = items.next();
+            while (items.hasNext()) {
+                TickerItemData item = items.next();
 //System.out.println("["+item.getServerTime()+"] " + item.getBuySell_Ratio());
-            if (item.getBuySell_Ratio() != 0f && item.getBuySell_Ratio() != 1.0f) {
-                float buyAndSellRatio = item.getBuySell_Ratio() + 1.0f;
+                if (item.getBuySell_Ratio() != 0f && item.getBuySell_Ratio() != 1.0f) {
+                    float buyAndSellRatio = item.getBuySell_Ratio() + 1.0f;
 
-                // volume cur
-                double buyVolumeCur = (item.getVol_Cur() / buyAndSellRatio) * item.getBuySell_Ratio();
-                double sellVolumeCur = item.getVol_Cur() - buyVolumeCur;
+                    // volume cur
+                    double buyVolumeCur = (item.getVol_Cur() / buyAndSellRatio) * item.getBuySell_Ratio();
+                    double sellVolumeCur = item.getVol_Cur() - buyVolumeCur;
 
-                totalBuyVolume_Cur += buyVolumeCur;
-                totalSellVolume_Cur += sellVolumeCur;
+                    totalBuyVolume_Cur += buyVolumeCur;
+                    totalSellVolume_Cur += sellVolumeCur;
 
-                // volume
-                double buyVolume = (item.getVol() / buyAndSellRatio) * item.getBuySell_Ratio();
-                double sellVolume = item.getVol() - buyVolume;
+                    // volume
+                    double buyVolume = (item.getVol() / buyAndSellRatio) * item.getBuySell_Ratio();
+                    double sellVolume = item.getVol() - buyVolume;
 
-                totalBuyVolume += buyVolume;
-                totalSellVolume += sellVolume;
+                    totalBuyVolume += buyVolume;
+                    totalSellVolume += sellVolume;
+                }
             }
         }
         profile.TotalBuyVolume_Cur = totalBuyVolume_Cur;
@@ -807,6 +804,9 @@ public class TickerCacheTask {
             System.out.println("[Info] Stopped caching " + ExchangeCurrencyPair + " data from MSSQL");
         }
 
+        private static final int MAX_TickerItem_PerFile = 400000;
+        private static final int FILE_VERSIONING = 2;
+
         private void ReadFromFileStorage(List<TickerItemData> list_newItems) {
             // Start saving to local file
             File f = new File("CachedPrice");
@@ -814,62 +814,73 @@ public class TickerCacheTask {
                 f.mkdirs();
             }
             try {
-                File f_data = new File(f, ExchangeCurrencyPair);
-                if (!f_data.exists()) {
-                    return;
-                }
-                synchronized (localStorageReadWriteMutex) { // not enough memory to run everything concurrently 
-                    FileInputStream fis = null;
-                    BufferedReader reader = null;
-                    try {
-                        fis = new FileInputStream(f_data);
+                // Loop through all possible files, there may be multiple for a single pair
+                // Ex: bitfinex-btc_usd, bitfinex-btc_usd_1, bitfinex-btc_usd_2, bitfinex-btc_usd_3
+                for (int z_fileCount = 0; z_fileCount < Integer.MAX_VALUE; z_fileCount++) {
 
-                        byte[] byte_line = new byte[fis.available()];
-                        int readbytes = fis.read(byte_line, 0, fis.available());
-                        if (readbytes != -1) {
-                            final SeekableLittleEndianAccessor slea = new GenericSeekableLittleEndianAccessor(new ByteArrayByteStream(byte_line));
+                    final File f_data = new File(f, z_fileCount == 0 ? ExchangeCurrencyPair : (ExchangeCurrencyPair + "_" + z_fileCount));
+                    if (!f_data.exists()) {
+                        break;
+                    }
+                    synchronized (localStorageReadWriteMutex) { // not enough memory to run everything concurrently 
+                        FileInputStream fis = null;
+                        BufferedReader reader = null;
+                        try {
+                            fis = new FileInputStream(f_data);
 
-                            int data_size = slea.readInt();
-                            for (int i = 0; i < data_size; i++) {
-                                final byte startingMarker = slea.readByte();
+                            byte[] byte_line = new byte[fis.available()];
+                            int readbytes = fis.read(byte_line, 0, fis.available());
+                            if (readbytes != -1) {
+                                final SeekableLittleEndianAccessor slea = new GenericSeekableLittleEndianAccessor(new ByteArrayByteStream(byte_line));
 
-                                // starting and ending marker to ensure simple checksum and the file integrity
-                                // if those markers are not -1, reload the entire one from Microsoft SQL database
-                                if (startingMarker != -1) {
-                                    // cleanup
-                                    list_newItems.clear();
-                                    return;
-                                }
-                                float close = slea.readFloat();
-                                float open = slea.readFloat();
-                                float high = slea.readFloat();
-                                float low = slea.readFloat();
-                                long servertime = slea.readLong();
-                                double volume = slea.readDouble();
-                                double volume_cur = slea.readDouble();
-                                float ratio = slea.readFloat();
+                                int file_version = slea.readInt(); // to be used for future updates
+                                int data_size = slea.readInt();
+                                System.out.println("[" + z_fileCount + "] Read count: " + data_size);
 
-                                TickerItemData data = new TickerItemData(servertime, close, high, low, open, volume, volume_cur, ratio, false);
-                                list_newItems.add(data);
+                                for (int i = 0; i < data_size; i++) {
+                                    final byte startingMarker = slea.readByte();
+                                    // starting and ending marker to ensure simple checksum and the file integrity
+                                    // if those markers are not -1, reload the entire one from Microsoft SQL database
+                                    if (startingMarker != -1) {
+                                        // cleanup
+                                        list_newItems.clear();
+                                        return;
+                                    }
+                                    final boolean isMaturedData = slea.readByte() > 0;
 
-                                // update max server time
-                                if (servertime > LastCachedTime) {
-                                    LastCachedTime = servertime;
+                                    if (isMaturedData) {
+                                        float close = slea.readFloat();
+                                        float open = slea.readFloat();
+                                        float high = slea.readFloat();
+                                        float low = slea.readFloat();
+                                        long servertime = slea.readLong();
+                                        double volume = slea.readDouble();
+                                        double volume_cur = slea.readDouble();
+                                        float ratio = slea.readFloat();
+
+                                        final TickerItemData data = new TickerItemData(servertime, close, high, low, open, volume, volume_cur, ratio, false);
+                                        list_newItems.add(data);
+
+                                        // update max server time
+                                        if (servertime > LastCachedTime) {
+                                            LastCachedTime = servertime;
+                                        }
+                                    }
                                 }
                             }
-                        }
-                    } catch (Exception error) {
-                        // data is corrupted?
-                        error.printStackTrace();
-                        f_data.delete();
+                        } catch (Exception error) {
+                            // data is corrupted?
+                            error.printStackTrace();
+                            f_data.delete();
 
-                        list_newItems.clear();
-                    } finally {
-                        if (reader != null) {
-                            reader.close();
-                        }
-                        if (fis != null) {
-                            fis.close();
+                            list_newItems.clear();
+                        } finally {
+                            if (reader != null) {
+                                reader.close();
+                            }
+                            if (fis != null) {
+                                fis.close();
+                            }
                         }
                     }
                 }
@@ -884,61 +895,107 @@ public class TickerCacheTask {
             if (!f.exists()) {
                 f.mkdirs();
             }
-            try {
-                File f_data = new File(f, ExchangeCurrencyPair + ".temp");
-                f_data.createNewFile();
 
-                File f_target = new File(f, ExchangeCurrencyPair);
+            try {
 
                 synchronized (localStorageReadWriteMutex) { // not enough memory to run everything concurrently 
                     // Create a new ArrayList here to prevent threading issue
                     // create here so we dont create unnecessary memory allocation until this synchronized block is called
-                    List<TickerItemData> currentList = new ArrayList(list_mssql.get(ExchangeCurrencyPair));
+                    final List<TickerItemData> currentList = new ArrayList(list_mssql.get(ExchangeCurrencyPair));
+                    int itemWrittenCountTotal = 0;
+                    int itemWrittenCount_File = 0;
 
-                    // override existing file if any.
-                    FileOutputStream out = null;
-                    try {
-                        out = new FileOutputStream(f_data, false);
+                    // Loop through all possible files, there may be multiple for a single pair
+                    // Ex: bitfinex-btc_usd, bitfinex-btc_usd_1, bitfinex-btc_usd_2, bitfinex-btc_usd_3
+                    for (int z_fileCount = 0; z_fileCount < Integer.MAX_VALUE; z_fileCount++) {
+                        final String storingFileName = z_fileCount == 0 ? ExchangeCurrencyPair : (ExchangeCurrencyPair + "_" + z_fileCount);
 
-                        PacketLittleEndianWriter mplew = new PacketLittleEndianWriter();
-                        // Write packet data size
-                        mplew.writeInt(currentList.size());
+                        // Creates a temporary file, to replace existing one only if the write is done to prevent unfinished writing errors.
+                        File f_data = new File(f, storingFileName + ".temp");
+                        f_data.createNewFile();
 
-                        final byte[] dataWrite = mplew.getPacket();
-                        out.write(dataWrite, 0, dataWrite.length);
+                        File f_target = new File(f, storingFileName);
+                        // override existing file if any.
+                        FileOutputStream out = null;
+                        try {
+                            out = new FileOutputStream(f_data, false);
 
-                        // Loop through the data and write for each individual entry
-                        for (TickerItemData data : currentList) {
-                            PacketLittleEndianWriter plew2 = new PacketLittleEndianWriter(); // using multiple mplews to assist garbage collection
-                            plew2.write(-1); // starting marker
+                            final PacketLittleEndianWriter plew = new PacketLittleEndianWriter();
+                            plew.writeInt(FILE_VERSIONING);
+                            // Write packet data size
+                            plew.writeInt(Math.min(MAX_TickerItem_PerFile, currentList.size() - (z_fileCount * MAX_TickerItem_PerFile) - 1));
 
-                            plew2.writeFloat(data.getClose());
-                            plew2.writeFloat(data.getOpen());
-                            plew2.writeFloat(data.getHigh());
-                            plew2.writeFloat(data.getLow());
-                            plew2.writeLong(data.getServerTime());
-                            plew2.writeDouble(data.getVol());
-                            plew2.writeDouble(data.getVol_Cur());
-                            plew2.writeFloat(data.getBuySell_Ratio());
+                            System.out.println("[" + z_fileCount + "] Dumping count: " + Math.min(MAX_TickerItem_PerFile, currentList.size() - (z_fileCount * MAX_TickerItem_PerFile)));
 
-                            final byte[] dataWrite2 = plew2.getPacket();
-                            out.write(dataWrite2, 0, dataWrite2.length);
+                            final byte[] dataWrite = plew.getPacket();
+                            out.write(dataWrite, 0, dataWrite.length);
+
+                            // Loop through the data and write for each individual entry
+                            while (true) {
+                                TickerItemData data = currentList.get(itemWrittenCountTotal);
+
+                                final PacketLittleEndianWriter plew2 = new PacketLittleEndianWriter(); // using multiple mplews to assist garbage collection
+                                plew2.write(-1); // starting marker
+
+                                if (data.isUnmaturedData()) { // Only write matured data
+                                    plew2.write(0);
+                                } else {
+                                    plew2.write(1);
+                                    plew2.writeFloat(data.getClose());
+                                    plew2.writeFloat(data.getOpen());
+                                    plew2.writeFloat(data.getHigh());
+                                    plew2.writeFloat(data.getLow());
+                                    plew2.writeLong(data.getServerTime());
+                                    plew2.writeDouble(data.getVol());
+                                    plew2.writeDouble(data.getVol_Cur());
+                                    plew2.writeFloat(data.getBuySell_Ratio());
+                                }
+
+                                final byte[] dataWrite2 = plew2.getPacket();
+                                out.write(dataWrite2, 0, dataWrite2.length);
+
+                                // Increment value of the number of items written.
+                                itemWrittenCountTotal++;
+                                itemWrittenCount_File++;
+
+                                if (itemWrittenCount_File >= MAX_TickerItem_PerFile || itemWrittenCountTotal >= currentList.size()) { // 60,000 items per file.
+                                    System.out.println("Written: " + itemWrittenCount_File + " total: " + itemWrittenCountTotal);
+                                    break;
+                                }
+                            }
+                        } catch (Exception error) {
+                            error.printStackTrace();
+
+                            // data is corrupted?
+                            f_data.delete();
+                        } finally {
+                            if (out != null) {
+                                out.close();
+                            }
                         }
-                    } catch (Exception error) {
-                        error.printStackTrace();
-
-                        // data is corrupted?
+                        if (f_target.exists()) {
+                            f_target.delete();
+                        }
+                        Files.move(f_data.toPath(), f_target.toPath());
                         f_data.delete();
-                    } finally {
-                        if (out != null) {
-                            out.close();
+
+                        if (itemWrittenCountTotal >= currentList.size()) {
+                            // Delete any extra files lying around.
+                            for (int z_fileCount2 = z_fileCount + 1; z_fileCount2 < Integer.MAX_VALUE; z_fileCount2++) {
+                                final String storingFileName2 = z_fileCount2 == 0 ? ExchangeCurrencyPair : (ExchangeCurrencyPair + "_" + z_fileCount2);
+
+                                File f_target2 = new File(f, storingFileName2);
+
+                                if (f_target2.exists()) {
+                                    f_target2.delete();
+                                } else {
+                                    break;
+                                }
+                            }
+                            break;
                         }
+                        itemWrittenCount_File = 0; // Reset
                     }
-                    if (f_target.exists()) {
-                        f_target.delete();
-                    }
-                    Files.move(f_data.toPath(), f_target.toPath());
-                    f_data.delete();
                 }
             } catch (IOException exp) {
                 exp.printStackTrace();
@@ -972,9 +1029,10 @@ public class TickerCacheTask {
             synchronized (currentList) {
                 // Remove current unmatured data in existence
                 final Stream<TickerItemData> items_unmatured = currentList.stream().filter(data -> data.isUnmaturedData());
-                final Iterator<TickerItemData> itr = items_unmatured.iterator();
-                while (itr.hasNext()) {
-                    TickerItemData item = itr.next();
+                
+                final Object[] items = items_unmatured.toArray();
+                for (Object o : items) { // Don't use iterator here to prevent concurrent modification issue
+                    TickerItemData item = (TickerItemData) o;
 
                     currentList.remove(item);
                 }
