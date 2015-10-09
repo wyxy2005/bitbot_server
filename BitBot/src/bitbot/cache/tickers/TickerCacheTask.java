@@ -18,17 +18,17 @@ import bitbot.cache.tickers.HTTP.TickerHistory_Cryptsy;
 import bitbot.cache.tickers.HTTP.TickerHistory_796;
 import bitbot.cache.tickers.HTTP.TickerHistory_CoinbaseExchange;
 import bitbot.util.database.MicrosoftAzureDatabaseExt;
-import bitbot.graph.ExponentialMovingAverage;
-import bitbot.graph.ExponentialMovingAverageData;
 import bitbot.handler.channel.ChannelServer;
 import bitbot.Constants;
 import bitbot.cache.tickers.HTTP.TickerHistory_BitVC;
 import bitbot.server.threads.LoggingSaveRunnable;
+import bitbot.server.threads.MultiThreadExecutor;
 import bitbot.server.threads.TimerManager;
 import bitbot.util.encryption.input.ByteArrayByteStream;
 import bitbot.util.encryption.input.GenericSeekableLittleEndianAccessor;
 import bitbot.util.encryption.input.SeekableLittleEndianAccessor;
 import bitbot.util.encryption.output.PacketLittleEndianWriter;
+import bitbot.util.packets.ServerSocketExchangePacket;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -224,7 +224,7 @@ public class TickerCacheTask {
             String ExchangeSite,
             long ServerTimeFrom, // Epoch in seconds
             long ServerTimeEnd, // Epoch in seconds
-            boolean IncludeUnmaturedData) {
+            boolean returnExactRequestedFromAndToTime) {
 
         final List<TickerItem_CandleBar> list_chart = new ArrayList(); // create a new array first
         final String dataSet = ExchangeSite + "-" + ticker;
@@ -415,7 +415,7 @@ public class TickerCacheTask {
                 break;
             }
         }
-        if (IncludeUnmaturedData) {
+        if (returnExactRequestedFromAndToTime) {
             boolean breakloop = false;
             while (!(LastUsedTime >= ServerTimeEnd || breakloop)) {
                 long time;
@@ -835,12 +835,12 @@ public class TickerCacheTask {
 
                                 int file_version = slea.readInt(); // to be used for future updates
                                 int data_size = slea.readInt();
-                                System.out.println("[" + z_fileCount + "] Read count: " + data_size);
+                                //System.out.println("[" + z_fileCount + "] Read count: " + data_size);
 
                                 for (int i = 0; i < data_size; i++) {
                                     final byte startingMarker = slea.readByte();
                                     // starting and ending marker to ensure simple checksum and the file integrity
-                                    // if those markers are not -1, reload the entire one from Microsoft SQL database
+                                    // if those markers are not -1, reload the entire one from backup
                                     if (startingMarker != -1) {
                                         // cleanup
                                         list_newItems.clear();
@@ -925,8 +925,7 @@ public class TickerCacheTask {
                             // Write packet data size
                             plew.writeInt(Math.min(MAX_TickerItem_PerFile, currentList.size() - (z_fileCount * MAX_TickerItem_PerFile) - 1));
 
-                            System.out.println("[" + z_fileCount + "] Dumping count: " + Math.min(MAX_TickerItem_PerFile, currentList.size() - (z_fileCount * MAX_TickerItem_PerFile)));
-
+                            //System.out.println("[" + z_fileCount + "] Dumping count: " + Math.min(MAX_TickerItem_PerFile, currentList.size() - (z_fileCount * MAX_TickerItem_PerFile)));
                             final byte[] dataWrite = plew.getPacket();
                             out.write(dataWrite, 0, dataWrite.length);
 
@@ -959,7 +958,7 @@ public class TickerCacheTask {
                                 itemWrittenCount_File++;
 
                                 if (itemWrittenCount_File >= MAX_TickerItem_PerFile || itemWrittenCountTotal >= currentList.size()) { // 60,000 items per file.
-                                    System.out.println("Written: " + itemWrittenCount_File + " total: " + itemWrittenCountTotal);
+                                    //System.out.println("Written: " + itemWrittenCount_File + " total: " + itemWrittenCountTotal);
                                     break;
                                 }
                             }
@@ -1020,39 +1019,112 @@ public class TickerCacheTask {
     public void receivedNewGraphEntry_OtherPeers(String ExchangeCurrencyPair, long server_time, float close, float high, float low, float open, double volume, double volume_cur, float buysell_ratio) {
         //System.out.println(String.format("[Info] New info from other peers %s [%d], Close: %f, High: %f", ExchangeCurrencyPair, server_time, close, high));
 
-        if (list_mssql.containsKey(ExchangeCurrencyPair)
-                && canAcceptNewInfoFromOtherPeers.contains(ExchangeCurrencyPair.hashCode())) { // First item, no sync needed
-            final List<TickerItemData> currentList = this.list_mssql.get(ExchangeCurrencyPair);
-            if (currentList == null || currentList.isEmpty()) {
-                return;
-            }
-            synchronized (currentList) {
-                // Remove current unmatured data in existence
-                final Stream<TickerItemData> items_unmatured = currentList.stream().filter(data -> data.isUnmaturedData());
-                
-                final Object[] items = items_unmatured.toArray();
-                for (Object o : items) { // Don't use iterator here to prevent concurrent modification issue
-                    TickerItemData item = (TickerItemData) o;
-
-                    currentList.remove(item);
-                }
-
-                // Add the new candle data
-                currentList.add(new TickerItemData(server_time, close, high, low, open, volume, volume_cur, buysell_ratio, false));
-            }
-        }
+        // Execute this in a new thread so it doesnt lock up the other
+        // server calling it. 
+        MultiThreadExecutor.submit(new Thread_NewGraphEntry(ExchangeCurrencyPair, server_time, close, high, low, open, volume, volume_cur, buysell_ratio));
     }
 
     public void recievedNewUnmaturedData(String ExchangeCurrencyPair, long server_time, float close, float high, float low, float open, double volume, double volume_cur, float buysell_ratio, float lastprice) {
-        if (list_mssql.containsKey(ExchangeCurrencyPair)
-                && canAcceptNewInfoFromOtherPeers.contains(ExchangeCurrencyPair.hashCode())) { // First item, no sync needed
-            final List<TickerItemData> currentList = this.list_mssql.get(ExchangeCurrencyPair);
-            if (currentList == null || currentList.isEmpty()) {
-                return;
+        // Execute this in a new thread so it doesnt lock up the other
+        // server calling it. 
+        MultiThreadExecutor.submit(new Thread_NewUnmaturedData(ExchangeCurrencyPair, server_time, close, high, low, open, volume, volume_cur, buysell_ratio, lastprice));
+    }
+
+    public class Thread_NewGraphEntry extends Thread {
+
+        private final String ExchangeCurrencyPair;
+        private final long server_time;
+        private final float close;
+        private final float high;
+        private final float low;
+        private final float open;
+        private final double volume;
+        private final double volume_cur;
+        private final float buysell_ratio;
+
+        public Thread_NewGraphEntry(String ExchangeCurrencyPair, long server_time, float close, float high, float low, float open, double volume, double volume_cur, float buysell_ratio) {
+            this.ExchangeCurrencyPair = ExchangeCurrencyPair;
+            this.server_time = server_time;
+            this.close = close;
+            this.high = high;
+            this.low = low;
+            this.open = open;
+            this.volume = volume;
+            this.volume_cur = volume_cur;
+            this.buysell_ratio = buysell_ratio;
+        }
+
+        @Override
+        public void run() {
+            if (list_mssql.containsKey(ExchangeCurrencyPair)
+                    && canAcceptNewInfoFromOtherPeers.contains(ExchangeCurrencyPair.hashCode())) { // First item, no sync needed
+                final List<TickerItemData> currentList = list_mssql.get(ExchangeCurrencyPair);
+                if (currentList == null || currentList.isEmpty()) {
+                    return;
+                }
+                synchronized (currentList) {
+                    // Remove current unmatured data in existence
+                    final Stream<TickerItemData> items_unmatured = currentList.stream().filter(data -> data.isUnmaturedData());
+
+                    final Object[] items = items_unmatured.toArray();
+                    for (Object o : items) { // Don't use iterator here to prevent concurrent modification issue
+                        TickerItemData item = (TickerItemData) o;
+
+                        currentList.remove(item);
+                    }
+
+                    // Add the new candle data
+                    currentList.add(new TickerItemData(server_time, close, high, low, open, volume, volume_cur, buysell_ratio, false));
+                }
             }
-            synchronized (currentList) {
-                currentList.add(new TickerItemData(server_time, close, high, low, open, volume, volume_cur, buysell_ratio, true));
+
+            // Broadcast
+            if (ChannelServer.getInstance().isEnableSocketStreaming()
+                    && ChannelServer.getInstance().getServerSocketExchangeHandler() != null) {
+                ChannelServer.getInstance().getServerSocketExchangeHandler().broadcastMessage(ServerSocketExchangePacket.getMinuteChanges(ExchangeCurrencyPair, server_time, close, high, low, open, volume, volume_cur, buysell_ratio));
             }
         }
     }
+
+    public class Thread_NewUnmaturedData extends Thread {
+
+        private final String ExchangeCurrencyPair;
+        private final long server_time;
+        private final float close;
+        private final float high;
+        private final float low;
+        private final float open;
+        private final double volume;
+        private final double volume_cur;
+        private final float buysell_ratio;
+        private final float lastprice;
+
+        public Thread_NewUnmaturedData(String ExchangeCurrencyPair, long server_time, float close, float high, float low, float open, double volume, double volume_cur, float buysell_ratio, float lastprice) {
+            this.ExchangeCurrencyPair = ExchangeCurrencyPair;
+            this.server_time = server_time;
+            this.close = close;
+            this.high = high;
+            this.low = low;
+            this.open = open;
+            this.volume = volume;
+            this.volume_cur = volume_cur;
+            this.buysell_ratio = buysell_ratio;
+            this.lastprice = lastprice;
+        }
+
+        @Override
+        public void run() {
+            if (list_mssql.containsKey(ExchangeCurrencyPair)
+                    && canAcceptNewInfoFromOtherPeers.contains(ExchangeCurrencyPair.hashCode())) { // First item, no sync needed
+                final List<TickerItemData> currentList = list_mssql.get(ExchangeCurrencyPair);
+                if (currentList == null || currentList.isEmpty()) {
+                    return;
+                }
+                synchronized (currentList) {
+                    currentList.add(new TickerItemData(server_time, close, high, low, open, volume, volume_cur, buysell_ratio, true));
+                }
+            }
+        }
+    }
+
 }

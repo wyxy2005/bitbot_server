@@ -90,7 +90,14 @@ public class MLTestTask implements Runnable {
                 _ResponseHeader.addBasicResponseHeader(response);
 
                 if (isAuthorized) {
-                    List<TickerItem_CandleBar> ret = ChannelServer.getInstance().getTickerTask().getTickerList_Candlestick(currencypair, backtestHours, intervalMinutes, ExchangeSite, ServerTimeFrom,  System.currentTimeMillis() / 1000, true);
+                    List<TickerItem_CandleBar> ret = ChannelServer.getInstance().getTickerTask().getTickerList_Candlestick(
+                            currencypair, 
+                            backtestHours, 
+                            intervalMinutes, 
+                            ExchangeSite, 
+                            ServerTimeFrom,  
+                            System.currentTimeMillis() / 1000, 
+                            true);
 
                     switch (APIVersion) {
                         case 1: { // encrypted

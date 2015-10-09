@@ -23,7 +23,7 @@ public class TickerHistoryData {
     private double Volume; // BTC * USD
     private double Volume_Cur; // BTC/USD, cur = BTC.
     private long LastPurchaseTime;
-    private long LastServerUTCTime = 0L;
+    private long LastServerUTCTime;
     private int LastTradeId;
 
     private double TotalBuyVolume = 1, TotalSellVolume = 1;
