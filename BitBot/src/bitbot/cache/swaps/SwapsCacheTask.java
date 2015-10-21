@@ -321,7 +321,7 @@ public class SwapsCacheTask {
                 final List<SwapsItemData> list_newItems = new ArrayList(); // create a new array first and replace later
 
                 // Load data from sql server
-                long biggest_server_time_result = MicrosoftAzureDatabaseExt.selectSwapsData(ExchangeSite, Currency, 60000, 24, LastCachedTime, list_newItems);
+                long biggest_server_time_result = MicrosoftAzureDatabaseExt.selectSwapsData(ExchangeSite, Currency, 60000, LastCachedTime, list_newItems);
                 if (biggest_server_time_result != -1) { // temporary network issue or unavailable
                     // Set max server_time
                     if (biggest_server_time_result > LastCachedTime) {

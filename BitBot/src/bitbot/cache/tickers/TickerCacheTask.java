@@ -637,10 +637,12 @@ public class TickerCacheTask {
             lastCacheTime = cTime;
             IsLoading = true;
 
-            System.out.println(String.format("[TH] Updating price: %s", ExchangeCurrencyPair));
+            if (ChannelServer.getInstance().isEnableDebugSessionPrints()) {
+                System.out.println(String.format("[TH] Updating price: %s", ExchangeCurrencyPair));
+            }
 
             try {
-                TickerHistoryData data = HistoryConnector.connectAndParseHistoryResult(
+                final TickerHistoryData data = HistoryConnector.connectAndParseHistoryResult(
                         ExchangeCurrencyPair,
                         ExchangeSite,
                         CurrencyPair,
@@ -657,30 +659,19 @@ public class TickerCacheTask {
                     } else {
                         HistoryData = data;
                     }
-                    HistoryDatabaseCommitEnum commitResult = HistoryData.tryCommitDatabase(LastCommitTime, ExchangeSite, CurrencyPair, ExchangeCurrencyPair);
-
-                    // Broadcast this piece of data to world server 
-                    if (HistoryData.getLastPrice() != 0 && readyToBroadcastPriceChanges()) {
-                        ChannelServer.getInstance().broadcastPriceChanges(
-                                ExchangeCurrencyPair,
-                                HistoryData.getLastServerUTCTime() / 1000l,
-                                HistoryData.getLastPrice(), // using last price as close since this isnt known yet
-                                HistoryData.getHigh(), HistoryData.getLow(), HistoryData.getOpen(),
-                                HistoryData.getVolume(), HistoryData.getVolume_Cur(),
-                                HistoryData.getBuySell_Ratio(),
-                                HistoryData.getLastPrice()
-                        );
-                    }
+                    final HistoryDatabaseCommitEnum commitResult = HistoryData.tryCommitDatabase(LastCommitTime, ExchangeSite, CurrencyPair, ExchangeCurrencyPair, readyToBroadcastPriceChanges());
 
                     switch (commitResult) {
                         case Ok: {
                             // Output
-                            Calendar cal = Calendar.getInstance();
-                            cal.setTimeInMillis(HistoryData.getLastServerUTCTime());
-                            cal.set(Calendar.SECOND, 0);
+                            if (ChannelServer.getInstance().isEnableDebugSessionPrints()) {
+                                Calendar cal = Calendar.getInstance();
+                                cal.setTimeInMillis(HistoryData.getLastServerUTCTime());
+                                cal.set(Calendar.SECOND, 0);
 
-                            System.out.println(String.format("[TH] %s Commited data hh:mm = (%s), High: %f, Low: %f, Volume: %f, VolumeCur: %f",
-                                    ExchangeCurrencyPair, cal.getTime().toString(), HistoryData.getHigh(), HistoryData.getLow(), HistoryData.getVolume(), HistoryData.getVolume_Cur()));
+                                System.out.println(String.format("[TH] %s Commited data hh:mm = (%s), High: %f, Low: %f, Volume: %f, VolumeCur: %f",
+                                        ExchangeCurrencyPair, cal.getTime().toString(), HistoryData.getHigh(), HistoryData.getLow(), HistoryData.getVolume(), HistoryData.getVolume_Cur()));
+                            }
 
                             LastCommitTime = HistoryData.getLastPurchaseTime();
 
@@ -772,7 +763,7 @@ public class TickerCacheTask {
 
             final List<TickerItemData> list_newItems = new ArrayList(); // create a new array first and replace later
 
-            final long biggest_server_time_result = MicrosoftAzureDatabaseExt.selectGraphData(ExchangeSite, CurrencyPair_, 60000, 24, LastCachedTime, list_newItems);
+            final long biggest_server_time_result = MicrosoftAzureDatabaseExt.selectGraphData(ExchangeSite, CurrencyPair_, 60000, LastCachedTime, list_newItems);
             if (biggest_server_time_result != -2) { // is not an error
                 // Set max server_time
                 if (biggest_server_time_result > LastCachedTime) {
@@ -1019,112 +1010,78 @@ public class TickerCacheTask {
     public void receivedNewGraphEntry_OtherPeers(String ExchangeCurrencyPair, long server_time, float close, float high, float low, float open, double volume, double volume_cur, float buysell_ratio) {
         //System.out.println(String.format("[Info] New info from other peers %s [%d], Close: %f, High: %f", ExchangeCurrencyPair, server_time, close, high));
 
-        // Execute this in a new thread so it doesnt lock up the other
-        // server calling it. 
-        MultiThreadExecutor.submit(new Thread_NewGraphEntry(ExchangeCurrencyPair, server_time, close, high, low, open, volume, volume_cur, buysell_ratio));
+        if (list_mssql.containsKey(ExchangeCurrencyPair)
+                && canAcceptNewInfoFromOtherPeers.contains(ExchangeCurrencyPair.hashCode())) { // First item, no sync needed
+            final List<TickerItemData> currentList = list_mssql.get(ExchangeCurrencyPair);
+            if (currentList == null || currentList.isEmpty()) {
+                return;
+            }
+            
+            // Temporary rollback, due to upper limits of memory until a better solution is found.
+            /*synchronized (currentList) {
+             // Remove current unmatured data in existence
+             final Stream<TickerItemData> items_unmatured = currentList.stream().filter(data -> data.isUnmaturedData());
+
+             final Object[] items = items_unmatured.toArray();
+             for (Object o : items) { // Don't use iterator here to prevent concurrent modification issue
+             TickerItemData item = (TickerItemData) o;
+
+             currentList.remove(item);
+             }
+
+             // Add the new candle data
+             currentList.add(new TickerItemData(server_time, close, high, low, open, volume, volume_cur, buysell_ratio, false));
+             }*/
+            synchronized (currentList) {
+                final TickerItemData lastItem = currentList.get(currentList.size() - 1);
+
+                // If an unmatured data is available  
+                // replace it with a matured ones  
+                if (lastItem.isUnmaturedData()) {
+                    lastItem.replaceUnmaturedData(server_time, close, high, low, open, volume, volume_cur, buysell_ratio, false);
+                    return;
+                }
+
+                // Add the new candle data
+                currentList.add(new TickerItemData(server_time, close, high, low, open, volume, volume_cur, buysell_ratio, false));
+            }
+        }
+
+        // Broadcast
+        if (ChannelServer.getInstance().isEnableSocketStreaming()
+                && ChannelServer.getInstance().getServerSocketExchangeHandler() != null) {
+            ChannelServer.getInstance().getServerSocketExchangeHandler().broadcastMessage(ServerSocketExchangePacket.getMinuteChanges(ExchangeCurrencyPair, server_time, close, high, low, open, volume, volume_cur, buysell_ratio));
+        }
     }
 
     public void recievedNewUnmaturedData(String ExchangeCurrencyPair, long server_time, float close, float high, float low, float open, double volume, double volume_cur, float buysell_ratio, float lastprice) {
-        // Execute this in a new thread so it doesnt lock up the other
-        // server calling it. 
-        MultiThreadExecutor.submit(new Thread_NewUnmaturedData(ExchangeCurrencyPair, server_time, close, high, low, open, volume, volume_cur, buysell_ratio, lastprice));
-    }
-
-    public class Thread_NewGraphEntry extends Thread {
-
-        private final String ExchangeCurrencyPair;
-        private final long server_time;
-        private final float close;
-        private final float high;
-        private final float low;
-        private final float open;
-        private final double volume;
-        private final double volume_cur;
-        private final float buysell_ratio;
-
-        public Thread_NewGraphEntry(String ExchangeCurrencyPair, long server_time, float close, float high, float low, float open, double volume, double volume_cur, float buysell_ratio) {
-            this.ExchangeCurrencyPair = ExchangeCurrencyPair;
-            this.server_time = server_time;
-            this.close = close;
-            this.high = high;
-            this.low = low;
-            this.open = open;
-            this.volume = volume;
-            this.volume_cur = volume_cur;
-            this.buysell_ratio = buysell_ratio;
-        }
-
-        @Override
-        public void run() {
-            if (list_mssql.containsKey(ExchangeCurrencyPair)
-                    && canAcceptNewInfoFromOtherPeers.contains(ExchangeCurrencyPair.hashCode())) { // First item, no sync needed
-                final List<TickerItemData> currentList = list_mssql.get(ExchangeCurrencyPair);
-                if (currentList == null || currentList.isEmpty()) {
-                    return;
-                }
-                synchronized (currentList) {
-                    // Remove current unmatured data in existence
-                    final Stream<TickerItemData> items_unmatured = currentList.stream().filter(data -> data.isUnmaturedData());
-
-                    final Object[] items = items_unmatured.toArray();
-                    for (Object o : items) { // Don't use iterator here to prevent concurrent modification issue
-                        TickerItemData item = (TickerItemData) o;
-
-                        currentList.remove(item);
-                    }
-
-                    // Add the new candle data
-                    currentList.add(new TickerItemData(server_time, close, high, low, open, volume, volume_cur, buysell_ratio, false));
-                }
+        if (list_mssql.containsKey(ExchangeCurrencyPair)
+                && canAcceptNewInfoFromOtherPeers.contains(ExchangeCurrencyPair.hashCode())) { // First item, no sync needed
+            final List<TickerItemData> currentList = list_mssql.get(ExchangeCurrencyPair);
+            if (currentList == null || currentList.isEmpty()) {
+                return;
             }
-
-            // Broadcast
-            if (ChannelServer.getInstance().isEnableSocketStreaming()
-                    && ChannelServer.getInstance().getServerSocketExchangeHandler() != null) {
-                ChannelServer.getInstance().getServerSocketExchangeHandler().broadcastMessage(ServerSocketExchangePacket.getMinuteChanges(ExchangeCurrencyPair, server_time, close, high, low, open, volume, volume_cur, buysell_ratio));
-            }
-        }
-    }
-
-    public class Thread_NewUnmaturedData extends Thread {
-
-        private final String ExchangeCurrencyPair;
-        private final long server_time;
-        private final float close;
-        private final float high;
-        private final float low;
-        private final float open;
-        private final double volume;
-        private final double volume_cur;
-        private final float buysell_ratio;
-        private final float lastprice;
-
-        public Thread_NewUnmaturedData(String ExchangeCurrencyPair, long server_time, float close, float high, float low, float open, double volume, double volume_cur, float buysell_ratio, float lastprice) {
-            this.ExchangeCurrencyPair = ExchangeCurrencyPair;
-            this.server_time = server_time;
-            this.close = close;
-            this.high = high;
-            this.low = low;
-            this.open = open;
-            this.volume = volume;
-            this.volume_cur = volume_cur;
-            this.buysell_ratio = buysell_ratio;
-            this.lastprice = lastprice;
-        }
-
-        @Override
-        public void run() {
-            if (list_mssql.containsKey(ExchangeCurrencyPair)
-                    && canAcceptNewInfoFromOtherPeers.contains(ExchangeCurrencyPair.hashCode())) { // First item, no sync needed
-                final List<TickerItemData> currentList = list_mssql.get(ExchangeCurrencyPair);
-                if (currentList == null || currentList.isEmpty()) {
-                    return;
-                }
-                synchronized (currentList) {
+            // Temporary rollback, due to upper limits of memory until a better solution is found.
+            /* synchronized (currentList) {
+             currentList.add(new TickerItemData(
+             server_time, 
+             close, 
+             high, 
+             low, 
+             open, 
+             volume, 
+             volume_cur, 
+             buysell_ratio, 
+             true));
+             }*/
+            synchronized (currentList) {
+                final TickerItemData lastItem = currentList.get(currentList.size() - 1);
+                if (lastItem.isUnmaturedData()) {
+                    lastItem.replaceUnmaturedData(server_time, close, high, low, open, volume, volume_cur, buysell_ratio, true);
+                } else {
                     currentList.add(new TickerItemData(server_time, close, high, low, open, volume, volume_cur, buysell_ratio, true));
                 }
             }
         }
     }
-
 }

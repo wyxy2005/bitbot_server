@@ -51,7 +51,7 @@ public class TickerHistoryData {
         }
     }
 
-    public HistoryDatabaseCommitEnum tryCommitDatabase(long LastCommitTime, String ExchangeSite, String currencyPair, String ExchangeCurrencyPair) {
+    public HistoryDatabaseCommitEnum tryCommitDatabase(long LastCommitTime, String ExchangeSite, String currencyPair, String ExchangeCurrencyPair, boolean readyToBroadcastPriceChanges) {
         //System.out.println("Time diff: " + Math.abs(LastCommitTime - LastPurchaseTime) );
 
         if (Math.abs(LastCommitTime - LastPurchaseTime) > 60000) { // per minute
@@ -85,6 +85,19 @@ public class TickerHistoryData {
 
             return HistoryDatabaseCommitEnum.Ok;
         }
+        // Broadcast this piece of data to world server 
+        if (getLastPrice() != 0 && readyToBroadcastPriceChanges) {
+            ChannelServer.getInstance().broadcastPriceChanges(
+                    ExchangeCurrencyPair,
+                    getLastServerUTCTime() / 1000l,
+                    getLastPrice(), // using last price as close since this isnt known yet
+                    getHigh(), getLow(), getOpen(),
+                    getVolume(), getVolume_Cur(),
+                    getBuySell_Ratio(),
+                    getLastPrice()
+            );
+        }
+
         return HistoryDatabaseCommitEnum.Time_Not_Ready;
     }
 

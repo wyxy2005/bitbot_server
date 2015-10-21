@@ -35,7 +35,7 @@ public class MicrosoftAzureDatabaseExt {
     * Returns the graph data selected from the MSSQL Datababase
     * @return long (biggest server time), -2 if error, -1 if no result
     */
-    public static long selectGraphData(String ExchangeSite, String currencyPair, int depthSelection, int hoursSelection, long start_server_time, List<TickerItemData> list_BTCe2) {
+    public static long selectGraphData(String ExchangeSite, String currencyPair, int depthSelection, long start_server_time, List<TickerItemData> list_BTCe2) {
         // currencyPair = eg: btc_usd
         String tableName = DatabaseTablesConstants.getDatabaseTableName(ExchangeSite, currencyPair);
 
@@ -44,7 +44,8 @@ public class MicrosoftAzureDatabaseExt {
         try {
             Connection con = DatabaseConnection.getConnection();
 
-            ps = con.prepareStatement("SELECT TOP " + depthSelection + "  \"high\", \"low\", \"open\", \"close\", \"vol\", \"vol_cur\", \"server_time\", \"buysell_ratio\" FROM BitCoinBot." + tableName + " WHERE server_time > ? AND __createdAt < dateadd(hh, + " + hoursSelection + ", getdate()) ORDER BY server_time ASC;");
+            //ps = con.prepareStatement("SELECT TOP " + depthSelection + "  \"high\", \"low\", \"open\", \"close\", \"vol\", \"vol_cur\", \"server_time\", \"buysell_ratio\" FROM BitCoinBot." + tableName + " WHERE server_time > ? AND __createdAt < dateadd(hh, + " + hoursSelection + ", getdate()) ORDER BY server_time ASC;");
+            ps = con.prepareStatement("SELECT TOP " + depthSelection + "  \"high\", \"low\", \"open\", \"close\", \"vol\", \"vol_cur\", \"server_time\", \"buysell_ratio\" FROM BitCoinBot." + tableName + " WHERE server_time > ? ORDER BY server_time ASC;");
             ps.setLong(1, start_server_time);
 
             rs = ps.executeQuery();
@@ -84,7 +85,7 @@ public class MicrosoftAzureDatabaseExt {
     * Returns the swaps data selected from the MSSQL Datababase
     * @return long (biggest server time), -1 if error
     */
-    public static long selectSwapsData(String ExchangeSite, String currency, int depthSelection, int hoursSelection, long start_server_time, List<SwapsItemData> list_items) {
+    public static long selectSwapsData(String ExchangeSite, String currency, int depthSelection, long start_server_time, List<SwapsItemData> list_items) {
         final String tableName = String.format("%s_swaps_%s", ExchangeSite, currency);
 
         PreparedStatement ps = null;
@@ -92,7 +93,8 @@ public class MicrosoftAzureDatabaseExt {
         try {
             Connection con = DatabaseConnection.getConnection();
 
-            ps = con.prepareStatement("SELECT TOP " + depthSelection + "  \"rate\", \"amount_lent\", \"timestamp\", \"spot_price\" FROM BitCoinBot." + tableName + " WHERE timestamp > ? AND __createdAt < dateadd(hh, + " + hoursSelection + ", getdate()) ORDER BY timestamp ASC;");
+            //ps = con.prepareStatement("SELECT TOP " + depthSelection + "  \"rate\", \"amount_lent\", \"timestamp\", \"spot_price\" FROM BitCoinBot." + tableName + " WHERE timestamp > ? AND __createdAt < dateadd(hh, + " + hoursSelection + ", getdate()) ORDER BY timestamp ASC;");
+            ps = con.prepareStatement("SELECT TOP " + depthSelection + "  \"rate\", \"amount_lent\", \"timestamp\", \"spot_price\" FROM BitCoinBot." + tableName + " WHERE timestamp > ? ORDER BY timestamp ASC;");
             ps.setLong(1, start_server_time);
 
             rs = ps.executeQuery();
