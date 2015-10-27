@@ -21,8 +21,8 @@ import bitbot.util.database.MicrosoftAzureDatabaseExt;
 import bitbot.handler.channel.ChannelServer;
 import bitbot.Constants;
 import bitbot.cache.tickers.HTTP.TickerHistory_BitVC;
+import bitbot.cache.tickers.HTTP.TickerHistory_Gemini;
 import bitbot.server.threads.LoggingSaveRunnable;
-import bitbot.server.threads.MultiThreadExecutor;
 import bitbot.server.threads.TimerManager;
 import bitbot.util.encryption.input.ByteArrayByteStream;
 import bitbot.util.encryption.input.GenericSeekableLittleEndianAccessor;
@@ -174,6 +174,9 @@ public class TickerCacheTask {
 
                 } else if (ExchangeCurrencyPair.contains("mtgox")) { // goxxed
                     //history = new TickerHistory_MTGox(trackLargeTrades); // died
+
+                } else if (ExchangeCurrencyPair.contains("gemini")) {
+                    history = new TickerHistory_Gemini(trackLargeTrades);
                 }
 
                 if (history != null) {
@@ -905,7 +908,7 @@ public class TickerCacheTask {
                         File f_data = new File(f, storingFileName + ".temp");
                         f_data.createNewFile();
 
-                        File f_target = new File(f, storingFileName);
+                        File f_target = new File(f, storingFileName );
                         // override existing file if any.
                         FileOutputStream out = null;
                         try {
@@ -913,16 +916,18 @@ public class TickerCacheTask {
 
                             final PacketLittleEndianWriter plew = new PacketLittleEndianWriter();
                             plew.writeInt(FILE_VERSIONING);
+                            
                             // Write packet data size
-                            plew.writeInt(Math.min(MAX_TickerItem_PerFile, currentList.size() - (z_fileCount * MAX_TickerItem_PerFile) - 1));
+                            plew.writeInt(currentList.isEmpty() ? 
+                                    0 : Math.min(MAX_TickerItem_PerFile, currentList.size() - (z_fileCount * MAX_TickerItem_PerFile) - 1));
 
                             //System.out.println("[" + z_fileCount + "] Dumping count: " + Math.min(MAX_TickerItem_PerFile, currentList.size() - (z_fileCount * MAX_TickerItem_PerFile)));
                             final byte[] dataWrite = plew.getPacket();
                             out.write(dataWrite, 0, dataWrite.length);
 
                             // Loop through the data and write for each individual entry
-                            while (true) {
-                                TickerItemData data = currentList.get(itemWrittenCountTotal);
+                            while (itemWrittenCount_File < MAX_TickerItem_PerFile && itemWrittenCountTotal < currentList.size()) {
+                                final TickerItemData data = currentList.get(itemWrittenCountTotal);
 
                                 final PacketLittleEndianWriter plew2 = new PacketLittleEndianWriter(); // using multiple mplews to assist garbage collection
                                 plew2.write(-1); // starting marker
@@ -953,6 +958,7 @@ public class TickerCacheTask {
                                     break;
                                 }
                             }
+
                         } catch (Exception error) {
                             error.printStackTrace();
 
@@ -1016,7 +1022,7 @@ public class TickerCacheTask {
             if (currentList == null || currentList.isEmpty()) {
                 return;
             }
-            
+
             // Temporary rollback, due to upper limits of memory until a better solution is found.
             /*synchronized (currentList) {
              // Remove current unmatured data in existence
