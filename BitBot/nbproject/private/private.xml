@@ -12,9 +12,8 @@
     </editor-bookmarks>
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
         <group>
-            <file>file:/C:/Users/zheng/Desktop/Server/bitbot_server/BitBot/src/bitbot/cache/trades/TradesCacheTask.java</file>
-            <file>file:/C:/Users/zheng/Desktop/Server/bitbot_server/BitBot/src/bitbot/cache/tickers/HTTP/TickerHistory_Gemini.java</file>
-            <file>file:/C:/Users/zheng/Desktop/Server/bitbot_server/BitBot/src/bitbot/cache/tickers/TickerCacheTask.java</file>
+            <file>file:/C:/Users/zheng/Desktop/Work/Server/bitbot_server/BitBot/src/bitbot/cache/tickers/socket/SocketTickerHistory_Huobi.java</file>
+            <file>file:/C:/Users/zheng/Desktop/Work/Server/bitbot_server/BitBot/src/bitbot/cache/tickers/TickerCacheTask.java</file>
         </group>
     </open-files>
 </project-private>

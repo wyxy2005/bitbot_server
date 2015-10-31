@@ -11,7 +11,6 @@ import bitbot.cache.tickers.HTTP.TickerHistory_CampBX;
 import bitbot.cache.tickers.HTTP.TickerHistory_BTCChina;
 import bitbot.cache.tickers.HTTP.TickerHistory_Coinbase;
 import bitbot.cache.tickers.HTTP.TickerHistory_BitFinex;
-import bitbot.cache.tickers.HTTP.TickerHistory_Huobi;
 import bitbot.cache.tickers.HTTP.TickerHistory_FybSGSE;
 import bitbot.cache.tickers.HTTP.TickerHistory_Bitstamp;
 import bitbot.cache.tickers.HTTP.TickerHistory_Cryptsy;
@@ -22,6 +21,7 @@ import bitbot.handler.channel.ChannelServer;
 import bitbot.Constants;
 import bitbot.cache.tickers.HTTP.TickerHistory_BitVC;
 import bitbot.cache.tickers.HTTP.TickerHistory_Gemini;
+import bitbot.cache.tickers.HTTP.TickerHistory_Huobi;
 import bitbot.server.threads.LoggingSaveRunnable;
 import bitbot.server.threads.TimerManager;
 import bitbot.util.encryption.input.ByteArrayByteStream;
@@ -107,6 +107,9 @@ public class TickerCacheTask {
                 if (ExchangeCurrencyPair.contains("huobi")) {
                     history = new TickerHistory_Huobi(trackLargeTrades);
                     UpdateTime_Millis = 500;
+                    
+                   // history = new SocketTickerHistory_Huobi(trackLargeTrades, ExchangeSite, CurrencyPair);
+                   // UpdateTime_Millis = 10000; // Check the socket state once every 10 seconds
 
                 } else if (ExchangeCurrencyPair.contains("bitvc")) {
                     history = new TickerHistory_BitVC(trackLargeTrades);

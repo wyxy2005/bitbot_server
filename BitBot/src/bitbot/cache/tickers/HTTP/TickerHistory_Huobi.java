@@ -13,7 +13,8 @@ import org.json.simple.parser.JSONParser;
 /**
  * Documentation:
  * http://translate.google.com/translate?act=url&depth=1&hl=en&ie=UTF8&prev=_t&rurl=translate.google.com&sl=auto&tl=en&u=http://www.huobi.com/help/index.php%3Fa%3Dmarket_help
- *
+ * https://www.huobi.com/help/index.php?a=market_help
+ * 
  * @author z
  */
 public class TickerHistory_Huobi implements TickerHistoryInterface {
@@ -33,7 +34,8 @@ public class TickerHistory_Huobi implements TickerHistoryInterface {
 
     @Override
     public TickerHistoryData connectAndParseHistoryResult(String ExchangeCurrencyPair, String ExchangeSite, String CurrencyPair, long LastPurchaseTime, int LastTradeId) {
-        String Uri = String.format("https://market.huobi.com/staticmarket/detail%s.html", CurrencyPair.contains("btc") ? "" : "_ltc");
+        final String[] Split = CurrencyPair.split("_");
+        final String Uri = String.format("http://api.huobi.com/staticmarket/detail_%s_json.js", Split[0]);
         String GetResult = HttpClient.httpGet(Uri, "");
 
         if (GetResult != null) {
@@ -41,10 +43,6 @@ public class TickerHistory_Huobi implements TickerHistoryInterface {
 
             JSONParser parser = new JSONParser(); // Init parser
             try {
-                // Remove unnecessary data
-                GetResult = GetResult.replace("view_detail(", "");
-                GetResult = GetResult.substring(0, GetResult.length() - 1);
-
                 // Timestamp for last purchase time
                 Calendar cal_LastPurchaseTime = Calendar.getInstance(timeZone); // Huobi time
 
@@ -100,7 +98,7 @@ public class TickerHistory_Huobi implements TickerHistoryInterface {
                     }
                 }
             } catch (Exception parseExp) {
-                //parseExp.printStackTrace();
+                parseExp.printStackTrace();
                 //System.out.println(GetResult);
                 //ServerLog.RegisterForLogging(ServerLogType.HistoryCacheTask, parseExp.getMessage());
             }
