@@ -98,7 +98,7 @@ public class TickerHistory_Huobi implements TickerHistoryInterface {
                     }
                 }
             } catch (Exception parseExp) {
-                parseExp.printStackTrace();
+                //parseExp.printStackTrace();
                 //System.out.println(GetResult);
                 //ServerLog.RegisterForLogging(ServerLogType.HistoryCacheTask, parseExp.getMessage());
             }

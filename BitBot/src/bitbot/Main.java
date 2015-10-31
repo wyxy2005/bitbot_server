@@ -1,11 +1,11 @@
 package bitbot;
 
-import bitbot.handler.CloudflareIPValidator;
 import bitbot.handler.channel.ChannelServer;
 import bitbot.handler.world.WorldServer;
 import bitbot.server.threads.MultiThreadExecutor;
 import bitbot.server.threads.TimerManager;
 import bitbot.util.BitcoinWisdomReader;
+import bitbot.util.LocalStorageDataReader;
 import bitbot.util.MT4CVSReader;
 import bitbot.util.encryption.CustomXorEncryption;
 import bitbot.util.encryption.input.ByteArrayByteStream;
@@ -93,6 +93,17 @@ public class Main {
                  }
                  }
                  }*/
+                break;
+            }
+            case "readRestoreFromLocalDatabase": {
+                // 1445439600 before
+                
+                String sqlPat = args[1];
+                String ExchangeCurrencyPair = "_796-btc Futures_usd";
+                
+                boolean showdebugOnly = Boolean.parseBoolean(args[2]);
+                
+                LocalStorageDataReader.ReadJsonFile(sqlPat, ExchangeCurrencyPair, showdebugOnly);
                 break;
             }
             case "readBitcoinWisdomData": {
