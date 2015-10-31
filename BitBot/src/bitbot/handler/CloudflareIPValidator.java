@@ -29,23 +29,31 @@ public class CloudflareIPValidator {
         "172.64.0.0/13"
     };
 
+    private static final String[] IPAddress_v6 = {
+        "2400:cb00::/32",
+        "2405:8100::/32",
+        "2405:b500::/32",
+        "2606:4700::/32",
+        "2803:f800::/32"
+    };
+
     private static final List<Pair<Integer, Integer>> CompiledIPAddrRange = new ArrayList<>();
 
     static {
         /*String[] usingAddressList;
         
-        String HttpGetResult = HttpClient.httpsGet("https://www.cloudflare.com/ips-v4", "");
-        if (HttpGetResult == null) {
-            usingAddressList = IPAddress_v4;
-        } else {
-            usingAddressList = HttpGetResult.split("\\r?\\n");
-        }
-        System.out.println(HttpGetResult);*/
+         String HttpGetResult = HttpClient.httpsGet("https://www.cloudflare.com/ips-v4", "");
+         if (HttpGetResult == null) {
+         usingAddressList = IPAddress_v4;
+         } else {
+         usingAddressList = HttpGetResult.split("\\r?\\n");
+         }
+         System.out.println(HttpGetResult);*/
         for (String CloudFlareIP : IPAddress_v4) {
-     /*       if (CloudFlareIP.isEmpty()) {
-                continue;
-            }
-            System.out.println(CloudFlareIP);*/
+            /*       if (CloudFlareIP.isEmpty()) {
+             continue;
+             }
+             System.out.println(CloudFlareIP);*/
             String[] splitIPAddr = CloudFlareIP.split("\\.");
             String[] last_mask = splitIPAddr[3].split("\\/");
 
@@ -80,7 +88,7 @@ public class CloudflareIPValidator {
                 | ((Integer.parseInt(splitIPAddr[1]) << 16) & 0xFF0000)
                 | ((Integer.parseInt(splitIPAddr[2]) << 8) & 0xFF00)
                 | (Integer.parseInt(splitIPAddr[3]) & 0xFF);
-        
+
         //System.out.println(addr);
         for (Pair<Integer, Integer> cloudFlareIP : CompiledIPAddrRange) {
             //System.out.println("Left: " + cloudFlareIP.left + " right: " + cloudFlareIP.right);

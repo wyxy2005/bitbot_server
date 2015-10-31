@@ -42,9 +42,9 @@ public class Constants {
     public static boolean tv_supports_group_request = false;
     public static boolean tv_supports_marks = false;
     
-    public static String[] tv_exchange_value = { "",                "BTCe", "Bitfinex", "Bitstamp", "Okcoin", "BTCChina", "Coinbase", "CoinbaseExchange", "Campbx", "Itbit", "Cryptsy", "_796", "Fybsg", "Fybse", "Kraken", "CexIO", "Dgex", "BitVC"};
-    public static String[] tv_exchange_name = { "All Exchanges",    "BTCe", "Bitfinex", "Bitstamp", "Okcoin", "BTCChina", "Coinbase", "CoinbaseExchange", "Campbx", "Itbit", "Cryptsy", "_796", "Fybsg", "Fybse", "Kraken", "CexIO", "Dgex", "BitVC"};
-    public static String[] tv_exchange_desc = { "",                 "BTCe", "Bitfinex", "Bitstamp", "Okcoin", "BTCChina", "Coinbase", "CoinbaseExchange", "Campbx", "Itbit", "Cryptsy", "_796", "Fybsg", "Fybse", "Kraken", "CexIO", "Dgex", "BitVC"};
+    public static String[] tv_exchange_value = { "",                "BTCe", "Bitfinex", "Bitstamp", "Okcoin", "BTCChina", "Coinbase", "CoinbaseExchange", "Campbx", "Itbit", "Cryptsy", "_796", "Fybsg", "Fybse", "Kraken", "CexIO", "Dgex", "BitVC", "Gemini"};
+    public static String[] tv_exchange_name = { "All Exchanges",    "BTCe", "Bitfinex", "Bitstamp", "Okcoin", "BTCChina", "Coinbase", "CoinbaseExchange", "Campbx", "Itbit", "Cryptsy", "_796", "Fybsg", "Fybse", "Kraken", "CexIO", "Dgex", "BitVC", "Gemini"};
+    public static String[] tv_exchange_desc = { "",                 "BTCe", "Bitfinex", "Bitstamp", "Okcoin", "BTCChina", "Coinbase", "CoinbaseExchange", "Campbx", "Itbit", "Cryptsy", "_796", "Fybsg", "Fybse", "Kraken", "CexIO", "Dgex", "BitVC", "Gemini"};
     
 
     public static String[] tv_symbolType1 = { "All types", "Bitcoin", "Stock", "Index"};
