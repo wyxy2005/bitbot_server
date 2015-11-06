@@ -74,14 +74,17 @@ public class LocalStorageDataReader {
                             Calendar cal = Calendar.getInstance();
                             cal.setTimeInMillis(servertime * 1000);
 
-                            if (servertime < 1445439600) {
+                            if (servertime > 1432352598 && servertime < 1445439600) {
                                 System.out.println(String.format("[%s] Open: %f, High: %f, Low: %f, Close: %f, VolumeCur: %f, Volume: %f", cal.getTime().toString(), open, high, low, close, volume_cur, volume));
 
-                                if (showdebugOnly) {
-                                    InsertSQLTable(path, high, low, volume, volume_cur, open, close, servertime, ratio);
-                                }
-                            }
 
+                                if (showdebugOnly) {
+                                    //Runnable r = new InsertOtherThread(path, high, low, volume, volume_cur, open, close, servertime, ratio);
+                                    
+                                    //ThreadPool.getInstance().execute(r);
+                                    InsertSQLTable(path, high, low, volume, volume_cur, open, close, servertime, ratio);
+                                }                             
+                            }
                         }
                     }
                 } catch (Exception error) {
@@ -101,6 +104,36 @@ public class LocalStorageDataReader {
             exp.printStackTrace();
         }
 
+    }
+
+    public static class InsertOtherThread implements Runnable {
+
+        private String tableName;
+        private float High;
+        private float Low;
+        private double Volume;
+        private double Volume_Cur;
+        private float Open;
+        private float LastPrice;
+        private long LastCommitTime;
+        private float ratio;
+
+        public InsertOtherThread(String tableName, float High, float Low, double Volume, double Volume_Cur, float Open, float LastPrice, long LastCommitTime, float ratio) {
+            this.tableName = tableName;
+            this.High = High;
+            this.Low = Low;
+            this.Volume = Volume;
+            this.Volume_Cur = Volume_Cur;
+            this.Open = Open;
+            this.LastPrice = LastPrice;
+            this.LastCommitTime = LastCommitTime;
+            this.ratio = ratio;
+        }
+
+        @Override
+        public void run() {
+            InsertSQLTable(tableName, High, Low, Volume, Volume_Cur, Open, LastPrice, LastCommitTime, ratio);
+        }
     }
 
     private static void InsertSQLTable(String tableName, float High, float Low, double Volume, double Volume_Cur, float Open, float LastPrice, long LastCommitTime, float ratio) {

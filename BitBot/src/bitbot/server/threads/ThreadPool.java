@@ -11,11 +11,15 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 public class ThreadPool {
 
-    private static ThreadPool instance = new ThreadPool();
+    private static ThreadPool instance;
     private ThreadPoolExecutor ses;
     private final BlockingQueue<Runnable> queue = new LinkedBlockingQueue();
 
     public static ThreadPool getInstance() {
+        if (instance == null) {
+            instance = new ThreadPool();
+            instance.start();
+        }
 	return instance;
     }
 
@@ -33,8 +37,8 @@ public class ThreadPool {
 	    }
 	};
 	final ThreadPoolExecutor stpe = new ThreadPoolExecutor(
-		10, // min core
-		20, // max core
+		1, // min core
+		5, // max core
 		50, TimeUnit.SECONDS, // Timeout delay
 		queue, thread);
 	stpe.allowCoreThreadTimeOut(true);

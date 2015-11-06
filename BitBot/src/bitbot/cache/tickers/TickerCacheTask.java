@@ -107,10 +107,9 @@ public class TickerCacheTask {
                 if (ExchangeCurrencyPair.contains("huobi")) {
                     history = new TickerHistory_Huobi(trackLargeTrades);
                     UpdateTime_Millis = 500;
-                    
-                   // history = new SocketTickerHistory_Huobi(trackLargeTrades, ExchangeSite, CurrencyPair);
-                   // UpdateTime_Millis = 10000; // Check the socket state once every 10 seconds
 
+                    // history = new SocketTickerHistory_Huobi(trackLargeTrades, ExchangeSite, CurrencyPair);
+                    // UpdateTime_Millis = 10000; // Check the socket state once every 10 seconds
                 } else if (ExchangeCurrencyPair.contains("bitvc")) {
                     history = new TickerHistory_BitVC(trackLargeTrades);
                     UpdateTime_Millis = 10000;
@@ -259,7 +258,8 @@ public class TickerCacheTask {
             ServerTimeEnd = cTime_Millis;
             timeDilusion = 0;
         }
-
+        final long _ServerTimeEnd = ServerTimeEnd;
+        
         // Determine where to start the candlestick
         final long LastUsedTime_;
         long LastUsedTime = 0;
@@ -274,16 +274,41 @@ public class TickerCacheTask {
         double Volume = 0, VolumeCur = 0;
         float buysell_ratio_Total = 0, buysellratio_sets = 1;
 
+        
+        // Get the first element and re-calibrate the time to be used 
+        // to start processing the return data
+        // Post process, for the variables and stuff
+        // round the last used time to best possible time for the chart period
+        final Calendar dtCal = Calendar.getInstance();
+        dtCal.setTimeInMillis(LastUsedTime);
+
+        int truncateField;
+        if (intervalMinutes < 60) { // below 1 hour
+            truncateField = Calendar.HOUR;
+
+        } else if (intervalMinutes < 60 * 60 * 24) { // below 1 day
+            truncateField = Calendar.DATE;
+
+        } else if (intervalMinutes < 60 * 60 * 24 * 30) { // below 30 days
+            truncateField = Calendar.MONTH;
+
+        } else if (intervalMinutes < 60 * 60 * 24 * 30 * 12 * 100) { // below 100 years
+            truncateField = Calendar.YEAR;
+        } else { // wtf
+            truncateField = Calendar.ERA;
+        }
+        LastUsedTime = DateUtils.truncate(dtCal, truncateField).getTimeInMillis();
+
         // Gets the list of data relevent to this request, sorted by time in ascending order
         final List<TickerItemData> currentList = list_mssql.get(dataSet);
         final Stream<TickerItemData> items_stream;
         synchronized (currentList) {
             items_stream = currentList.stream().
-                    filter((data) -> (data.getServerTime() >= (LastUsedTime_))).
+                    filter((data) -> 
+                            (data.getServerTime() >= LastUsedTime_ && data.getServerTime() <= _ServerTimeEnd)).
                     sorted(TickerItemComparator);         // No need to lock this thread, if we are creating a new ArrayList off existing since its a copy :)
 
-            boolean processedTime = false;
-            TickerItem_CandleBar firstData = null;
+            boolean processedFirstTime = false;
 
             // Now we create the candle data chain
             final Iterator<TickerItemData> items = items_stream.iterator();
@@ -292,38 +317,18 @@ public class TickerCacheTask {
                 // However if that minute does not have any trading activity, the data will not be present. We detect this missing data by its time.
                 final TickerItemData item = items.next();
 
-                // Get the first element and re-calibrate the time to be used 
-                // to start processing the return data
-                if (!processedTime && !isTradingViewData) {
-                    // if (backtestHours != 0) { // not tradingview
-                    // Post process, for the variables and stuff
-                    // round the last used time to best possible time for the chart period
-                    final Calendar dtCal = Calendar.getInstance();
-                    dtCal.setTimeInMillis(Math.min(LastUsedTime, item.getServerTime()));
-
-                    int truncateField;
-                    if (intervalMinutes < 60) { // below 1 hour
-                        truncateField = Calendar.HOUR;
-                    } else if (intervalMinutes < 60 * 60 * 24) { // below 1 day
-                        truncateField = Calendar.DATE;
-                    } else if (intervalMinutes < 60 * 60 * 24 * 30) { // below 30 days
-                        truncateField = Calendar.MONTH;
-                    } else if (intervalMinutes < 60 * 60 * 24 * 30 * 12 * 100) { // below 100 years
-                        truncateField = Calendar.YEAR;
-                    } else { // wtf
-                        truncateField = Calendar.ERA;
-                    }
-                    LastUsedTime = DateUtils.truncate(dtCal, truncateField).getTimeInMillis();
-                    //  }
+                if (!processedFirstTime) {
                     while (LastUsedTime < item.getServerTime()) {
                         LastUsedTime += intervalMinutes;
                     }
-                    processedTime = true;
+                    processedFirstTime = true;
                 }
 
                 // Real stuff here
                 final long endCandleTime = LastUsedTime + (long) intervalMinutes;
 
+                // If the stored item time is above the supposed expected
+                // end candle time 
                 if (item.getServerTime() > endCandleTime) {
                     long endCandleTime2 = endCandleTime;
                     boolean isEmptyBar = false;
@@ -342,23 +347,20 @@ public class TickerCacheTask {
                                     (buysell_ratio_Total == 0.0f ? 1.0f : buysell_ratio_Total) / buysellratio_sets,
                                     false);
                         } else {
-                            item_ret
-                                    = new TickerItem_CandleBar(
-                                            endCandleTime2,
-                                            lastPriceSet,
-                                            lastPriceSet,
-                                            lastPriceSet,
-                                            lastPriceSet,
-                                            0.0,
-                                            0.0,
-                                            1.0f,
-                                            false);
+                            item_ret = new TickerItem_CandleBar(
+                                    endCandleTime2, // Time
+                                    lastPriceSet, // Last
+                                    lastPriceSet, // High
+                                    lastPriceSet, // Low
+                                    lastPriceSet, // Open
+                                    0.0, // Volume
+                                    0.0, // Volume cur
+                                    1.0f, // Ratio
+                                    false);
                         }
-
                         list_chart.add(item_ret);
-                        if (firstData == null) { // Debug stuff
-                            firstData = item_ret;
-                        }
+
+                        
                         high = item.getHigh();
                         low = item.getLow();
                         open = item.getOpen();
@@ -374,7 +376,9 @@ public class TickerCacheTask {
                         // Reset emptybar data
                         isEmptyBar = true;
                     }
-                } else if (item.getServerTime() <= endCandleTime) {
+
+                    // Otherwise, create a new candle data
+                } else {
                     high = Math.max(item.getHigh(), high);
                     low = Math.min(item.getLow(), low);
                     if (open == -1.0f) {
@@ -391,50 +395,50 @@ public class TickerCacheTask {
             }
         }
 
-        for (int i = 0; i < 100; ++i) {
-            if (LastUsedTime > ServerTimeEnd) {
-                break;
-            }
-            final long endCandleTime = Math.min(ServerTimeEnd, LastUsedTime + (long) intervalMinutes);
-            final TickerItem_CandleBar item_ret_last
-                    = new TickerItem_CandleBar(
-                            endCandleTime,
-                            lastPriceSet,
-                            high,
-                            low,
-                            open,
-                            Volume,
-                            VolumeCur,
-                            (buysell_ratio_Total == 0.0f ? 1.0f : buysell_ratio_Total) / buysellratio_sets,
-                            false);
-            list_chart.add(item_ret_last);
+        /*for (int i = 0; i < 100; ++i) {
+         if (LastUsedTime > ServerTimeEnd) {
+         break;
+         }
+         final long endCandleTime = Math.min(ServerTimeEnd, LastUsedTime + (long) intervalMinutes);
+         final TickerItem_CandleBar item_ret_last
+         = new TickerItem_CandleBar(
+         endCandleTime,
+         lastPriceSet,
+         high,
+         low,
+         open,
+         Volume,
+         VolumeCur,
+         (buysell_ratio_Total == 0.0f ? 1.0f : buysell_ratio_Total) / buysellratio_sets,
+         false);
+         list_chart.add(item_ret_last);
 
-            high = lastPriceSet;
-            low = lastPriceSet;
-            open = lastPriceSet;
-            Volume = 0.0;
-            VolumeCur = 0.0;
-            buysell_ratio_Total = 0.0f;
-            LastUsedTime += (long) intervalMinutes;
+         high = lastPriceSet;
+         low = lastPriceSet;
+         open = lastPriceSet;
+         Volume = 0.0;
+         VolumeCur = 0.0;
+         buysell_ratio_Total = 0.0f;
+         LastUsedTime += (long) intervalMinutes;
 
-            if (endCandleTime == ServerTimeEnd) {
-                break;
-            }
-        }
-        if (returnExactRequestedFromAndToTime) {
-            boolean breakloop = false;
-            while (!(LastUsedTime >= ServerTimeEnd || breakloop)) {
-                long time;
-                if ((LastUsedTime += (long) intervalMinutes) > ServerTimeEnd) {
-                    breakloop = true;
-                }
-                if ((time = ServerTimeEnd) > LastUsedTime) {
-                    time = LastUsedTime;
-                }
-                final TickerItem_CandleBar unmatured = new TickerItem_CandleBar(time, lastPriceSet, lastPriceSet, lastPriceSet, lastPriceSet, 0.0, 0.0, 1.0f, true);
-                list_chart.add(unmatured);
-            }
-        }
+         if (endCandleTime == ServerTimeEnd) {
+         break;
+         }
+         }*/
+        /*if (returnExactRequestedFromAndToTime) {
+         boolean breakloop = false;
+         while (!(LastUsedTime >= ServerTimeEnd || breakloop)) {
+         long time;
+         if ((LastUsedTime += (long) intervalMinutes) > ServerTimeEnd) {
+         breakloop = true;
+         }
+         if ((time = ServerTimeEnd) > LastUsedTime) {
+         time = LastUsedTime;
+         }
+         final TickerItem_CandleBar unmatured = new TickerItem_CandleBar(time, lastPriceSet, lastPriceSet, lastPriceSet, lastPriceSet, 0.0, 0.0, 1.0f, true);
+         list_chart.add(unmatured);
+         }
+         }*/
         return list_chart;
     }
 
@@ -911,7 +915,7 @@ public class TickerCacheTask {
                         File f_data = new File(f, storingFileName + ".temp");
                         f_data.createNewFile();
 
-                        File f_target = new File(f, storingFileName );
+                        File f_target = new File(f, storingFileName);
                         // override existing file if any.
                         FileOutputStream out = null;
                         try {
@@ -919,10 +923,10 @@ public class TickerCacheTask {
 
                             final PacketLittleEndianWriter plew = new PacketLittleEndianWriter();
                             plew.writeInt(FILE_VERSIONING);
-                            
+
                             // Write packet data size
-                            plew.writeInt(currentList.isEmpty() ? 
-                                    0 : Math.min(MAX_TickerItem_PerFile, currentList.size() - (z_fileCount * MAX_TickerItem_PerFile) - 1));
+                            plew.writeInt(currentList.isEmpty()
+                                    ? 0 : Math.min(MAX_TickerItem_PerFile, currentList.size() - (z_fileCount * MAX_TickerItem_PerFile) - 1));
 
                             //System.out.println("[" + z_fileCount + "] Dumping count: " + Math.min(MAX_TickerItem_PerFile, currentList.size() - (z_fileCount * MAX_TickerItem_PerFile)));
                             final byte[] dataWrite = plew.getPacket();
