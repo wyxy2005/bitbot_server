@@ -799,6 +799,14 @@ public class TickerCacheTask {
             this.LastCommitTime = 0;
             this.HistoryConnector = HistoryConnector;
         }
+        
+        public String getExchangeSite() {
+            return ExchangeSite;
+        }
+        
+        public String getCurrencyPair() {
+            return CurrencyPair;
+        }
 
         @Override
         public void run() {
@@ -818,6 +826,7 @@ public class TickerCacheTask {
 
             try {
                 final TickerHistoryData data = HistoryConnector.connectAndParseHistoryResult(
+                        this,
                         ExchangeCurrencyPair,
                         ExchangeSite,
                         CurrencyPair,
@@ -834,11 +843,11 @@ public class TickerCacheTask {
                     } else {
                         HistoryData = data;
                     }
-                    final HistoryDatabaseCommitEnum commitResult = HistoryData.tryCommitDatabase(LastCommitTime, ExchangeSite, CurrencyPair, ExchangeCurrencyPair, readyToBroadcastPriceChanges());
+                    final HistoryDatabaseCommitEnum commitResult = HistoryData.tryCommitDatabase(LastCommitTime, ExchangeCurrencyPair, readyToBroadcastPriceChanges());
 
                     switch (commitResult) {
                         case Ok: {
-                            // Output
+                            // DEBUG
                             if (ChannelServer.getInstance().isEnableDebugSessionPrints()) {
                                 Calendar cal = Calendar.getInstance();
                                 cal.setTimeInMillis(HistoryData.getLastServerUTCTime());
@@ -851,7 +860,7 @@ public class TickerCacheTask {
                             LastCommitTime = HistoryData.getLastPurchaseTime();
 
                             // Set new
-                            HistoryData = new TickerHistoryData(HistoryData.getLastPurchaseTime(), HistoryData.getLastTradeId(), HistoryData.getLastPrice(), HistoryData.isCoinbase_CampBX());
+                            HistoryData = new TickerHistoryData(this, HistoryData.getLastPurchaseTime(), HistoryData.getLastTradeId(), HistoryData.getLastPrice(), HistoryData.isCoinbase_CampBX());
                             break;
                         }
                         /*case DatabaseError: { // Not possible to be returned by 'tryCommitDatabase'.

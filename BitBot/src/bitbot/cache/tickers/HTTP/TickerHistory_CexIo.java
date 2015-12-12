@@ -1,5 +1,6 @@
 package bitbot.cache.tickers.HTTP;
 
+import bitbot.cache.tickers.TickerCacheTask;
 import bitbot.cache.tickers.TickerHistoryInterface;
 import bitbot.cache.tickers.TickerHistoryData;
 import bitbot.cache.trades.TradeHistoryBuySellEnum;
@@ -31,13 +32,13 @@ public class TickerHistory_CexIo implements TickerHistoryInterface {
     }
 
     @Override
-    public TickerHistoryData connectAndParseHistoryResult(String ExchangeCurrencyPair, String ExchangeSite, String CurrencyPair, long LastPurchaseTime, int LastTradeId) {
+    public TickerHistoryData connectAndParseHistoryResult(TickerCacheTask.TickerCacheTask_ExchangeHistory _TickerCacheTaskSource, String ExchangeCurrencyPair, String ExchangeSite, String CurrencyPair, long LastPurchaseTime, int LastTradeId) {
         String[] CurrencyPairSplit = CurrencyPair.toUpperCase().split("_");
         String Uri = String.format("https://cex.io/api/trade_history/%s/%s", CurrencyPairSplit[0], CurrencyPairSplit[1]);
         String GetResult = HttpClient.httpsGet(Uri, "");
 
         if (GetResult != null) {
-            TickerHistoryData ReturnData = new TickerHistoryData(LastPurchaseTime, LastTradeId, 0, false);
+            TickerHistoryData ReturnData = new TickerHistoryData(_TickerCacheTaskSource, LastPurchaseTime, LastTradeId, 0, false);
 
             JSONParser parser = new JSONParser(); // Init parser
             try {

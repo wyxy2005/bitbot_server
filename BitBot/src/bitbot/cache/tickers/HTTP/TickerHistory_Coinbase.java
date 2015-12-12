@@ -1,5 +1,6 @@
 package bitbot.cache.tickers.HTTP;
 
+import bitbot.cache.tickers.TickerCacheTask;
 import bitbot.cache.tickers.TickerHistoryInterface;
 import bitbot.cache.tickers.TickerHistoryData;
 import bitbot.cache.trades.TradeHistoryBuySellEnum;
@@ -30,7 +31,7 @@ public class TickerHistory_Coinbase implements TickerHistoryInterface {
     }
     
     @Override
-    public TickerHistoryData connectAndParseHistoryResult(String ExchangeCurrencyPair, String ExchangeSite, String CurrencyPair, long LastPurchaseTime, int LastTradeId) {
+    public TickerHistoryData connectAndParseHistoryResult(TickerCacheTask.TickerCacheTask_ExchangeHistory _TickerCacheTaskSource, String ExchangeCurrencyPair, String ExchangeSite, String CurrencyPair, long LastPurchaseTime, int LastTradeId) {
         String UriSell = "https://coinbase.com/api/v1/prices/sell";
         String SellResult = HttpClient.httpsGet(UriSell, "");
 
@@ -38,7 +39,7 @@ public class TickerHistory_Coinbase implements TickerHistoryInterface {
         String BuyResult = HttpClient.httpsGet(UriBuy, "");
 
         if (SellResult != null && BuyResult != null) {
-            TickerHistoryData ReturnData = new TickerHistoryData(LastPurchaseTime, LastTradeId, 0, true);
+            TickerHistoryData ReturnData = new TickerHistoryData(_TickerCacheTaskSource, LastPurchaseTime, LastTradeId, 0, true);
 
             JSONParser parser = new JSONParser(); // Init parser
             try {

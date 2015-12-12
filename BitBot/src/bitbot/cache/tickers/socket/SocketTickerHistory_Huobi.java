@@ -1,5 +1,6 @@
 package bitbot.cache.tickers.socket;
 
+import bitbot.cache.tickers.TickerCacheTask;
 import bitbot.cache.tickers.TickerHistoryData;
 import bitbot.cache.tickers.TickerHistoryInterface;
 import java.net.InetSocketAddress;
@@ -40,7 +41,7 @@ public class SocketTickerHistory_Huobi extends IoHandlerAdapter implements Ticke
     }
 
     @Override
-    public TickerHistoryData connectAndParseHistoryResult(String ExchangeCurrencyPair, String ExchangeSite, String CurrencyPair, long LastPurchaseTime, int LastTradeId) {
+    public TickerHistoryData connectAndParseHistoryResult(TickerCacheTask.TickerCacheTask_ExchangeHistory _TickerCacheTaskSource, String ExchangeCurrencyPair, String ExchangeSite, String CurrencyPair, long LastPurchaseTime, int LastTradeId) {
 
         return null;
     }

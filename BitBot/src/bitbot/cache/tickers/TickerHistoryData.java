@@ -1,5 +1,6 @@
 package bitbot.cache.tickers;
 
+import bitbot.cache.tickers.TickerCacheTask.TickerCacheTask_ExchangeHistory;
 import bitbot.cache.trades.TickerTradesData;
 import bitbot.cache.trades.TradeHistoryBuySellEnum;
 import bitbot.handler.channel.ChannelServer;
@@ -31,9 +32,12 @@ public class TickerHistoryData {
     private boolean isCoinbase_CampBX = false;
 
     private boolean isDatasetReadyForCommit = false; // additional boolean to ensure that future changes won't bug this up.. 
-    private String TmpExchangeSite, TmpcurrencyPair;
-
-    public TickerHistoryData(long LastPurchaseTime, int LastTradeId, float LastPrice, boolean IsCoinbaseOrCexIO) {
+    
+    // Keep a reference of the Runnable source, that way we dont need to create a new pair of string CurrencyPair, ExchangeSite, ExchangeCurrencyPair
+    // Since reference is much cheaper ;) 
+    private TickerCacheTask_ExchangeHistory _TickerCacheTaskSource;
+    
+    public TickerHistoryData(TickerCacheTask_ExchangeHistory _TickerCacheTaskSource, long LastPurchaseTime, int LastTradeId, float LastPrice, boolean IsCoinbaseOrCexIO) {
         this.High = 0;
         this.Low = Float.MAX_VALUE;
         this.LastPurchaseTime = LastPurchaseTime;
@@ -41,6 +45,7 @@ public class TickerHistoryData {
         this.LastPrice = 0;
         this.Open = LastPrice;
         this.isCoinbase_CampBX = IsCoinbaseOrCexIO;
+        this._TickerCacheTaskSource = _TickerCacheTaskSource;
 
         if (IsCoinbaseOrCexIO) {
             this.Volume = 1;
@@ -51,16 +56,12 @@ public class TickerHistoryData {
         }
     }
 
-    public HistoryDatabaseCommitEnum tryCommitDatabase(long LastCommitTime, String ExchangeSite, String currencyPair, String ExchangeCurrencyPair, boolean readyToBroadcastPriceChanges) {
+    public HistoryDatabaseCommitEnum tryCommitDatabase(long LastCommitTime, String ExchangeCurrencyPair, boolean readyToBroadcastPriceChanges) {
         //System.out.println("Time diff: " + Math.abs(LastCommitTime - LastPurchaseTime) );
 
-        if (Math.abs(LastCommitTime - LastPurchaseTime) > 60000) { // per minute
+        if (Math.abs(LastCommitTime - LastPurchaseTime) >= 60000) { // per minute
             // check if data is available
             if (Volume > 0 && LastPurchaseTime > 0 && High > 0 && Low > 0) { // Commit for real :)
-                if (ExchangeSite != null) {
-                    TmpExchangeSite = ExchangeSite; // Set reference for backlog, when needed
-                    TmpcurrencyPair = currencyPair;
-                }
                 isDatasetReadyForCommit = true;
 
                 // Check again, just in case
@@ -103,7 +104,7 @@ public class TickerHistoryData {
 
     public HistoryDatabaseCommitEnum commitDatabase(long LastCommitTime, String ExchangeSite, String currencyPair) {
         //System.out.println("Time diff: " + Math.abs(LastCommitTime - LastPurchaseTime) );
-        if (!isDatasetReadyForCommit || TmpExchangeSite == null || TmpcurrencyPair == null) {
+        if (!isDatasetReadyForCommit) {
             return HistoryDatabaseCommitEnum.Time_Not_Ready;
         }
         // Commit data to database
@@ -112,7 +113,7 @@ public class TickerHistoryData {
         }
         PreparedStatement ps = null;
         final String query = String.format("INSERT INTO bitcoinbot.%s (\"high\", \"low\", \"vol\", \"vol_cur\", \"open\", \"close\", \"server_time\", \"buysell_ratio\") VALUES (?,?,?,?,?,?,?,?);",
-                DatabaseTablesConstants.getDatabaseTableName(TmpExchangeSite, TmpcurrencyPair));
+                DatabaseTablesConstants.getDatabaseTableName(_TickerCacheTaskSource.getExchangeSite(), _TickerCacheTaskSource.getCurrencyPair()));
 
         try {
             Connection con = DatabaseConnection.getConnection();
@@ -272,7 +273,7 @@ public class TickerHistoryData {
     public void broadcastCompletedMinuteCandleDataToPeers() {
         // Broadcast to peers on other servers
         try {
-            final String ExchangeCurrencyPair = String.format("%s-%s", TmpExchangeSite, TmpcurrencyPair);
+            final String ExchangeCurrencyPair = String.format("%s-%s", _TickerCacheTaskSource.getExchangeSite(), _TickerCacheTaskSource.getCurrencyPair());
             ChannelServer.getInstance().getWorldInterface().broadcastNewGraphEntry(ExchangeCurrencyPair, LastServerUTCTime / 1000l, LastPrice, High, Low, Open, Volume, Volume_Cur, getBuySell_Ratio());
         } catch (Exception exp) {
             ServerLog.RegisterForLoggingException(ServerLogType.RemoteError, exp);

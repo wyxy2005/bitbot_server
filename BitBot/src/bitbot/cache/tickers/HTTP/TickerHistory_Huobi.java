@@ -1,5 +1,6 @@
 package bitbot.cache.tickers.HTTP;
 
+import bitbot.cache.tickers.TickerCacheTask;
 import bitbot.cache.tickers.TickerHistoryInterface;
 import bitbot.cache.tickers.TickerHistoryData;
 import bitbot.cache.trades.TradeHistoryBuySellEnum;
@@ -33,13 +34,13 @@ public class TickerHistory_Huobi implements TickerHistoryInterface {
     }
 
     @Override
-    public TickerHistoryData connectAndParseHistoryResult(String ExchangeCurrencyPair, String ExchangeSite, String CurrencyPair, long LastPurchaseTime, int LastTradeId) {
+    public TickerHistoryData connectAndParseHistoryResult(TickerCacheTask.TickerCacheTask_ExchangeHistory _TickerCacheTaskSource, String ExchangeCurrencyPair, String ExchangeSite, String CurrencyPair, long LastPurchaseTime, int LastTradeId) {
         final String[] Split = CurrencyPair.split("_");
         final String Uri = String.format("http://api.huobi.com/staticmarket/detail_%s_json.js", Split[0]);
         String GetResult = HttpClient.httpGet(Uri, "");
 
         if (GetResult != null) {
-            TickerHistoryData ReturnData = new TickerHistoryData(LastPurchaseTime, LastTradeId, 0, false);
+            TickerHistoryData ReturnData = new TickerHistoryData(_TickerCacheTaskSource, LastPurchaseTime, LastTradeId, 0, false);
 
             JSONParser parser = new JSONParser(); // Init parser
             try {

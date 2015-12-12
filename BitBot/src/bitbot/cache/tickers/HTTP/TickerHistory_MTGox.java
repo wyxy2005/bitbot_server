@@ -1,5 +1,6 @@
 package bitbot.cache.tickers.HTTP;
 
+import bitbot.cache.tickers.TickerCacheTask;
 import bitbot.cache.tickers.TickerHistoryInterface;
 import bitbot.cache.tickers.TickerHistoryData;
 
@@ -21,7 +22,7 @@ public class TickerHistory_MTGox implements TickerHistoryInterface {
     }
     
     @Override
-    public TickerHistoryData connectAndParseHistoryResult(String ExchangeCurrencyPair, String ExchangeSite, String CurrencyPair, long LastPurchaseTime, int LastTradeId) {
+    public TickerHistoryData connectAndParseHistoryResult(TickerCacheTask.TickerCacheTask_ExchangeHistory _TickerCacheTaskSource, String ExchangeCurrencyPair, String ExchangeSite, String CurrencyPair, long LastPurchaseTime, int LastTradeId) {
         return null;
     }
 }

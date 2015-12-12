@@ -1,5 +1,6 @@
 package bitbot.cache.tickers.HTTP;
 
+import bitbot.cache.tickers.TickerCacheTask;
 import bitbot.cache.tickers.TickerHistoryData;
 import bitbot.cache.tickers.TickerHistoryInterface;
 import bitbot.cache.trades.TradeHistoryBuySellEnum;
@@ -30,7 +31,7 @@ public class TickerHistory_Gemini implements TickerHistoryInterface {
     }
 
     @Override
-    public TickerHistoryData connectAndParseHistoryResult(String ExchangeCurrencyPair, String ExchangeSite, String CurrencyPair, long LastPurchaseTime, int LastTradeId) {
+    public TickerHistoryData connectAndParseHistoryResult(TickerCacheTask.TickerCacheTask_ExchangeHistory _TickerCacheTaskSource, String ExchangeCurrencyPair, String ExchangeSite, String CurrencyPair, long LastPurchaseTime, int LastTradeId) {
         final String[] split = CurrencyPair.split("_");
 
         final String Uri = String.format("https://api.gemini.com/v1/trades/%s%s%s", 
@@ -41,7 +42,7 @@ public class TickerHistory_Gemini implements TickerHistoryInterface {
         final String GetResult = HttpClient.httpsGet(Uri, "");
 
         if (GetResult != null) {
-            final TickerHistoryData ReturnData = new TickerHistoryData(LastPurchaseTime, LastTradeId, 0, false);
+            final TickerHistoryData ReturnData = new TickerHistoryData(_TickerCacheTaskSource, LastPurchaseTime, LastTradeId, 0, false);
 
             final JSONParser parser = new JSONParser(); // Init parser
             try {

@@ -1,5 +1,6 @@
 package bitbot.cache.tickers.HTTP;
 
+import bitbot.cache.tickers.TickerCacheTask.TickerCacheTask_ExchangeHistory;
 import bitbot.cache.tickers.TickerHistoryInterface;
 import bitbot.cache.tickers.TickerHistoryData;
 import bitbot.cache.trades.TradeHistoryBuySellEnum;
@@ -29,7 +30,7 @@ public class TickerHistory_796 implements TickerHistoryInterface {
     }
 
     @Override
-    public TickerHistoryData connectAndParseHistoryResult(String ExchangeCurrencyPair, String ExchangeSite, String CurrencyPair, long LastPurchaseTime, int LastTradeId) {
+    public TickerHistoryData connectAndParseHistoryResult(TickerCacheTask_ExchangeHistory _TickerCacheTaskSource, String ExchangeCurrencyPair, String ExchangeSite, String CurrencyPair, long LastPurchaseTime, int LastTradeId) {
         String Uri;
         if (CurrencyPair.contains("btc")) {
             if (CurrencyPair.contains("cny")) {
@@ -47,7 +48,7 @@ public class TickerHistory_796 implements TickerHistoryInterface {
         String GetResult = HttpClient.httpGet(Uri, "");
 
         if (GetResult != null) {
-            TickerHistoryData ReturnData = new TickerHistoryData(LastPurchaseTime, LastTradeId, 0, false);
+            TickerHistoryData ReturnData = new TickerHistoryData(_TickerCacheTaskSource, LastPurchaseTime, LastTradeId, 0, false);
 
             JSONParser parser = new JSONParser(); // Init parser
             try {

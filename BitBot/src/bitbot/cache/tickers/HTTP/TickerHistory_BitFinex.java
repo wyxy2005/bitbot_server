@@ -1,5 +1,6 @@
 package bitbot.cache.tickers.HTTP;
 
+import bitbot.cache.tickers.TickerCacheTask;
 import bitbot.cache.tickers.TickerHistoryInterface;
 import bitbot.cache.tickers.TickerHistoryData;
 import bitbot.cache.trades.TradeHistoryBuySellEnum;
@@ -29,12 +30,12 @@ public class TickerHistory_BitFinex implements TickerHistoryInterface {
     }
 
     @Override
-    public TickerHistoryData connectAndParseHistoryResult(String ExchangeCurrencyPair, String ExchangeSite, String CurrencyPair, long LastPurchaseTime, int LastTradeId) {
+    public TickerHistoryData connectAndParseHistoryResult(TickerCacheTask.TickerCacheTask_ExchangeHistory _TickerCacheTaskSource, String ExchangeCurrencyPair, String ExchangeSite, String CurrencyPair, long LastPurchaseTime, int LastTradeId) {
         String Uri = String.format("https://api.bitfinex.com/v1/trades/%s?timestamp=%d&limit_trades=%d", CurrencyPair.replace("_", ""), (LastPurchaseTime / 1000) + 1, 200);
         String GetResult = HttpClient.httpsGet(Uri, "");
 
         if (GetResult != null) {
-            TickerHistoryData ReturnData = new TickerHistoryData(LastPurchaseTime, LastTradeId, 0, false);
+            TickerHistoryData ReturnData = new TickerHistoryData(_TickerCacheTaskSource, LastPurchaseTime, LastTradeId, 0, false);
 
             JSONParser parser = new JSONParser(); // Init parser
             try {
