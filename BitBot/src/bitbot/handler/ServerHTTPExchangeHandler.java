@@ -136,7 +136,7 @@ public class ServerHTTPExchangeHandler implements Container {
                 case "/quotes":
                 case "/marks": {
                     // Anti flood check
-                    if (AntiFloodValidator.CheckSpam(IPAddress, 100)) {
+                    if (AntiFloodValidator.CheckSpam(IPAddress, 70)) {
                         MultiThreadExecutor.submit(new SpamErrorTask(request, response));
                         return;
                     }

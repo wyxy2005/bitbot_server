@@ -35,7 +35,7 @@ public class TickerHistoryData {
     
     // Keep a reference of the Runnable source, that way we dont need to create a new pair of string CurrencyPair, ExchangeSite, ExchangeCurrencyPair
     // Since reference is much cheaper ;) 
-    private TickerCacheTask_ExchangeHistory _TickerCacheTaskSource;
+    private final TickerCacheTask_ExchangeHistory _TickerCacheTaskSource;
     
     public TickerHistoryData(TickerCacheTask_ExchangeHistory _TickerCacheTaskSource, long LastPurchaseTime, int LastTradeId, float LastPrice, boolean IsCoinbaseOrCexIO) {
         this.High = 0;
