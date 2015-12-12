@@ -6,7 +6,9 @@ import bitbot.handler.channel.ChannelServer;
 import bitbot.Constants;
 import bitbot.cache.trades.TradesItemData;
 import bitbot.tradingviewUDF.TV_Symbol;
+import bitbot.tradingviewUDF.TV_SymbolRet;
 import bitbot.tradingviewUDF.TV_symboldatabase;
+import bitbot.util.Pair;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.List;
@@ -22,24 +24,24 @@ import org.simpleframework.http.Response;
  * @author zheng
  */
 public class TradingViewUDFTask implements Runnable {
-
+    
     private final Response response;
     private final Request request;
     private final Query query;
     private final String path;
-
+    
     public TradingViewUDFTask(Request request, Response response, Query query, String path) {
         this.response = response;
         this.request = request;
         this.query = query;
         this.path = path;
     }
-
+    
     @Override
     public void run() {
         try {
             PrintStream body = response.getPrintStream();
-
+            
             _ResponseHeader.addBasicResponseHeader(response);
 //System.out.println("Geting path: " + path);
 
@@ -102,31 +104,37 @@ public class TradingViewUDFTask implements Runnable {
             e.printStackTrace();
         }
     }
-
+    
     private void sendError(PrintStream body, String error) {
         String ret = "{\"s\":\"error\",\"errmsg\":\"" + error + "\"}";
-
+        
         response.setContentLength(ret.length());
         body.print(ret);
     }
-
+    
     private void sendSymbolSearchResults(PrintStream body, String query, String type, String exchange, int maxRecords) {
-        List<TV_Symbol> searchResult = TV_symboldatabase.search(query, type, exchange, maxRecords);
-
+        List<TV_SymbolRet> searchResult = TV_symboldatabase.search(query, type, exchange, maxRecords);
+        
         JSONArray json_array = new JSONArray();
-        for (TV_Symbol sym : searchResult) {
+        for (TV_SymbolRet symRet : searchResult) {
+            final TV_Symbol sym = symRet.getSymbol();
+            
             JSONObject obj = new JSONObject();
-
-            obj.put("symbol", sym.exchange + ":" + sym.name);
-            obj.put("full_name", sym.exchange + ":" + sym.name);
-            obj.put("description", sym.description);
-            obj.put("exchange", sym.exchange);
-            obj.put("type", sym.type);
-
+            
+            if (symRet.IsCumulativeVolumeType()) {
+                obj.put("symbol", sym.GetExchange() + ":" + sym.GetName().concat(TV_symboldatabase.BalanceVolumeStr));
+            } else {
+                obj.put("symbol", sym.GetExchange() + ":" + sym.GetName());
+            }
+            obj.put("full_name", sym.GetExchange() + ":" + sym.GetName());
+            obj.put("description", sym.GetDescription());
+            obj.put("exchange", sym.GetExchange());
+            obj.put("type", sym.getType());
+            
             json_array.add(obj);
         }
         String ret = json_array.toJSONString();
-
+        
         response.setContentLength(ret.length());
         body.print(ret);
     }
@@ -148,7 +156,7 @@ public class TradingViewUDFTask implements Runnable {
             sendError(body, "Invalid nonce.");
             return;
         }
-
+        
         final String sha256hex = DigestUtils.sha256Hex(symbolName + (startDateTimestamp & endDateTimestamp) + resolution + nonce);
         if (!sha256hex.equals(hash)) {
             sendError(body, "Invalid hash.");
@@ -156,7 +164,7 @@ public class TradingViewUDFTask implements Runnable {
         }
 
         // Get symbol from database
-        final TV_Symbol symbol = TV_symboldatabase.symbolInfo(symbolName);
+        final Pair<Boolean, TV_Symbol> symbol = TV_symboldatabase.symbolInfo(symbolName);
         if (symbol == null) {
             sendError(body, "unknown_symbol");
             return;
@@ -207,7 +215,7 @@ public class TradingViewUDFTask implements Runnable {
                 return;
             }
         }
-
+        
         List<TickerItem_CandleBar> ret = null;
 
         // Estimate the amount of candles needed
@@ -230,30 +238,39 @@ public class TradingViewUDFTask implements Runnable {
         } else {
             limit = 3500;
         }
-
+        
         if (candlesRequested < limit) { // TV usually request 2041 at once... 
-            ret = ChannelServer.getInstance().getTickerTask().getTickerList_Candlestick(
-                    symbol.name.toLowerCase(), 0, time, symbol.exchange.toLowerCase(), startDateTimestamp, endDateTimestamp, true);
+            if (symbol.left) {
+                // make sure that cumulative volume only return on the first request
+                // because cumulative volume calculates starting from the first request, it cannot be continious unless the first request time is given
+                // which unfortunately not available on TradingView chart
+                if (candlesRequested > 100) { 
+                    ret = ChannelServer.getInstance().getTickerTask().GetTickerList_CumulativeVolume(
+                            symbol.right.GetName().toLowerCase(), 0, time, symbol.right.GetExchange().toLowerCase(), startDateTimestamp, endDateTimestamp, true);
+                }
+            } else {
+                ret = ChannelServer.getInstance().getTickerTask().getTickerList_Candlestick(
+                        symbol.right.GetName().toLowerCase(), 0, time, symbol.right.GetExchange().toLowerCase(), startDateTimestamp, endDateTimestamp, true);
+            }
         } else {
             // should we auto ban?
-
         }
         // return result to client
         JSONObject json_main = new JSONObject();
-
+        
         if (ret == null || ret.isEmpty()) {
             json_main.put("s", "no_data"); // Status code. Expected values: “ok” | “error” | “incomplete” | “no_data”
             json_main.put("errmsg", "Not enough data, please wait."); // Status code. Expected values: “ok” | “error” | “incomplete” | “no_data”
         } else {
             json_main.put("s", "ok");
-
+            
             JSONArray json_array_candlestick_t = new JSONArray();
             JSONArray json_array_candlestick_c = new JSONArray();
             JSONArray json_array_candlestick_o = new JSONArray();
             JSONArray json_array_candlestick_h = new JSONArray();
             JSONArray json_array_candlestick_l = new JSONArray();
             JSONArray json_array_candlestick_v = new JSONArray();
-
+            
             for (TickerItem_CandleBar candle : ret) {
                 json_array_candlestick_t.add(candle.getServerTime());
                 json_array_candlestick_c.add(candle.getClose());
@@ -270,7 +287,7 @@ public class TradingViewUDFTask implements Runnable {
             json_main.put("v", json_array_candlestick_v);
         }
         String retstr = json_main.toJSONString();
-
+        
         response.setContentLength(retstr.length());
         body.print(retstr);
     }
@@ -294,7 +311,7 @@ public class TradingViewUDFTask implements Runnable {
      return daysCount * 24 * 60 * 60;
      }*/
     private void sendMarks(PrintStream body, String symbolName, long from, long to, String resolution) {
-        TV_Symbol symbol = TV_symboldatabase.symbolInfo(symbolName);
+        final Pair<Boolean, TV_Symbol> symbol = TV_symboldatabase.symbolInfo(symbolName);
         if (symbol == null) {
             sendError(body, "unknown_symbol");
             return;
@@ -311,10 +328,10 @@ public class TradingViewUDFTask implements Runnable {
          };
 
          */
-
+        
         int i = 0;
         JSONObject json_main = new JSONObject();
-
+        
         JSONArray json_array_id = new JSONArray();
         JSONArray json_array_time = new JSONArray();
         JSONArray json_array_color = new JSONArray();
@@ -322,17 +339,19 @@ public class TradingViewUDFTask implements Runnable {
         JSONArray json_array_label = new JSONArray();
         JSONArray json_array_labelFontColor = new JSONArray();
         JSONArray json_array_minSize = new JSONArray();
-
-        final List<TradesItemData> ret = ChannelServer.getInstance().getTradesTask().getTradesList(String.format("%s-%s", symbol.exchange.toLowerCase(), symbol.name.toLowerCase()), 50, from, to);
+        
+        final List<TradesItemData> ret = ChannelServer.getInstance().getTradesTask().getTradesList(
+                String.format("%s-%s", symbol.right.GetExchange().toLowerCase(), symbol.right.GetName().toLowerCase()), 50, from, to);
+        
         for (TradesItemData data : ret) {
             if (data.getAmount() >= 50) {
                 json_array_id.add(i);
                 json_array_time.add(data.getLastPurchaseTime());
-                json_array_text.add(String.format("%s %s", data.getAmount(), symbol.type));
+                json_array_text.add(String.format("%s %s", data.getAmount(), symbol.right.getType()));
                 json_array_label.add(data.getAmount());
                 json_array_labelFontColor.add("white");
                 json_array_minSize.add(Math.min(50, Math.max(7, data.getAmount() / 3)));
-
+                
                 switch (data.getType()) {
                     case Buy:
                         json_array_color.add("green");
@@ -344,7 +363,7 @@ public class TradingViewUDFTask implements Runnable {
                         json_array_color.add("gray");
                         break;
                 }
-
+                
                 i++;
             }
         }
@@ -355,31 +374,33 @@ public class TradingViewUDFTask implements Runnable {
         json_main.put("label", json_array_label);
         json_main.put("labelFontColor", json_array_labelFontColor);
         json_main.put("minSize", json_array_minSize);
-
+        
         final String retstr = json_main.toJSONString();
-
+        
         response.setContentLength(retstr.length());
         body.print(retstr);
     }
-
+    
     private void sendSymbolInfo(PrintStream body, String symbolName) {
-        TV_Symbol symbol = TV_symboldatabase.symbolInfo(symbolName);
+        final Pair<Boolean, TV_Symbol> symbol = TV_symboldatabase.symbolInfo(symbolName);
         if (symbol == null) {
             sendError(body, "unknown_symbol");
             return;
         }
-        final TickerItemData summary_ret = ChannelServer.getInstance().getTickerTask().getTickerSummary(symbol.name.toLowerCase(), symbol.exchange.toLowerCase());
+        final TickerItemData summary_ret = ChannelServer.getInstance().getTickerTask().getTickerSummary(
+                symbol.right.GetName().toLowerCase(),
+                symbol.right.GetExchange().toLowerCase());
 
 //	BEWARE: this `pricescale` parameter computation algorithm is wrong and works
 //	for symbols with 10-based minimal movement value only
         String strPrice = summary_ret == null ? "1" : String.valueOf(summary_ret.getOpen());
         int integerPlaces = strPrice.indexOf('.');
         int decimalPlaces = strPrice.length() - (integerPlaces == -1 ? 0 : integerPlaces) - 1;
-
+        
         JSONObject json_main = new JSONObject();
 
         // https://github.com/tradingview/charting_library/wiki/Symbology
-        json_main.put("name", symbol.name);
+        json_main.put("name", symbol.right.GetName());
         json_main.put("exchange-traded", true);
         json_main.put("exchange-listed", true);
         json_main.put("fractional", false);
@@ -397,11 +418,15 @@ public class TradingViewUDFTask implements Runnable {
         json_main.put("force_session_rebuild", true);
         json_main.put("has_no_volume", false);
         json_main.put("volume_precision", 0); // 0 = volume is an integer, 1 = decimal
-        json_main.put("listed_exchange", symbol.exchange); // listed and traded exchange for bitcoin is the same
-        json_main.put("exchange", symbol.exchange); // listed and traded exchange for bitcoin is the same
-        json_main.put("ticker", symbol.exchange + ":" + symbol.name);
-        json_main.put("description", symbol.description);
-        json_main.put("type", symbol.type);
+        json_main.put("listed_exchange", symbol.right.GetExchange()); // listed and traded exchange for bitcoin is the same
+        json_main.put("exchange", symbol.right.GetExchange()); // listed and traded exchange for bitcoin is the same
+        if (symbol.left) { // cumulative volume type
+            json_main.put("ticker", symbol.right.GetExchange() + ":" + symbol.right.GetName().concat(TV_symboldatabase.BalanceVolumeStr));
+        } else {
+            json_main.put("ticker", symbol.right.GetExchange() + ":" + symbol.right.GetName());
+        }
+        json_main.put("description", symbol.right.GetDescription());
+        json_main.put("type", symbol.right.getType());
         json_main.put("data_status", "streaming"); // •streaming •endofday •pulsed •delayed_streaming
 
         // Contract expiration
@@ -423,11 +448,11 @@ public class TradingViewUDFTask implements Runnable {
         //json_array_intradayMultipliers.add(1);
         //json_main.put("supported_resolutions", json_array_intradayMultipliers);
         String retstr = json_main.toJSONString();
-
+        
         response.setContentLength(retstr.length());
         body.print(retstr);
     }
-
+    
     private void sendConfig(PrintStream body) {
         JSONObject json_main = new JSONObject();
 
@@ -440,11 +465,11 @@ public class TradingViewUDFTask implements Runnable {
         JSONArray json_array_exchanges = new JSONArray();
         for (int i = 0; i < Constants.tv_exchange_value.length; i++) {
             JSONObject json_sym = new JSONObject();
-
+            
             json_sym.put("value", Constants.tv_exchange_value[i]);
             json_sym.put("name", Constants.tv_exchange_name[i]);
             json_sym.put("desc", Constants.tv_exchange_desc[i]);
-
+            
             json_array_exchanges.add(json_sym);
         }
         json_main.put("exchanges", json_array_exchanges);
@@ -453,10 +478,10 @@ public class TradingViewUDFTask implements Runnable {
         JSONArray json_array_symbolTypes = new JSONArray();
         for (int i = 0; i < Constants.tv_symbolType1.length; i++) {
             JSONObject json_sym = new JSONObject();
-
+            
             json_sym.put("name", Constants.tv_symbolType1[i]);
             json_sym.put("value", Constants.tv_symbolType2[i]);
-
+            
             json_array_symbolTypes.add(json_sym);
         }
         json_main.put("symbolsTypes", json_array_symbolTypes);
@@ -467,9 +492,9 @@ public class TradingViewUDFTask implements Runnable {
             json_array_supportedres.add(res);
         }
         json_main.put("supportedResolutions", json_array_supportedres);
-
+        
         String retstr = json_main.toJSONString();
-
+        
         response.setContentLength(retstr.length());
         body.print(retstr);
     }

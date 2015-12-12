@@ -44,6 +44,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.TimeZone;
 import java.util.stream.Stream;
 import org.apache.commons.lang3.time.DateUtils;
@@ -58,17 +59,16 @@ public class TickerCacheTask {
     private static final int MSSQL_CacheRefreshTime_Seconds = 60;
 
     // Acquiring of old data from mssql database
-    private final List<Integer> canAcceptNewInfoFromOtherPeers = new LinkedList(); // string = exchange+currency pair
     private final List<LoggingSaveRunnable> runnable_mssql = new ArrayList();
     private final Map<String, List<TickerItemData>> list_mssql;
-    private final Map<String, List<TickerItemData>> list_mssql_summary; // Create another dummy map for easy reference [summary]
+    private final Map<String, List<TickerItemData>> list_unmaturedData;
 
     // Acquiring of data directly from the trades
     private final List<LoggingSaveRunnable> runnable_exchangeHistory = new ArrayList();
 
     public TickerCacheTask() {
         this.list_mssql = new LinkedHashMap<>();
-        this.list_mssql_summary = new LinkedHashMap<>();
+        this.list_unmaturedData = new LinkedHashMap<>(); // LinkedHashMap to maintain order
 
         StartScheduleTask();
     }
@@ -94,7 +94,8 @@ public class TickerCacheTask {
                 list_mssql.put(ExchangeCurrencyPair.toLowerCase(), arrays); // to fix for futures
                 list_mssql.put(ExchangeCurrencyPair.replace(" ", "").toLowerCase(), arrays); // and one without space, for hyperlinks
 
-                list_mssql_summary.put(ExchangeCurrencyPair, arrays);
+                // Unmatured
+                list_unmaturedData.put(ExchangeCurrencyPair, new ArrayList());
             }
 
             // History
@@ -259,7 +260,7 @@ public class TickerCacheTask {
             timeDilusion = 0;
         }
         final long _ServerTimeEnd = ServerTimeEnd;
-        
+
         // Determine where to start the candlestick
         final long LastUsedTime_;
         long LastUsedTime = 0;
@@ -274,7 +275,6 @@ public class TickerCacheTask {
         double Volume = 0, VolumeCur = 0;
         float buysell_ratio_Total = 0, buysellratio_sets = 1;
 
-        
         // Get the first element and re-calibrate the time to be used 
         // to start processing the return data
         // Post process, for the variables and stuff
@@ -304,8 +304,8 @@ public class TickerCacheTask {
         final Stream<TickerItemData> items_stream;
         synchronized (currentList) {
             items_stream = currentList.stream().
-                    filter((data) -> 
-                            (data.getServerTime() >= LastUsedTime_ && data.getServerTime() <= _ServerTimeEnd)).
+                    filter((data)
+                            -> (data.getServerTime() >= LastUsedTime_ && data.getServerTime() <= _ServerTimeEnd)).
                     sorted(TickerItemComparator);         // No need to lock this thread, if we are creating a new ArrayList off existing since its a copy :)
 
             boolean processedFirstTime = false;
@@ -360,7 +360,6 @@ public class TickerCacheTask {
                         }
                         list_chart.add(item_ret);
 
-                        
                         high = item.getHigh();
                         low = item.getLow();
                         open = item.getOpen();
@@ -442,6 +441,171 @@ public class TickerCacheTask {
         return list_chart;
     }
 
+        public List<TickerItem_CandleBar> GetTickerList_CumulativeVolume(
+            final String ticker,
+            final int backtestHours,
+            int intervalMinutes,
+            String ExchangeSite,
+            long ServerTimeFrom, // Epoch in seconds
+            long ServerTimeEnd, // Epoch in seconds
+            boolean returnExactRequestedFromAndToTime) {
+
+        final List<TickerItem_CandleBar> list_chart = new ArrayList(); // create a new array first
+        final String dataSet = ExchangeSite + "-" + ticker;
+
+        // Is the data set available?
+        if (!list_mssql.containsKey(dataSet)) {
+            return list_chart;
+        }
+
+        // Timestamp
+        final long cTime_Millis = System.currentTimeMillis();
+        intervalMinutes *= 60; // convert to seconds
+
+        final boolean includeVolumeData = !ExchangeSite.equalsIgnoreCase("coinbase");
+
+        final long cTime = cTime_Millis / 1000;
+
+        // Etc
+        final boolean isTradingViewData = ServerTimeFrom != 0;
+        final boolean isLastCandleRequest = ServerTimeEnd - ServerTimeFrom == intervalMinutes;
+
+        // truncate the ending time to max current time
+        // This could also prevent DOS
+        long timeDilusion = cTime - ServerTimeEnd;
+        if (Math.abs(cTime - ServerTimeEnd) > 60 * 5) { // Time difference is 5 minutes, just use the server time. This could also prevent denial of service by sending long.maxvalue
+            ServerTimeEnd = cTime_Millis;
+            timeDilusion = 0;
+        }
+        final long _ServerTimeEnd = ServerTimeEnd;
+
+        // Determine where to start the candlestick
+        final long LastUsedTime_;
+        long LastUsedTime = 0;
+        if (isTradingViewData) { // tradingview
+            LastUsedTime_ = ServerTimeFrom - intervalMinutes;
+        } else {
+            LastUsedTime_ = cTime - (60l * 60l * backtestHours);
+        }
+        LastUsedTime = LastUsedTime_;
+
+        float lastPriceSet = 0;
+        float buysell_ratio_Total = 0, buysellratio_sets = 1;
+        float CumulativeVolume = 0;
+
+        // Get the first element and re-calibrate the time to be used 
+        // to start processing the return data
+        // Post process, for the variables and stuff
+        // round the last used time to best possible time for the chart period
+        final Calendar dtCal = Calendar.getInstance();
+        dtCal.setTimeInMillis(LastUsedTime);
+
+        int truncateField;
+        if (intervalMinutes < 60) { // below 1 hour
+            truncateField = Calendar.HOUR;
+
+        } else if (intervalMinutes < 60 * 60 * 24) { // below 1 day
+            truncateField = Calendar.DATE;
+
+        } else if (intervalMinutes < 60 * 60 * 24 * 30) { // below 30 days
+            truncateField = Calendar.MONTH;
+
+        } else if (intervalMinutes < 60 * 60 * 24 * 30 * 12 * 100) { // below 100 years
+            truncateField = Calendar.YEAR;
+        } else { // wtf
+            truncateField = Calendar.ERA;
+        }
+        LastUsedTime = DateUtils.truncate(dtCal, truncateField).getTimeInMillis();
+
+        // Gets the list of data relevent to this request, sorted by time in ascending order
+        final List<TickerItemData> currentList = list_mssql.get(dataSet);
+        final Stream<TickerItemData> items_stream;
+        synchronized (currentList) {
+            items_stream = currentList.stream().
+                    filter((data)
+                            -> (data.getServerTime() >= LastUsedTime_ && data.getServerTime() <= _ServerTimeEnd)).
+                    sorted(TickerItemComparator);         // No need to lock this thread, if we are creating a new ArrayList off existing since its a copy :)
+
+            boolean processedFirstTime = false;
+
+            // Now we create the candle data chain
+            final Iterator<TickerItemData> items = items_stream.iterator();
+            while (items.hasNext()) {
+                // Loop through the entire data chain, which each data representing 1 minute of the snapshot.
+                // However if that minute does not have any trading activity, the data will not be present. We detect this missing data by its time.
+                final TickerItemData item = items.next();
+
+                if (!processedFirstTime) {
+                    while (LastUsedTime < item.getServerTime()) {
+                        LastUsedTime += intervalMinutes;
+                    }
+                    processedFirstTime = true;
+                }
+
+                // Real stuff here
+                final long endCandleTime = LastUsedTime + (long) intervalMinutes;
+
+                
+                if (item.getBuySell_Ratio() != 0f && item.getBuySell_Ratio() != 1.0f) {
+                    float buyAndSellRatio = item.getBuySell_Ratio() + 1.0f;
+
+                    // volume cur
+                    double buyVolumeCur = (item.getVol_Cur() / buyAndSellRatio) * item.getBuySell_Ratio();
+                    double sellVolumeCur = item.getVol_Cur() - buyVolumeCur;
+
+                    CumulativeVolume += buyVolumeCur;
+                    CumulativeVolume -= sellVolumeCur;
+                }
+                
+                // If the stored item time is above the supposed expected
+                // end candle time 
+                if (item.getServerTime() > endCandleTime) {
+                    long endCandleTime2 = endCandleTime;
+                    boolean isEmptyBar = false;
+
+                    while (item.getServerTime() > endCandleTime2) {
+                        TickerItem_CandleBar item_ret;
+                        if (!isEmptyBar) {
+                            item_ret = new TickerItem_CandleBar(
+                                    endCandleTime2,
+                                    CumulativeVolume, CumulativeVolume, CumulativeVolume, CumulativeVolume,
+                                    0,
+                                    0,
+                                    (buysell_ratio_Total == 0.0f ? 1.0f : buysell_ratio_Total) / buysellratio_sets,
+                                    false);
+                        } else {
+                            item_ret = new TickerItem_CandleBar(
+                                    endCandleTime2, // Time
+                                    CumulativeVolume, // Last
+                                    CumulativeVolume, // High
+                                    CumulativeVolume, // Low
+                                    CumulativeVolume, // Open
+                                    0.0, // Volume
+                                    0.0, // Volume cur
+                                    1.0f, // Ratio
+                                    false);
+                        }
+                        list_chart.add(item_ret);
+
+
+                        LastUsedTime = endCandleTime2;
+                        endCandleTime2 = LastUsedTime + (long) intervalMinutes;
+
+                        // Reset emptybar data
+                        isEmptyBar = true;
+                    }
+
+                    // Otherwise, create a new candle data
+                } else {
+                    buysell_ratio_Total += item.getBuySell_Ratio();
+                    buysellratio_sets += 1.0f;
+                }
+                lastPriceSet = item.getClose();
+            }
+        }
+        return list_chart;
+    }
+    
     public List<ReturnVolumeProfileData> getVolumeProfile(final String ticker, final List<Integer> hoursFromNow, String ExchangeSite) {
         List<ReturnVolumeProfileData> ret = new ArrayList();
 
@@ -580,11 +744,12 @@ public class TickerCacheTask {
     public Map<String, TickerItemData> getExchangePriceSummaryData() {
         final Map<String, TickerItemData> mapPriceSummary = new HashMap();
 
-        list_mssql_summary.entrySet().stream().forEach((mapItem) -> {
-            mapPriceSummary.put(mapItem.getKey(),
-                    mapItem.getValue().size() > 0 ? mapItem.getValue().get(mapItem.getValue().size() - 1) : null);
-        });
-
+        for (Entry<String, List<TickerItemData>> currentList : list_mssql.entrySet()) {
+            synchronized (currentList) {
+                mapPriceSummary.put(currentList.getKey(),
+                        currentList.getValue().size() > 0 ? currentList.getValue().get(currentList.getValue().size() - 1) : null);
+            }
+        }
         return mapPriceSummary;
     }
 
@@ -797,7 +962,6 @@ public class TickerCacheTask {
 
         private void completedCaching(String ExchangeCurrencyPair) {
             isDataAcquisitionFromMSSQL_Completed = true;
-            canAcceptNewInfoFromOtherPeers.add(ExchangeCurrencyPair.hashCode());
             runnable.getSchedule().cancel(false); // cancel this cache task completely.
 
             commitToFileStorage();
@@ -1023,10 +1187,11 @@ public class TickerCacheTask {
     public void receivedNewGraphEntry_OtherPeers(String ExchangeCurrencyPair, long server_time, float close, float high, float low, float open, double volume, double volume_cur, float buysell_ratio) {
         //System.out.println(String.format("[Info] New info from other peers %s [%d], Close: %f, High: %f", ExchangeCurrencyPair, server_time, close, high));
 
-        if (list_mssql.containsKey(ExchangeCurrencyPair)
-                && canAcceptNewInfoFromOtherPeers.contains(ExchangeCurrencyPair.hashCode())) { // First item, no sync needed
+        if (list_mssql.containsKey(ExchangeCurrencyPair)) { // First item, no sync needed
             final List<TickerItemData> currentList = list_mssql.get(ExchangeCurrencyPair);
-            if (currentList == null || currentList.isEmpty()) {
+            final List<TickerItemData> currentList_Unmatured = list_unmaturedData.get(ExchangeCurrencyPair);
+
+            if (currentList == null || currentList_Unmatured == null) {
                 return;
             }
 
@@ -1046,17 +1211,11 @@ public class TickerCacheTask {
              currentList.add(new TickerItemData(server_time, close, high, low, open, volume, volume_cur, buysell_ratio, false));
              }*/
             synchronized (currentList) {
-                final TickerItemData lastItem = currentList.get(currentList.size() - 1);
-
-                // If an unmatured data is available  
-                // replace it with a matured ones  
-                if (lastItem.isUnmaturedData()) {
-                    lastItem.replaceUnmaturedData(server_time, close, high, low, open, volume, volume_cur, buysell_ratio, false);
-                    return;
-                }
-
                 // Add the new candle data
                 currentList.add(new TickerItemData(server_time, close, high, low, open, volume, volume_cur, buysell_ratio, false));
+            }
+            synchronized (currentList_Unmatured) {
+                currentList_Unmatured.clear();
             }
         }
 
@@ -1068,9 +1227,8 @@ public class TickerCacheTask {
     }
 
     public void recievedNewUnmaturedData(String ExchangeCurrencyPair, long server_time, float close, float high, float low, float open, double volume, double volume_cur, float buysell_ratio, float lastprice) {
-        if (list_mssql.containsKey(ExchangeCurrencyPair)
-                && canAcceptNewInfoFromOtherPeers.contains(ExchangeCurrencyPair.hashCode())) { // First item, no sync needed
-            final List<TickerItemData> currentList = list_mssql.get(ExchangeCurrencyPair);
+        if (list_unmaturedData.containsKey(ExchangeCurrencyPair)) { // First item, no sync needed
+            final List<TickerItemData> currentList = list_unmaturedData.get(ExchangeCurrencyPair);
             if (currentList == null || currentList.isEmpty()) {
                 return;
             }
@@ -1088,9 +1246,13 @@ public class TickerCacheTask {
              true));
              }*/
             synchronized (currentList) {
-                final TickerItemData lastItem = currentList.get(currentList.size() - 1);
-                if (lastItem.isUnmaturedData()) {
-                    lastItem.replaceUnmaturedData(server_time, close, high, low, open, volume, volume_cur, buysell_ratio, true);
+                if (currentList.size() >= 1) {
+                    final TickerItemData lastItem = currentList.get(currentList.size() - 1);
+                    if (lastItem.isUnmaturedData()) {
+                        lastItem.replaceUnmaturedData(server_time, close, high, low, open, volume, volume_cur, buysell_ratio, true);
+                    } else {
+                        currentList.add(new TickerItemData(server_time, close, high, low, open, volume, volume_cur, buysell_ratio, true));
+                    }
                 } else {
                     currentList.add(new TickerItemData(server_time, close, high, low, open, volume, volume_cur, buysell_ratio, true));
                 }
