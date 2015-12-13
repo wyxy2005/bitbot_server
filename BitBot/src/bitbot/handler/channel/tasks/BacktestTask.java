@@ -39,106 +39,110 @@ public class BacktestTask implements Runnable {
 
     @Override
     public void run() {
-        try {
-            try (PrintStream body = response.getPrintStream()) {
-                _ResponseHeader.addBasicResponseHeader(response);
 
-                JSONObject returnJson = new JSONObject();
+        try (PrintStream body = response.getPrintStream()) {
+            _ResponseHeader.addBasicResponseHeader(response);
 
-                if (content != null) {
-                    MarketBacktestInteraction bt = new MarketBacktestInteraction("");
+            JSONObject returnJson = new JSONObject();
 
-                    String returnResult = MarketBacktestScriptManager.startBacktestScriptfromString(bt, content);
-                    if (returnResult == null) {
-                        returnJson.put("success", "1");
-                        returnJson.put("error_msg", "");
+            if (content != null) {
+                MarketBacktestInteraction bt = new MarketBacktestInteraction("");
 
-                        JSONArray array = new JSONArray();
-                        JSONArray array_Debug = new JSONArray();
+                String returnResult = MarketBacktestScriptManager.startBacktestScriptfromString(bt, content);
+                if (returnResult == null) {
+                    returnJson.put("success", "1");
+                    returnJson.put("error_msg", "");
 
-                        // back testing
-                        for (MarketBacktestBuySellPoints pt : bt.getBuySellPoints()) {
-                            JSONObject obj = new JSONObject();
+                    JSONArray array = new JSONArray();
+                    JSONArray array_Debug = new JSONArray();
 
-                            obj.put("IsBuy", pt.isBuy() ? "buy" : "sell");
-                            obj.put("Amount", pt.getAmount());
-                            obj.put("Price", pt.getPrice());
+                    // back testing
+                    for (MarketBacktestBuySellPoints pt : bt.getBuySellPoints()) {
+                        JSONObject obj = new JSONObject();
 
-                            TickerItem_CandleBar item = pt.getTickerItem_Candlebar();
+                        obj.put("IsBuy", pt.isBuy() ? "buy" : "sell");
+                        obj.put("Amount", pt.getAmount());
+                        obj.put("Price", pt.getPrice());
 
-                            obj.put("server_time", item.getServerTime());
-                            obj.put("Open", item.getOpen());
-                            obj.put("Close", item.getClose());
-                            obj.put("High", item.getHigh());
-                            obj.put("Low", item.getLow());
-                            obj.put("Volume", item.getVol());
-                            obj.put("VolumeCur", item.getVol_Cur());
-                            obj.put("Ratio", item.getBuySell_Ratio());
+                        TickerItem_CandleBar item = pt.getTickerItem_Candlebar();
 
-                            array.add(obj);
-                        }
-                        returnJson.put("ret", array);
+                        obj.put("server_time", item.getServerTime());
+                        obj.put("Open", item.getOpen());
+                        obj.put("Close", item.getClose());
+                        obj.put("High", item.getHigh());
+                        obj.put("Low", item.getLow());
+                        obj.put("Volume", item.getVol());
+                        obj.put("VolumeCur", item.getVol_Cur());
+                        obj.put("Ratio", item.getBuySell_Ratio());
 
-                        // Full candlestick data
-                        JSONArray fullchartDataArray = new JSONArray();
-                        if (bt.getLastTickerList_CandleStick() != null) {
-                            bt.getLastTickerList_CandleStick().stream().map((item) -> {
-                                JSONArray obj_array = new JSONArray();
-
-                                obj_array.add(item.getServerTime());
-                                obj_array.add(item.getOpen());
-                                obj_array.add(item.getClose());
-                                obj_array.add(item.getHigh());
-                                obj_array.add(item.getLow());
-                                obj_array.add(item.getVol());
-                                obj_array.add(item.getVol_Cur());
-                                obj_array.add(item.getBuySell_Ratio());
-
-                                return obj_array;
-                            }).forEach((obj) -> {
-                                fullchartDataArray.add(obj);
-                            });
-                        }
-                        returnJson.put("fullChartData", fullchartDataArray);
-
-                        // back test msg
-                        Collections.reverse(bt.getDebugMessages());
-                        for (String str : bt.getDebugMessages()) {
-                            JSONObject obj = new JSONObject();
-
-                            obj.put("Str", str);
-
-                            array_Debug.add(obj);
-                        }
-                        returnJson.put("Debug", array_Debug);
-
-                        String retString = returnJson.toJSONString();
-
-                        response.setContentLength(retString.length());
-                        body.print(retString);
-                    } else {
-                        returnJson.put("success", "0");
-                        returnJson.put("error_msg", returnResult);
-
-                        String retString = returnJson.toJSONString();
-
-                        response.setContentLength(retString.length());
-                        body.print(retString);
+                        array.add(obj);
                     }
+                    returnJson.put("ret", array);
+
+                    // Full candlestick data
+                    JSONArray fullchartDataArray = new JSONArray();
+                    if (bt.getLastTickerList_CandleStick() != null) {
+                        bt.getLastTickerList_CandleStick().stream().map((item) -> {
+                            JSONArray obj_array = new JSONArray();
+
+                            obj_array.add(item.getServerTime());
+                            obj_array.add(item.getOpen());
+                            obj_array.add(item.getClose());
+                            obj_array.add(item.getHigh());
+                            obj_array.add(item.getLow());
+                            obj_array.add(item.getVol());
+                            obj_array.add(item.getVol_Cur());
+                            obj_array.add(item.getBuySell_Ratio());
+
+                            return obj_array;
+                        }).forEach((obj) -> {
+                            fullchartDataArray.add(obj);
+                        });
+                    }
+                    returnJson.put("fullChartData", fullchartDataArray);
+
+                    // back test msg
+                    Collections.reverse(bt.getDebugMessages());
+                    for (String str : bt.getDebugMessages()) {
+                        JSONObject obj = new JSONObject();
+
+                        obj.put("Str", str);
+
+                        array_Debug.add(obj);
+                    }
+                    returnJson.put("Debug", array_Debug);
+
+                    String retString = returnJson.toJSONString();
+
+                    response.setContentLength(retString.length());
+                    body.print(retString);
                 } else {
                     returnJson.put("success", "0");
-                    returnJson.put("error_msg", "No content available.");
+                    returnJson.put("error_msg", returnResult);
 
                     String retString = returnJson.toJSONString();
 
                     response.setContentLength(retString.length());
                     body.print(retString);
                 }
-                response.setStatus(Status.OK);
-                body.close();
+            } else {
+                returnJson.put("success", "0");
+                returnJson.put("error_msg", "No content available.");
+
+                String retString = returnJson.toJSONString();
+
+                response.setContentLength(retString.length());
+                body.print(retString);
             }
+            response.setStatus(Status.OK);
+            body.close();
         } catch (Exception exp) {
             exp.printStackTrace();
+        } finally {
+            try {
+                response.close();
+            } catch (Exception exp) {
+            }
         }
     }
 }

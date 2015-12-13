@@ -35,7 +35,7 @@ public class TickerHistoryData {
     
     // Keep a reference of the Runnable source, that way we dont need to create a new pair of string CurrencyPair, ExchangeSite, ExchangeCurrencyPair
     // Since reference is much cheaper ;) 
-    private final TickerCacheTask_ExchangeHistory _TickerCacheTaskSource;
+    private TickerCacheTask_ExchangeHistory _TickerCacheTaskSource;
     
     public TickerHistoryData(TickerCacheTask_ExchangeHistory _TickerCacheTaskSource, long LastPurchaseTime, int LastTradeId, float LastPrice, boolean IsCoinbaseOrCexIO) {
         this.High = 0;
@@ -67,12 +67,14 @@ public class TickerHistoryData {
                 // Check again, just in case
                 if (this.LastServerUTCTime == 0) {
                     throw new RuntimeException("LastServerUTCTime is not set...");
+                } else if (_TickerCacheTaskSource == null) {
+                    throw new RuntimeException("_TickerCacheTaskSource is null");
                 }
-
-                BacklogCommitTask_Tickers.RegisterForImmediateLogging(this);
 
                 // Broadcast to peers on other servers
                 broadcastCompletedMinuteCandleDataToPeers();
+                
+                BacklogCommitTask_Tickers.RegisterForImmediateLogging(this);
 
                 // Debug
                 if (ChannelServer.getInstance().isEnableDebugSessionPrints()) {
@@ -143,6 +145,8 @@ public class TickerHistoryData {
                 e.printStackTrace();
             }
         }
+        _TickerCacheTaskSource = null; // cleanup
+        
         return HistoryDatabaseCommitEnum.Ok;
     }
 

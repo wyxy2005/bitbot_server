@@ -38,10 +38,8 @@ public class TradingViewUDFTask implements Runnable {
     }
 
     @Override
-    public void run() {
-        try {
-            PrintStream body = response.getPrintStream();
-
+    public void run() { 
+        try (PrintStream body = response.getPrintStream()) {
             _ResponseHeader.addBasicResponseHeader(response);
 //System.out.println("Geting path: " + path);
 
@@ -97,11 +95,13 @@ public class TradingViewUDFTask implements Runnable {
             } catch (Exception exp) {
                 exp.printStackTrace();
                 sendError(body, "wrong_request_format");
-            } finally {
-                body.close();
             }
         } catch (IOException e) {
             e.printStackTrace();
+        } finally {
+            try {
+                response.close();
+            } catch (IOException e) {}
         }
     }
 
@@ -121,10 +121,10 @@ public class TradingViewUDFTask implements Runnable {
 
             JSONObject obj = new JSONObject();
 
-            obj.put("symbol", sym.GetExchange() + ":" + sym.GetName());
-            obj.put("full_name", sym.GetExchange() + ":" + sym.GetName());
-            obj.put("description", sym.GetDescription());
-            obj.put("exchange", sym.GetExchange());
+            obj.put("symbol", sym.getExchange() + ":" + sym.getName());
+            obj.put("full_name", sym.getExchange() + ":" + sym.getName());
+            obj.put("description", sym.getDescription());
+            obj.put("exchange", sym.getExchange());
             obj.put("type", sym.getType());
 
             json_array.add(obj);
@@ -132,10 +132,10 @@ public class TradingViewUDFTask implements Runnable {
             if (symRet.IsCumulativeVolumeType()) {
                 JSONObject obj2 = new JSONObject();
                 
-                obj2.put("symbol", sym.GetExchange() + ":" + sym.GetName().concat(TV_symboldatabase.BalanceVolumeStr));
-                obj2.put("full_name", sym.GetExchange() + ":" + sym.GetName());
-                obj2.put("description", sym.GetDescription());
-                obj2.put("exchange", sym.GetExchange());
+                obj2.put("symbol", sym.getExchange() + ":" + sym.getName().concat(TV_symboldatabase.BalanceVolumeStr));
+                obj2.put("full_name", sym.getExchange() + ":" + sym.getName());
+                obj2.put("description", sym.getDescription());
+                obj2.put("exchange", sym.getExchange());
                 obj2.put("type", sym.getType());
                 
                 json_array.add(obj2);
@@ -254,11 +254,11 @@ public class TradingViewUDFTask implements Runnable {
                 // which unfortunately not available on TradingView chart
                 if (candlesRequested > 100) {
                     ret = ChannelServer.getInstance().getTickerTask().GetTickerList_CumulativeVolume(
-                            symbol.right.GetName().toLowerCase(), 0, time, symbol.right.GetExchange().toLowerCase(), startDateTimestamp, endDateTimestamp, true);
+                            symbol.right.getName().toLowerCase(), 0, time, symbol.right.getExchange().toLowerCase(), startDateTimestamp, endDateTimestamp, true);
                 }
             } else {
                 ret = ChannelServer.getInstance().getTickerTask().getTickerList_Candlestick(
-                        symbol.right.GetName().toLowerCase(), 0, time, symbol.right.GetExchange().toLowerCase(), startDateTimestamp, endDateTimestamp, true);
+                        symbol.right.getName().toLowerCase(), 0, time, symbol.right.getExchange().toLowerCase(), startDateTimestamp, endDateTimestamp, true);
             }
         } else {
             // should we auto ban?
@@ -349,7 +349,7 @@ public class TradingViewUDFTask implements Runnable {
         JSONArray json_array_minSize = new JSONArray();
 
         final List<TradesItemData> ret = ChannelServer.getInstance().getTradesTask().getTradesList(
-                String.format("%s-%s", symbol.right.GetExchange().toLowerCase(), symbol.right.GetName().toLowerCase()), 50, from, to);
+                String.format("%s-%s", symbol.right.getExchange().toLowerCase(), symbol.right.getName().toLowerCase()), 50, from, to);
 
         for (TradesItemData data : ret) {
             if (data.getAmount() >= 50) {
@@ -396,8 +396,8 @@ public class TradingViewUDFTask implements Runnable {
             return;
         }
         final TickerItemData summary_ret = ChannelServer.getInstance().getTickerTask().getTickerSummary(
-                symbol.right.GetName().toLowerCase(),
-                symbol.right.GetExchange().toLowerCase());
+                symbol.right.getName().toLowerCase(),
+                symbol.right.getExchange().toLowerCase());
 
 //	BEWARE: this `pricescale` parameter computation algorithm is wrong and works
 //	for symbols with 10-based minimal movement value only
@@ -408,7 +408,7 @@ public class TradingViewUDFTask implements Runnable {
         JSONObject json_main = new JSONObject();
 
         // https://github.com/tradingview/charting_library/wiki/Symbology
-        json_main.put("name", symbol.right.GetName());
+        json_main.put("name", symbol.right.getName());
         json_main.put("exchange-traded", true);
         json_main.put("exchange-listed", true);
         json_main.put("fractional", false);
@@ -426,14 +426,14 @@ public class TradingViewUDFTask implements Runnable {
         json_main.put("force_session_rebuild", true);
         json_main.put("has_no_volume", symbol.left);  // cumulative volume type doesnt have volume
         json_main.put("volume_precision", 0); // 0 = volume is an integer, 1 = decimal
-        json_main.put("listed_exchange", symbol.right.GetExchange()); // listed and traded exchange for bitcoin is the same
-        json_main.put("exchange", symbol.right.GetExchange()); // listed and traded exchange for bitcoin is the same
+        json_main.put("listed_exchange", symbol.right.getExchange()); // listed and traded exchange for bitcoin is the same
+        json_main.put("exchange", symbol.right.getExchange()); // listed and traded exchange for bitcoin is the same
         if (symbol.left) { // cumulative volume type
-            json_main.put("ticker", symbol.right.GetExchange() + ":" + symbol.right.GetName().concat(TV_symboldatabase.BalanceVolumeStr));
+            json_main.put("ticker", symbol.right.getExchange() + ":" + symbol.right.getName().concat(TV_symboldatabase.BalanceVolumeStr));
         } else {
-            json_main.put("ticker", symbol.right.GetExchange() + ":" + symbol.right.GetName());
+            json_main.put("ticker", symbol.right.getExchange() + ":" + symbol.right.getName());
         }
-        json_main.put("description", symbol.right.GetDescription());
+        json_main.put("description", symbol.right.getDescription());
         json_main.put("type", symbol.right.getType());
         json_main.put("data_status", "streaming"); // •streaming •endofday •pulsed •delayed_streaming
 

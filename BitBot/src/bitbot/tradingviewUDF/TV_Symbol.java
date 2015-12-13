@@ -24,15 +24,15 @@ public class TV_Symbol {
         this.HaveBalanceVolume = _VolumeProfileData;
     }
     
-    public String GetName() {
+    public String getName() {
         return name;
     }
     
-    public String GetDescription() {
+    public String getDescription() {
         return description;
     }
     
-    public String GetExchange() {
+    public String getExchange() {
         return exchange;
     }
     
@@ -40,7 +40,7 @@ public class TV_Symbol {
         return type;
     }
     
-    public boolean GetHaveBalanceVolume() {
+    public boolean getHaveBalanceVolume() {
         return HaveBalanceVolume;
     }
     

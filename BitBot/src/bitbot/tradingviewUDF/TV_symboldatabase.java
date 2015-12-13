@@ -122,16 +122,16 @@ public class TV_symboldatabase {
             if (type.length() > 0 && !item.getType().equalsIgnoreCase(type)) {
                 continue;
             }
-            if (exchange.length() > 0 && !item.GetExchange().equalsIgnoreCase(exchange)) {
+            if (exchange.length() > 0 && !item.getExchange().equalsIgnoreCase(exchange)) {
                 continue;
             }
-            boolean isCumulativeVolumeType = (item.GetName().concat(BalanceVolumeStr).toLowerCase().contains(searchText)) 
-                    || (item.GetExchange() + ":" + item.GetName().concat(BalanceVolumeStr)).toLowerCase().contains(searchText);
+            boolean isCumulativeVolumeType = (item.getName().concat(BalanceVolumeStr).toLowerCase().contains(searchText)) 
+                    || (item.getExchange() + ":" + item.getName().concat(BalanceVolumeStr)).toLowerCase().contains(searchText);
             
             //System.out.println(item.name + " " + item.description + " " + item.type + " " + item.exchange);
             if (queryIsEmpty 
-                    || (item.GetName().toLowerCase().contains(searchText)) 
-                    || (item.GetExchange() + ":" + item.GetName()).toLowerCase().contains(searchText)
+                    || (item.getName().toLowerCase().contains(searchText)) 
+                    || (item.getExchange() + ":" + item.getName()).toLowerCase().contains(searchText)
                     
                     || isCumulativeVolumeType) {
                 
@@ -151,10 +151,10 @@ public class TV_symboldatabase {
         final String symbol = (data.length > 1 ? data[1] : symbolName).toUpperCase();
 
         for (TV_Symbol item : symbols) {
-            boolean balanceVolume = item.GetName().concat(BalanceVolumeStr).toUpperCase().equals(symbol) && item.GetHaveBalanceVolume();
+            boolean balanceVolume = item.getName().concat(BalanceVolumeStr).toUpperCase().equals(symbol) && item.getHaveBalanceVolume();
 
-            if ((item.GetName().toUpperCase().equals(symbol) || balanceVolume) &&  // Match ticker name
-                    (exchange.length() == 0 || exchange.equals(item.GetExchange().toUpperCase())) ) { // Match exchange name
+            if ((item.getName().toUpperCase().equals(symbol) || balanceVolume) &&  // Match ticker name
+                    (exchange.length() == 0 || exchange.equals(item.getExchange().toUpperCase())) ) { // Match exchange name
                 
                 return new Pair(balanceVolume, item);
             }
