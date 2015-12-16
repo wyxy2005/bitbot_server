@@ -27,7 +27,7 @@ public class AntiFloodValidator {
     
     // variables
     private static final List<String> blacklist = new ArrayList();
-    private static final Map<String, Pair<Long, Integer>> tracker = new HashMap();
+    private static final Map<String, Pair<Pair<Long, Long>, Integer>> tracker = new HashMap();
     private static final Object mutex = new Object();
     
     static {
@@ -59,23 +59,29 @@ public class AntiFloodValidator {
 	   // session.close(true);
 	    return true;
 	}
-	final Pair<Long, Integer> track = tracker.get(address);
+	final Pair<Pair<Long, Long>, Integer> track = tracker.get(address);
 
 	int count;
 	long cTime = System.currentTimeMillis();
 	if (track == null) {
 	    synchronized (mutex) {
-		tracker.put(address, new Pair(cTime, 0)); // 0 count
+		tracker.put(address, new Pair(new Pair(cTime, cTime), 0)); // 0 count
 	    }
 	} else {
 	    count = track.right;
 
-	    cTime = System.currentTimeMillis();
-	    final long difference = cTime - track.left;
-	    if (difference < AllowedInterval) {
+            final long LastResetInterval = track.left.left;
+            final long LastPacketSentTime = track.left.right;
+            
+	    final long difference = cTime - LastPacketSentTime; // Current time - Last packet sent time 
+            final long difference_Reset = cTime - LastResetInterval; // Current time - Last packet reset Interval
+            boolean resetInterval = false;
+            
+	    if (difference < AllowedInterval) { // 50
 		count++;
-	    } else if (difference > AllowedResetInveral) {
-		count = 0;
+	    } else if (difference_Reset > AllowedResetInveral) {
+		resetInterval = true;
+                count = 0;
             }
 	    if (count >= SpamCount) {
 		synchronized (mutex) {
@@ -84,8 +90,13 @@ public class AntiFloodValidator {
 		FileoutputUtil.log("DOS_Log.rtf", String.format("Banned IP address : %s", address));
 		return true;
 	    }
-	    track.left = cTime;
+	    track.left.right = cTime;
+            if (resetInterval) {
+                track.left.left = cTime;
+            }
 	    track.right = count;
+            
+            System.out.println("LastResetInterval: "+difference_Reset+", LastPacketSentTime: "+difference+", count: " + count);
 	}
         return false;
     }

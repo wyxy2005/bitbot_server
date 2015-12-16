@@ -31,7 +31,7 @@ public class TickerItemData implements TickerItem {
     }
 
     public void replaceUnmaturedData(long server_time, float close, float high, float low, float open, double volume, double volume_cur, float buysell_ratio, boolean unmatured_data) {
-        if (!unmatured_data) {
+        if (unmatured_data) {
             this.server_time = server_time;//DateTimeUtil.convertDateTime(Long.parseLong(obj.get("server_time").toString()));
         }
         this.high = high;

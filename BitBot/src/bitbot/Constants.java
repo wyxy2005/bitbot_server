@@ -25,7 +25,7 @@ public class Constants {
     public static final String CLIENT_KEY = "CLIENT";
     
     // server-server
-    public static final long PriceBetweenServerBroadcastDelay = 0;
+    public static final long PriceBetweenServerBroadcastDelay = 9;
     
     // Socket
     public static final int SocketPortLegacy = 8080; // to provide compatibility for those on old version of the app

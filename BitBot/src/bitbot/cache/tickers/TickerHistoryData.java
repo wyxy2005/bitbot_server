@@ -61,7 +61,7 @@ public class TickerHistoryData {
 
         if (Math.abs(LastCommitTime - LastPurchaseTime) >= 60000) { // per minute
             // check if data is available
-            if (Volume > 0 && LastPurchaseTime > 0 && High > 0 && Low > 0) { // Commit for real :)
+            if (Volume > 0 && LastPurchaseTime > 0 && High > 0 && Low > 0 && !isDatasetReadyForCommit) { // Commit for real :)
                 isDatasetReadyForCommit = true;
 
                 // Check again, just in case
@@ -71,6 +71,8 @@ public class TickerHistoryData {
                     throw new RuntimeException("_TickerCacheTaskSource is null");
                 }
 
+               // truncateLastServerUTCMinute();
+                
                 // Broadcast to peers on other servers
                 broadcastCompletedMinuteCandleDataToPeers();
                 
@@ -278,7 +280,16 @@ public class TickerHistoryData {
         // Broadcast to peers on other servers
         try {
             final String ExchangeCurrencyPair = String.format("%s-%s", _TickerCacheTaskSource.getExchangeSite(), _TickerCacheTaskSource.getCurrencyPair());
-            ChannelServer.getInstance().getWorldInterface().broadcastNewGraphEntry(ExchangeCurrencyPair, LastServerUTCTime / 1000l, LastPrice, High, Low, Open, Volume, Volume_Cur, getBuySell_Ratio());
+            ChannelServer.getInstance().getWorldInterface().broadcastNewGraphEntry(
+                    ExchangeCurrencyPair, 
+                    LastServerUTCTime / 1000l, 
+                    LastPrice, 
+                    High, 
+                    Low, 
+                    Open, 
+                    Volume, 
+                    Volume_Cur, 
+                    getBuySell_Ratio());
         } catch (Exception exp) {
             ServerLog.RegisterForLoggingException(ServerLogType.RemoteError, exp);
             ChannelServer.getInstance().reconnectWorld(exp);
@@ -300,6 +311,18 @@ public class TickerHistoryData {
     public long getLastServerUTCTime() {
         return this.LastServerUTCTime;
     }
+    
+   /* private void truncateLastServerUTCMinute() {
+        // 1450247285000
+        Calendar cal = Calendar.getInstance();
+        cal.setTimeInMillis(LastServerUTCTime);
+        
+        //cal.add(Calendar.MINUTE, 1);
+        cal.set(Calendar.SECOND, 0);
+        cal.set(Calendar.MILLISECOND, 0);
+        
+        this.LastServerUTCTime = cal.getTimeInMillis();
+    }*/
 
     public float getBuySell_Ratio() {
         return (float) (TotalBuyVolume / TotalSellVolume);

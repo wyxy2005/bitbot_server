@@ -441,7 +441,7 @@ public class TickerCacheTask {
         return list_chart;
     }
 
-        public List<TickerItem_CandleBar> GetTickerList_CumulativeVolume(
+    public List<TickerItem_CandleBar> GetTickerList_CumulativeVolume(
             final String ticker,
             final int backtestHours,
             int intervalMinutes,
@@ -545,7 +545,6 @@ public class TickerCacheTask {
                 // Real stuff here
                 final long endCandleTime = LastUsedTime + (long) intervalMinutes;
 
-                
                 if (item.getBuySell_Ratio() != 0f && item.getBuySell_Ratio() != 1.0f) {
                     float buyAndSellRatio = item.getBuySell_Ratio() + 1.0f;
 
@@ -556,7 +555,7 @@ public class TickerCacheTask {
                     CumulativeVolume += buyVolumeCur;
                     CumulativeVolume -= sellVolumeCur;
                 }
-                
+
                 // If the stored item time is above the supposed expected
                 // end candle time 
                 if (item.getServerTime() > endCandleTime) {
@@ -587,7 +586,6 @@ public class TickerCacheTask {
                         }
                         list_chart.add(item_ret);
 
-
                         LastUsedTime = endCandleTime2;
                         endCandleTime2 = LastUsedTime + (long) intervalMinutes;
 
@@ -605,7 +603,7 @@ public class TickerCacheTask {
         }
         return list_chart;
     }
-    
+
     public List<ReturnVolumeProfileData> getVolumeProfile(final String ticker, final List<Integer> hoursFromNow, String ExchangeSite) {
         List<ReturnVolumeProfileData> ret = new ArrayList();
 
@@ -799,11 +797,11 @@ public class TickerCacheTask {
             this.LastCommitTime = 0;
             this.HistoryConnector = HistoryConnector;
         }
-        
+
         public String getExchangeSite() {
             return ExchangeSite;
         }
-        
+
         public String getCurrencyPair() {
             return CurrencyPair;
         }
@@ -834,7 +832,8 @@ public class TickerCacheTask {
                         HistoryData != null ? HistoryData.getLastTradeId() : 0);
 
                 if (data != null) { // Network unavailable?
-                    // Set data to UTC time now.
+                    // Set data to UTC time.
+                    // This UTC time is used for inserting to database
                     Calendar cal_UTC = Calendar.getInstance(utc);
                     data.setLastServerUTCTime(cal_UTC.getTimeInMillis());
 
@@ -1237,8 +1236,8 @@ public class TickerCacheTask {
 
     public void recievedNewUnmaturedData(String ExchangeCurrencyPair, long server_time, float close, float high, float low, float open, double volume, double volume_cur, float buysell_ratio, float lastprice) {
         if (list_unmaturedData.containsKey(ExchangeCurrencyPair)) { // First item, no sync needed
-            final List<TickerItemData> currentList = list_unmaturedData.get(ExchangeCurrencyPair);
-            if (currentList == null || currentList.isEmpty()) {
+            final List<TickerItemData> currentList_Unmatured = list_unmaturedData.get(ExchangeCurrencyPair);
+            if (currentList_Unmatured == null || currentList_Unmatured.isEmpty()) {
                 return;
             }
             // Temporary rollback, due to upper limits of memory until a better solution is found.
@@ -1254,18 +1253,25 @@ public class TickerCacheTask {
              buysell_ratio, 
              true));
              }*/
-            synchronized (currentList) {
-                if (currentList.size() >= 1) {
-                    final TickerItemData lastItem = currentList.get(currentList.size() - 1);
+            synchronized (currentList_Unmatured) {
+                if (currentList_Unmatured.size() >= 1) {
+                    final TickerItemData lastItem = currentList_Unmatured.get(currentList_Unmatured.size() - 1);
                     if (lastItem.isUnmaturedData()) {
                         lastItem.replaceUnmaturedData(server_time, close, high, low, open, volume, volume_cur, buysell_ratio, true);
                     } else {
-                        currentList.add(new TickerItemData(server_time, close, high, low, open, volume, volume_cur, buysell_ratio, true));
+                        currentList_Unmatured.add(new TickerItemData(server_time, close, high, low, open, volume, volume_cur, buysell_ratio, true));
                     }
                 } else {
-                    currentList.add(new TickerItemData(server_time, close, high, low, open, volume, volume_cur, buysell_ratio, true));
+                    currentList_Unmatured.add(new TickerItemData(server_time, close, high, low, open, volume, volume_cur, buysell_ratio, true));
                 }
             }
+            
+            /*final List<TickerItemData> currentList = list_mssql.get(ExchangeCurrencyPair);
+
+            synchronized (currentList) {
+                // Add the new candle data
+                currentList.add(new TickerItemData(server_time, close, high, low, open, volume, volume_cur, buysell_ratio, true));
+            }*/
         }
     }
 }

@@ -121,7 +121,7 @@ public class ServerHTTPExchangeHandler implements Container {
             switch (path) {
                 case "/search":
                     // Anti flood check
-                    if (AntiFloodValidator.CheckSpam(IPAddress, 10)) {
+                    if (AntiFloodValidator.CheckSpam(IPAddress, 50)) {
                         MultiThreadExecutor.submit(new SpamErrorTask(request, response));
                         return;
                     }
@@ -136,7 +136,7 @@ public class ServerHTTPExchangeHandler implements Container {
                 case "/quotes":
                 case "/marks": {
                     // Anti flood check
-                    if (AntiFloodValidator.CheckSpam(IPAddress, 70)) {
+                    if (AntiFloodValidator.CheckSpam(IPAddress, 200)) {
                         MultiThreadExecutor.submit(new SpamErrorTask(request, response));
                         return;
                     }
