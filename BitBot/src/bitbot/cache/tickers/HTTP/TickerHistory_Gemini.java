@@ -5,17 +5,18 @@ import bitbot.cache.tickers.TickerHistoryData;
 import bitbot.cache.tickers.TickerHistoryInterface;
 import bitbot.cache.trades.TradeHistoryBuySellEnum;
 import bitbot.util.HttpClient;
+import java.util.Calendar;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.TimeZone;
 import org.json.simple.parser.ContainerFactory;
 import org.json.simple.parser.JSONParser;
 
 /**
  *
- * @author z
- * https://docs.gemini.com/#current-order-book
+ * @author z https://docs.gemini.com/#current-order-book
  */
 public class TickerHistory_Gemini implements TickerHistoryInterface {
 
@@ -32,13 +33,22 @@ public class TickerHistory_Gemini implements TickerHistoryInterface {
 
     @Override
     public TickerHistoryData connectAndParseHistoryResult(TickerCacheTask.TickerCacheTask_ExchangeHistory _TickerCacheTaskSource, String ExchangeCurrencyPair, String ExchangeSite, String CurrencyPair, long LastPurchaseTime, int LastTradeId) {
-        final String[] split = CurrencyPair.split("_");
+        final String formattedExchangeName = CurrencyPair.toUpperCase().replace("_", "");
+        final String Uri;
 
-        final String Uri = String.format("https://api.gemini.com/v1/trades/%s%s%s", 
-                split[0].toUpperCase(), 
-                split[1].toUpperCase(), 
+        if (LastPurchaseTime > 1) {
+            Uri = String.format("https://api.gemini.com/v1/trades/%s?since=%s",
+                    formattedExchangeName,
+                    (LastPurchaseTime / 1000) + 1);
+        } else {
+            TimeZone utc = TimeZone.getTimeZone("UTC");
+            Calendar cal_UTC = Calendar.getInstance(utc);
+            
+            Uri = String.format("https://api.gemini.com/v1/trades/%s?since=%s",
+                    formattedExchangeName,
+                    cal_UTC.getTimeInMillis() / 1000);
+        }
 
-                LastPurchaseTime > 1 ? ("?since=" + (LastPurchaseTime / 1000) + 1) : "");
         final String GetResult = HttpClient.httpsGet(Uri, "");
 
         if (GetResult != null) {
@@ -65,7 +75,7 @@ public class TickerHistory_Gemini implements TickerHistoryInterface {
 
                 for (int i = tradesArray.size() - 1; i > 0; i--) {
                     LinkedHashMap obj = tradesArray.get(i);
-                            
+
                     final int tradeid = Integer.parseInt(obj.get("tid").toString());
                     final long date = Integer.parseInt(obj.get("timestamp").toString()) * 1000l;
                     final float price = Float.parseFloat(obj.get("price").toString());
@@ -89,16 +99,16 @@ public class TickerHistory_Gemini implements TickerHistoryInterface {
 
                     //http://tutorials.jenkov.com/java-date-time/java-util-timezone.html
                     // Timestamp for trades
-                   /* Calendar cal = Calendar.getInstance(); // BTCe time
-                     cal.set(Calendar.YEAR, 1970);
-                     cal.set(Calendar.MONTH, 0);
-                     cal.set(Calendar.DATE, 0);
+                /*    Calendar cal = Calendar.getInstance(); // BTCe time
+                    cal.set(Calendar.YEAR, 1970);
+                    cal.set(Calendar.MONTH, 0);
+                    cal.set(Calendar.DATE, 0);
 
-                     cal.add(Calendar.SECOND, (int) (date / 1000));*/
-                  //  System.out.println(String.format("Got [%s], Price: %f, Sum: %f ", cal.getTime().toString(), price, amount));
+                    cal.add(Calendar.SECOND, (int) (date / 1000));
+                        System.out.println(String.format("Got [%s], Price: %f, Sum: %f ", cal.getTime().toString(), price, amount));*/
                     // Assume things are read in ascending order
                     if (date > LastPurchaseTime) {
-                     //   System.out.println(String.format("[Trades history] Added [%s], Price: %f, Sum: %f ", cal.getTime().toString(), price, amount));
+                   //     System.out.println(String.format("[Trades history] Added [%s], Price: %f, Sum: %f ", cal.getTime().toString(), price, amount));
                         ReturnData.merge(price, amount, date, tradeid, type);
 
                         if (enableTrackTrades) {
@@ -107,7 +117,7 @@ public class TickerHistory_Gemini implements TickerHistoryInterface {
                     }
                 }
             } catch (Exception parseExp) {
-                //parseExp.printStackTrace();
+                parseExp.printStackTrace();
                 //System.out.println(GetResult);
                 //ServerLog.RegisterForLogging(ServerLogType.HistoryCacheTask, parseExp.getMessage());
             }

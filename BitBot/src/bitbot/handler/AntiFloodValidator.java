@@ -77,13 +77,14 @@ public class AntiFloodValidator {
             final long difference_Reset = cTime - LastResetInterval; // Current time - Last packet reset Interval
             boolean resetInterval = false;
             
-	    if (difference < AllowedInterval) { // 50
+	    if (difference < AllowedInterval) { // if last packet sent relative to this is within 50~200 ms, add the count.
 		count++;
-	    } else if (difference_Reset > AllowedResetInveral) {
+	    } 
+            if (difference_Reset > AllowedResetInveral) { // if time > 10 seconds, reset counter
 		resetInterval = true;
                 count = 0;
             }
-	    if (count >= SpamCount) {
+	    if (count >= SpamCount) { // if count > 200, auto ban
 		synchronized (mutex) {
 		    block(address, true);
 		}
@@ -96,7 +97,7 @@ public class AntiFloodValidator {
             }
 	    track.right = count;
             
-            System.out.println("LastResetInterval: "+difference_Reset+", LastPacketSentTime: "+difference+", count: " + count);
+            //System.out.println("LastResetInterval: "+difference_Reset+", LastPacketSentTime: "+difference+", count: " + count);
 	}
         return false;
     }

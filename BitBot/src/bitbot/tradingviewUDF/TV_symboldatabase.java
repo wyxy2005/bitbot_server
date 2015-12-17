@@ -47,6 +47,9 @@ public class TV_symboldatabase {
         
         symbols.add(new TV_Symbol("BTC_USD", "Bitcoin/ Dollar", "Coinbase", "bitcoin"));
         symbols.add(new TV_Symbol("BTC_USD", "Bitcoin/ Dollar", "CoinbaseExchange", "bitcoin", true));
+        symbols.add(new TV_Symbol("BTC_GBP", "Bitcoin/ Pound Sterling", "CoinbaseExchange", "bitcoin", true));
+        symbols.add(new TV_Symbol("BTC_CAD", "Bitcoin/ Canadian Dollar", "CoinbaseExchange", "bitcoin", true));
+        symbols.add(new TV_Symbol("BTC_EUR", "Bitcoin/ Euro", "CoinbaseExchange", "bitcoin", true));
         
         symbols.add(new TV_Symbol("XBT_USD", "Bitcoin/ Dollar", "Itbit", "bitcoin"));
         symbols.add(new TV_Symbol("XBT_SGD", "Bitcoin/ Singapore Dollar", "Itbit", "bitcoin"));

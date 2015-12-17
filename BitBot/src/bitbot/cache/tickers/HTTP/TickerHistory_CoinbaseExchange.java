@@ -34,7 +34,7 @@ public class TickerHistory_CoinbaseExchange implements TickerHistoryInterface {
         return enableTrackTrades;
     }
 
-    private static final DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    private static final DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss"); // 2015-12-17T17:33:40.510317Z
 
     static {
         df.setTimeZone(TimeZone.getTimeZone("GMT+0:00"));
@@ -100,7 +100,7 @@ public class TickerHistory_CoinbaseExchange implements TickerHistoryInterface {
                     }
                 }
             } catch (Exception parseExp) {
-                //parseExp.printStackTrace();
+                parseExp.printStackTrace();
                 //System.out.println(GetResult);
                 //ServerLog.RegisterForLogging(ServerLogType.HistoryCacheTask, parseExp.getMessage());
             }
