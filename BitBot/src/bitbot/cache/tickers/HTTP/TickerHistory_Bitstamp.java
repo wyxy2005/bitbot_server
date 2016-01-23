@@ -61,7 +61,9 @@ public class TickerHistory_Bitstamp implements TickerHistoryInterface {
                     long date = Integer.parseInt(obj.get("date").toString()) * 1000l;
                     float price = Float.parseFloat(obj.get("price").toString());
                     float amount = Float.parseFloat(obj.get("amount").toString());
-                    TradeHistoryBuySellEnum type = TradeHistoryBuySellEnum.Unknown; // bitstamp doesn't broadcast buy or sell
+                    int typeInt = Integer.parseInt(obj.get("type").toString());
+                    
+                    TradeHistoryBuySellEnum type = typeInt == 0 ? TradeHistoryBuySellEnum.Buy : TradeHistoryBuySellEnum.Sell;
                     // bitstamp doesn't broadcast buy/sell
 
                     // Initialize last purchase time if neccessary
