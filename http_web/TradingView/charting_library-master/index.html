@@ -1,19 +1,22 @@
-<!DOCTYPE HTML> 
+<!DOCTYPE HTML>
 <html>
-	<head>
 
-		<title>Bitbot beta</title>
+<head>
 
-		<!-- Fix for iOS Safari zooming bug -->
-		<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,minimum-scale=1.0">
-		<meta http-equiv="X-UA-Compatible" content="IE=Edge"> 
+    <title>Bitbot beta</title>
 
-		<script type="text/javascript" src="https://code.jquery.com/jquery-1.11.2.min.js"></script> 
-		<script type="text/javascript" src="charting_library/charting_library.min.js"></script>
-		<script type="text/javascript" src="charting_library/datafeed/udf/datafeed.js"></script>
+    <!-- Fix for iOS Safari zooming bug -->
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge">
+
+    <script type="text/javascript" src="https://code.jquery.com/jquery-1.11.2.min.js"></script>
+    <script type="text/javascript" src="charting_library/charting_library.min.js"></script>
+    <script type="text/javascript" src="charting_library/datafeed/udf/datafeed.js"></script>
 
 
-		<script type="text/javascript">
+    <script type="text/javascript">
+        var widget = null;
+        
 			function getParameterByName(name) {
 				name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
 				var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
@@ -21,9 +24,8 @@
 				return results === null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
 			}
 
-			TradingView.onready(function()
-			{
-				var widget = new TradingView.widget({
+            TradingView.onready(function () {
+                widget = new TradingView.widget({
 					fullscreen: true,
 					symbol: 'BITFINEX:BTC_USD',
 					interval: '1D',
@@ -47,13 +49,12 @@
 					}
 				});
 			});
+    </script>
 
-		</script>
+</head>
 
-	</head>
-
-	<body style="margin:0px;">
-		<div id="tv_chart_container"></div>
-	</body>
+<body style="margin:0px;">
+    <div id="tv_chart_container"></div>
+</body>
 
 </html>

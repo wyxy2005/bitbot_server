@@ -50,7 +50,5 @@ public class Constants {
     public static String[] tv_symbolType1 = { "All types", "Bitcoin", "Stock", "Index"};
     public static String[] tv_symbolType2 = { "", "bitcoin", "stock", "index"};
     
-    public static String[] tv_supportedResolutions = { "1", "3", "5", "15", "30", "60", "120", "240", "360", "720", "1D", "2D", "3D", "W", "2W", "3W", "1M"};
-
- 
+    public static String[] tv_supportedResolutions = { "1", "3", "5", "10", "15", "30", "60", "120", "240", "360", "720", "1D", "2D", "3D", "W", "2W", "3W", "1M"};
 }

@@ -1,15 +1,18 @@
 <html>
-	<head>
-		<title>Bitbot demo</title>
 
-		<!-- Fix for iOS Safari zooming bug -->
-		<meta name="viewport" content="width=800,initial-scale=1,maximum-scale=1,minimum-scale=1">
-        <script type="text/javascript" src="https://code.jquery.com/jquery-1.11.2.min.js"></script>
+<head>
+    <title>Bitbot demo</title>
 
-		<script type="text/javascript" src="charting_library/charting_library.min.js"></script>
-		<script type="text/javascript" src="charting_library/datafeed/udf/datafeed.js"></script>
+    <!-- Fix for iOS Safari zooming bug -->
+    <meta name="viewport" content="width=800,initial-scale=1,maximum-scale=1,minimum-scale=1">
+    <script type="text/javascript" src="https://code.jquery.com/jquery-1.11.2.min.js"></script>
 
-		<script type="text/javascript">
+    <script type="text/javascript" src="charting_library/charting_library.min.js"></script>
+    <script type="text/javascript" src="charting_library/datafeed/udf/datafeed.js"></script>
+
+    <script type="text/javascript">
+        var widget = null;
+        
 			function getURLParameters(paramName)
 			{
     			var sURL = window.document.URL.toString();
@@ -58,7 +61,7 @@
 
 			TradingView.onready(function()
 			{
-				var widget = new TradingView.widget({
+				widget = new TradingView.widget({
 					fullscreen: true,
 					autosize: true,
 					symbol: param_symbol,
@@ -83,13 +86,12 @@
 					}
 				});
 			})
+    </script>
 
-		</script>
+</head>
 
-	</head>
-
-	<body style="margin:0px;">
-		<div id="tv_chart_container"></div>
-	</body>
+<body style="margin:0px;">
+    <div id="tv_chart_container"></div>
+</body>
 
 </html>
