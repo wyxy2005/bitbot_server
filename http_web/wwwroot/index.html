@@ -1,0 +1,171 @@
+﻿<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,minimum-scale=1">
+    <meta name="author" content="LastBattle">
+    <meta name="description" content="Bitcoin - The most important invention since the internet">
+
+    <!-- Icon-->
+    <link rel="icon" type="image/x-icon" href="assets/icon/ico_32x32.ico" sizes="96x96" />
+
+    <title>Bitcoin - The most important invention since the internet</title>
+
+    <!-- CSS-->
+    <link rel="stylesheet" type="text/css" media="screen" href="css/common.css" />
+    <link rel="stylesheet" type="text/css" media="screen" href="css/index.css" />
+    <link rel="stylesheet" type="text/css" media="screen" href="css/animate.css">
+
+    <!-- Scripts -->
+    <script src="scripts/jquery-2.1.4.js" type="text/javascript"></script>
+    <script src="scripts/index.js" type="text/javascript"></script>
+    <script src="scripts/wow.min.js" type="text/javascript"></script>
+    <script src="scripts/common.js" type="text/javascript"></script>
+    <script src='https://www.google.com/recaptcha/api.js'></script>
+</head>
+<body>
+    <!-- hidden hamburger menu -->
+    <div id="col0_hamburgerMenu" class="wow slideInLeft">
+        <button class="button_topnavigation" onclick="fadeOutPage('index.html')">
+            HOME
+        </button>
+        <button class="button_topnavigation" onclick="fadeOutPage('buy.html')">
+            BUY BITCOINS
+        </button>
+        <button class="button_topnavigation" onclick="fadeOutPage('create_wallet.html')">
+            CREATE WALLET
+        </button>
+        <button class="button_topnavigation" onclick="fadeOutPage('learn_more.html')">
+            LEARN MORE
+        </button>
+    </div>
+
+    <div id="col1">
+        <button class="button_hamburgernav" onclick="onManburgerMenuTapped()">
+            <img src="assets/menu/icon_hamburger.png" alt="more" width="40">
+        </button>
+
+        <div id="col1_title">
+            <a onclick="fadeOutPage('index.html')">
+                <img id="title_img" src="assets/img/coin2_mid.png" alt="Bitcoin" width="170">
+            </a>
+            <!-- responsive image according to screen size -->
+            <!-- <picture id="title_img" alt="Bitcoin">
+                <source src="assets/img/coin.png" media="min-width:800px"  sizes="8vw">
+                <source src="assets/img/coin_mid.png" media="min-width:480px">
+                <source src="assets/img/coin_low.png">
+
+                <img src="assets/img/coin.png" alt="Bitcoin">
+            </picture>-->
+
+            <div class="wow bounceIn">
+                <h1 id="title">THE MOST IMPORTANT INVENTION SINCE THE INTERNET</h1>
+                <h4 id="title_ad">2008 A.D</h4>
+            </div>
+        </div>
+    </div>
+
+    <div id="col2">
+        <div id="col2_bitcoinMainFeatures" class="wow pulse">
+            <!-- Stacking horizontally -->
+            <ul id="ul_keyfeatures">
+                <li>Peer to peer transactions</li>
+                <li>Decentralized</li>
+                <li>0 or no processing fees</li>
+                <li>Worldwide payments</li>
+            </ul>
+
+            <!-- To stack this vertically-->
+            <div id="meetbitcoin">
+                <h1 id="h1_meetBitcoin">Meet Bitcoin</h1>
+                <h4 id="h4_meetBitcoin">The innovative payment network and a new kind of money.</h4>
+            </div>
+        </div>
+    </div>
+
+    <div id="col3">
+        <!-- logo -->
+        <img id="img_bitbot" src="assets/icon/logo.png" alt="more">
+
+        <div id="col3_chartContent">
+            <iframe id="chart" src="https://newcurrency.co/chart/embedded.html"></iframe>
+
+            <a id="a_morecharts" class="center" target="_blank" href="https://newcurrency.co/chart/">more charts..</a>
+        </div>
+    </div>
+
+    <div id="col4" class="wow slideInUp">
+        <h4 id="h4_bitcoinDesc" class="center">
+            Bitcoin is a peer-to-peer technology that operates with no central authority or banks;
+            managing transactions and the issuing of bitcoins is carried out collectively by the network.
+            Bitcoin is <a href="https://github.com/bitcoin/bitcoin" target="_blank">open-source</a>; its design is public, nobody owns or controls Bitcoin and everyone can take part.
+
+            Through many of its unique properties, Bitcoin allows exciting uses that could not be covered by any previous payment system.
+        </h4>
+
+        <h3 class="center" id="h3_scrollingMessage">Imagine payments without a midleman</h3>
+
+        <h4 id="h4_bitcoinDesctagline" class="center">Global, secure, nearly instant secure and free.</h4>
+    </div>
+
+    <div id="col5">
+        <div id="col5_buttonContent" class="center">
+            <button class="button" onclick="fadeOutPage('buy.html')">
+                BUY BITCOINS
+            </button>
+            <button class="button" onclick="fadeOutPage('create_wallet.html')">
+                CREATE WALLET
+            </button>
+            <button class="button" onclick="fadeOutPage('learn_more.html')">
+                LEARN MORE
+            </button>
+        </div>
+
+        <div id="col5_contactUs" class="wow pulse">
+            <form id="contact-form"
+                  onsubmit="return validateInputFields()" action="form_submission/contact.php" method="post">
+                <table>
+                    <thead>
+                        <tr>
+                            <th id="header_form_contactus">Feedback:</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        <tr>
+                            <th><label>Name: </label></th>
+                            <th><input type="text" name="name" required></th>
+                        </tr>
+                        <tr>
+                            <th><label>Email: </label></th>
+                            <th><input type="email" name="email" required></th>
+                        </tr>
+                        <tr>
+                            <th><label>Enquiry: </label></th>
+                            <th><textarea name="desc"></textarea></th>
+                        </tr>
+                        <tr>
+                            <th colspan="2"><div id="feedback-g-recaptcha" class="g-recaptcha" data-sitekey="6LcdKAsTAAAAABfzCUumgZs5T7ONB-VK6BA9Mey7"></div></th>
+                        </tr>
+                        <tr>
+                            <th colspan="2">
+                                <input type="submit" id="contactus_submit" value="Send">
+                            </th>
+                        </tr>
+                    </tbody>
+                </table>
+            </form>
+        </div>
+    </div>
+
+
+    <!-- bottom navigation -->
+    <div id="col_last">
+        <ul id="navlist" class="center">
+            <li><a href="aboutus.html" target="_self">ABOUT US</a></li>
+        </ul>
+    </div>
+</body>
+</html>

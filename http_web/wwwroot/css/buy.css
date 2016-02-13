@@ -1,0 +1,169 @@
+﻿/*
+    CSS to hold the list of styling elements that'll be used
+    by buy.html exclusively.
+*/
+
+
+/* Column 1 */
+h1#title {
+    text-align: center;
+    font-size: 3em;
+    display: none; /* display none to allow for fade in via jquery*/
+    vertical-align: central;
+     font-weight: lighter;
+}
+
+#col1 {
+    background-color: white;
+    height: 70px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+div#col1_title {
+    width: 80%;
+    max-width: 700px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+
+/* Column 2 */
+#col2 {
+    background-color: #F2F0BC;
+    min-height: 260px;
+}
+
+div#col2_countrySelect {
+    margin: auto;
+    margin-top: 1em;
+    max-width: 200px;
+    display: block; /*Silly issue with chrome*/
+    min-height: 200px;
+}
+
+h2#h2_selCountry_Header {
+    font-weight: lighter;
+    padding: 0px;
+}
+
+select#country2 {
+    padding-top: -10px;
+}
+
+.h2_countriesBelow {
+    color: gray;
+    font-size: 20px;
+    font-weight: lighter;
+    padding: 0px;
+    margin-top: 0px;
+    margin-left: 3px;
+}
+
+h2#h2_country_fade1 {
+    opacity: 0.9;
+    white-space: nowrap;
+    word-wrap: break-word; /* IE 8 and below */
+}
+
+h2#h2_country_fade2 {
+    opacity: 0.6;
+    white-space: nowrap;
+    word-wrap: break-word; /* IE 8 and below */
+}
+
+h2#h2_country_fade3 {
+    opacity: 0.3;
+    white-space: nowrap;
+    word-wrap: break-word; /* IE 8 and below */
+}
+
+div#col2_information {
+    right: 20px;
+    position: relative;
+    text-align: right;
+    bottom: 0;
+    height: 20px;
+}
+
+/* Column 3 */
+#col3 {
+    min-height: 300px;
+    background: linear-gradient(#fef6cb, /*#fef3ba*/ white);
+}
+
+h3#h3_buyareaHeader {
+    -webkit-margin-before: 0em;
+    -webkit-margin-after: 0em;
+    -webkit-margin-start: 0px;
+    -webkit-margin-end: 0px;
+    font-weight: bold;
+    margin-top: -10px;
+}
+
+h6#h6_contactus_list {
+    margin-right: 10px;
+}
+
+#exchangeslist li {
+    display: inline;
+    list-style-type: none;
+    padding-right: 20px;
+}
+
+/*****************************  Optimize for mobile ******************************/
+
+@media screen and (max-width:700px) {
+    /* column 1 */
+    h1#title {
+        text-align: center;
+        font-size: 1.5em;
+        display: none; /* display none to allow for fade in via jquery*/
+    }
+
+    h4#title_ad {
+        text-align: right;
+        clear: none;
+        margin-top: 0em;
+    }
+
+    img#title_img {
+        float: left;
+        width: 50px;
+        margin-left: 0.5em;
+        margin-top: 0.5em;
+    }
+
+
+    /* Column 2 */
+    div#col2_information {
+        left: 20px;
+        position: relative;
+        text-align: left;
+        bottom: 0;
+        height: 20px;
+    }
+
+    div#col2_countrySelect {
+        margin: auto;
+        margin-top: 1em;
+        display: block; /*Silly issue with chrome*/
+        min-height: 200px;
+        max-width: 150px;
+    }
+
+    h2#h2_selCountry_Header {
+        font-weight: lighter;
+        padding: 0px;
+        font-size: 1em;
+    }
+
+    h4#h4_selExchangeTip {
+        font-size: 0.9em;
+    }
+
+    select#country2 {
+        padding-top: -10px;
+        max-width: 150px;
+    }
+}

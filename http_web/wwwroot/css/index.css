@@ -1,0 +1,271 @@
+﻿
+/*
+    CSS to hold the list of styling elements that'll be used
+    by index.html exclusively.
+*/
+
+/* Column 1 */
+h1#title {
+    text-align: center;
+    font-size: 2em;
+    /*display: none; display none to allow for fade in via jquery*/
+}
+
+h4#title_ad {
+    text-align: right;
+    clear: none;
+    margin-top: -2em;
+}
+
+#col1 {
+    background-color: white;
+    max-height: 120px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+div#col1_title {
+    width: 80%;
+    max-width: 700px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* Column 2 */
+#col2 {
+    background-color: #F2F0BC;
+    min-height: 180px;
+}
+
+#col2_bitcoinMainFeatures {
+    margin: auto;
+    margin-top: 1em;
+    max-width: 700px;
+    display: flex; /*Silly issue with chrome*/
+}
+
+ul#ul_keyfeatures {
+    margin-top: 1em;
+}
+
+div#meetbitcoin {
+    margin-left: 1em;
+    float: right;
+    /*display: none; display none to allow for fade in via jquery*/
+}
+
+#h1_meetBitcoin {
+    font-size: 4em;
+    font-weight: bold;
+    text-shadow: 1px 2px 3px #808080;
+}
+
+#h4_meetBitcoin {
+    margin-left: 0.3em;
+}
+
+/* Column 3 */
+#col3 {
+    min-height: 400px;
+    background: linear-gradient(#fef6cb, /*#fef3ba*/ white);
+}
+
+div#col3_chartContent {
+    padding-top: 10px;
+    padding-bottom: 50px;
+    display: block;
+}
+
+iframe#chart {
+    display: block;
+    width: 70%;
+    height: 30vw; /* set to the aspect ratio */
+    min-height: 300px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+img#img_bitbot {
+    position: absolute;
+    right: 0px;
+    overflow: hidden;
+    width: 50px;
+}
+
+
+a#a_morecharts {
+    clear: both;
+    display: block;
+    float: right;
+}
+
+
+/* Column 4 */
+#col4 {
+}
+
+h4#h4_bitcoinDesc {
+    width: 70%;
+    max-width: 800px; /* for ultra large resolution screen, like 4k.. just limit it to 800*/
+    font-weight: lighter;
+}
+
+h4#h4_bitcoinDesctagline {
+    width: 100%;
+    font-weight: lighter;
+}
+
+
+h3#h3_scrollingMessage {
+    padding-top: 3em;
+    padding-bottom: 3em;
+    font-weight: 600;
+    width: 80%;
+}
+
+/* Column 5 */
+#col5 {
+    background-color: lightgray;
+    min-height: 150px;
+    padding-bottom: 20px;
+}
+
+div#col5_buttonContent {
+    padding-top: 1.7em;
+    display: inherit;
+    margin: auto;
+}
+
+div#col5_contactUs {
+    padding-top: 50px;
+    margin-left: auto;
+    margin-right: 0;
+    max-width: 400px;
+    background-color: transparent;
+}
+
+th#header_form_contactus {
+    margin-bottom: 0px;
+    font-size: 1.2em;
+}
+
+th {
+    text-align: left;
+}
+
+#feedback-g-recaptcha {
+    max-height: 100px;
+}
+
+input#contactus_submit {
+    height: 50px;
+    width: 280px;
+    background: white;
+    border: 1px solid lightgray;
+    margin-right: 1px;
+    /*Text Styles*/
+    color: rgba(0, 0, 0, 0.55);
+    text-align: center;
+    font-size: 0.8em;
+    -webkit-box-shadow: 0 2px 0 #1b383b;
+    -moz-box-shadow: 0 2px 0 #1b383b;
+    box-shadow: 0 2px 0 #1b383b;
+}
+
+#feedback-g-recaptcha {
+    padding: 0;
+    margin: 0;
+}
+
+
+/*****************************  Optimize for mobile ******************************/
+
+@media screen and (max-width:700px) {
+    #col1 {
+        background-color: white;
+        max-height: 200px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    /* column 1 */
+    h1#title {
+        text-align: center;
+        font-size: 1.2em;
+        /* display: none; display none to allow for fade in via jquery*/
+    }
+
+    h4#title_ad {
+        text-align: right;
+        clear: none;
+        margin-top: 0em;
+    }
+
+    img#title_img {
+        float: left;
+        width: 50px;
+        margin-left: 0.5em;
+        margin-top: 0.5em;
+    }
+
+    #col2_bitcoinMainFeatures {
+        margin-left: auto;
+        margin-right: auto;
+        display: block;
+    }
+
+    #col2 {
+        background-color: #F2F0BC;
+        min-height: 220px;
+    }
+
+    div#meetbitcoin {
+        margin-left: 1em;
+        text-align: center;
+    }
+
+    #h4_meetBitcoin {
+        text-align: center;
+    }
+
+
+    #h1_meetBitcoin {
+        font-size: 2em;
+        font-weight: bold;
+        text-shadow: 5px 5px 10px #808080;
+    }
+
+    /* Column 3 */
+    div#col3_chartContent {
+        padding-bottom: 20px;
+        display: block;
+    }
+
+    iframe#chart {
+        width: 100%;
+        min-height: 300px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    img#img_bitbot {
+        display: none;
+    }
+
+    /* Column 4 */
+    h4.h4_bitcoinDesc {
+        width: 90%;
+        font-weight: lighter;
+    }
+
+    /* Column 5 */
+    div#col5_buttonContent {
+        padding-top: 0.7em;
+        display: block;
+        margin: auto;
+    }
+
+    div#col5_contactUs {
+        display: none; /* hide in mobile*/
+    }
+}
