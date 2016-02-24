@@ -4,6 +4,7 @@ import bitbot.cache.tickers.ReturnVolumeProfileData;
 import bitbot.handler.channel.ChannelServer;
 import bitbot.util.encryption.CustomXorEncryption;
 import bitbot.util.encryption.HMACSHA1;
+import bitbot.util.encryption.output.PacketLittleEndianWriter;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.ArrayList;
@@ -100,31 +101,62 @@ public class VolumeProfileTask implements Runnable {
                 if (isAuthorized) {
                     List<ReturnVolumeProfileData> profiles = ChannelServer.getInstance().getTickerTask().getVolumeProfile(currencypair, hoursFromNow, ExchangeSite);
 
-                    JSONArray array = new JSONArray();
+                    switch (APIVersion) {
+                        case 1: { // JSON result
+                            JSONArray array = new JSONArray();
 
-                    for (ReturnVolumeProfileData profile : profiles) {
-                        JSONArray obj_array = new JSONArray();
-                        
-                        obj_array.add(profile.TotalBuyVolume);
-                        obj_array.add(profile.TotalSellVolume);
-                        obj_array.add(profile.TotalBuyVolume_Cur);
-                        obj_array.add(profile.TotalSellVolume_Cur);
+                            for (ReturnVolumeProfileData profile : profiles) {
+                                JSONArray obj_array = new JSONArray();
 
-                        if (profile.TotalBuyVolume > profile.TotalSellVolume) { // buy is more than sell
-                            obj_array.add(1);
-                            obj_array.add(profile.TotalSellVolume / profile.TotalBuyVolume);
-                        } else { // sell is more than buy
-                            obj_array.add(profile.TotalBuyVolume / profile.TotalSellVolume);
-                            obj_array.add(1);
+                                obj_array.add(profile.TotalBuyVolume);
+                                obj_array.add(profile.TotalSellVolume);
+                                obj_array.add(profile.TotalBuyVolume_Cur);
+                                obj_array.add(profile.TotalSellVolume_Cur);
+
+                                if (profile.TotalBuyVolume > profile.TotalSellVolume) { // buy is more than sell
+                                    obj_array.add(1);
+                                    obj_array.add(profile.TotalSellVolume / profile.TotalBuyVolume);
+                                } else { // sell is more than buy
+                                    obj_array.add(profile.TotalBuyVolume / profile.TotalSellVolume);
+                                    obj_array.add(1);
+                                }
+
+                                array.add(obj_array);
+                            }
+
+                            String retString = CustomXorEncryption.custom_xor_encrypt(array.toJSONString(), nonce);
+
+                            response.setContentLength(retString.length());
+                            body.print(retString);
+                            break;
                         }
-                        
-                        array.add(obj_array);
-                    }
+                        case 2: { // bytes
+                            final PacketLittleEndianWriter plew = new PacketLittleEndianWriter();
 
-                    String retString = CustomXorEncryption.custom_xor_encrypt(array.toJSONString(), nonce);
-                    
-                    response.setContentLength(retString.length());
-                    body.print(retString);
+                            plew.writeInt(profiles.size());
+                            for (ReturnVolumeProfileData profile : profiles) {
+                                plew.writeDouble(profile.TotalBuyVolume);
+                                plew.writeDouble(profile.TotalSellVolume);
+                                plew.writeDouble(profile.TotalBuyVolume_Cur);
+                                plew.writeDouble(profile.TotalSellVolume_Cur);
+
+                                if (profile.TotalBuyVolume > profile.TotalSellVolume) { // buy is more than sell
+                                    plew.writeDouble(1);
+                                    plew.writeDouble(profile.TotalSellVolume / profile.TotalBuyVolume);
+                                } else { // sell is more than buy
+                                    plew.writeDouble(profile.TotalBuyVolume / profile.TotalSellVolume);
+                                    plew.writeDouble(1);
+                                }
+                            }
+
+                            // Output
+                            final byte[] packet = plew.getPacket();
+
+                            response.setContentLength(packet.length);
+                            body.write(packet);
+                            break;
+                        }
+                    }
                 } else {
                     response.setStatus(Status.UNAUTHORIZED);
                 }

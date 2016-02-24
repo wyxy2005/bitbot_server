@@ -5,6 +5,7 @@ import bitbot.handler.channel.ChannelServer;
 import bitbot.Constants;
 import bitbot.util.encryption.CustomXorEncryption;
 import bitbot.util.encryption.HMACSHA1;
+import bitbot.util.encryption.output.PacketLittleEndianWriter;
 import java.io.PrintStream;
 import java.util.List;
 import org.json.simple.JSONArray;
@@ -161,6 +162,34 @@ public class SwapTask implements Runnable {
 
                             response.setContentLength(retString.length());
                             body.print(retString);
+                            break;
+                        }
+                        case 3: { // byte, compressed data type
+                            final PacketLittleEndianWriter plew = new PacketLittleEndianWriter();
+                            
+                            int arrayPrintCount = 1;
+
+                            // Write size
+                            plew.writeInt(ret.size());
+                            for (List<SwapsItemData> swap : ret) {
+                                plew.writeMapleAsciiString("cur" + arrayPrintCount);
+                                plew.writeInt(swap.size());
+                                
+                                for (SwapsItemData item : swap) {
+                                    plew.writeInt(item.getTimestamp());
+                                    plew.writeFloat(item.getSpotPrice());
+                                    plew.writeFloat(item.getRate());
+                                    plew.writeDouble(item.getAmountLent());
+                                }
+
+                                arrayPrintCount++;
+                            }
+
+                            // Output
+                            final byte[] packet = plew.getPacket();
+
+                            response.setContentLength(packet.length);
+                            body.write(packet);
                             break;
                         }
                     }

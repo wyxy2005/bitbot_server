@@ -462,8 +462,6 @@ public class TickerCacheTask {
         final long cTime_Millis = System.currentTimeMillis();
         intervalMinutes *= 60; // convert to seconds
 
-        final boolean includeVolumeData = !ExchangeSite.equalsIgnoreCase("coinbase");
-
         final long cTime = cTime_Millis / 1000;
 
         // Etc
