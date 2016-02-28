@@ -70,8 +70,15 @@ public class TV_SymbolDatabase {
         // Okcoin
         symbols.add(new TV_Symbol("BTC_CNY", "Bitcoin/ Chinese Yuan", "Okcoin", "bitcoin"));
         symbols.add(new TV_Symbol("LTC_CNY", "Litecoin/ Chinese Yuan", "Okcoin", "bitcoin"));
-        symbols.add(new TV_Symbol("BTC_CNY", "Bitcoin/ Chinese Yuan", "OkcoinInternational", "bitcoin"));
-        symbols.add(new TV_Symbol("LTC_CNY", "Litecoin/ Chinese Yuan", "OkcoinInternational", "bitcoin"));
+        
+        symbols.add(new TV_Symbol("BTC_USD", "Bitcoin/ Dollar", "OkcoinInternational", "bitcoin"));
+        symbols.add(new TV_Symbol("LTC_USD", "Litecoin/ Dollar", "OkcoinInternational", "bitcoin"));
+        symbols.add(new TV_Symbol("BTC Futures Weekly_USD", "Bitcoin Weekly Futures/ Dollar", "OkcoinInternational", "bitcoin"));
+        symbols.add(new TV_Symbol("BTC Futures BiWeekly_USD", "Bitcoin Biweekly Futures/ Dollar", "OkcoinInternational", "bitcoin"));
+        symbols.add(new TV_Symbol("BTC Futures Quarterly_USD", "Bitcoin Quarterly Futures/ Dollar", "OkcoinInternational", "bitcoin"));
+        symbols.add(new TV_Symbol("LTC Futures Weekly_USD", "Litecoin Weekly Futures/ Dollar", "OkcoinInternational", "bitcoin"));
+        symbols.add(new TV_Symbol("LTC Futures BiWeekly_USD", "Litecoin Biweekly Futures/ Dollar", "OkcoinInternational", "bitcoin"));
+        symbols.add(new TV_Symbol("LTC Futures Quarterly_USD", "Litecoin Quarterly Futures/ Dollar", "OkcoinInternational", "bitcoin"));
 
         // Huobi
         symbols.add(new TV_Symbol("BTC_CNY", "Bitcoin/ Chinese Yuan", "Huobi", "bitcoin"));

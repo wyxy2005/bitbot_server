@@ -87,8 +87,8 @@ public class BitcoinWisdomReader {
                     //System.out.println(time);
                 }*/
                 
-                if (time >= 1443961585 && time <= 1445439600) {
-                                        System.out.println(String.format("[%s] Open: %f, High: %f, Low: %f, Close: %f, VolumeCur: %f, Volume: %f", cal.getTime().toString(), open, high, low, close, vol_cur, vol));
+                if (time <= 1456695720) {
+                    System.out.println(String.format("[%s] Open: %f, High: %f, Low: %f, Close: %f, VolumeCur: %f, Volume: %f", cal.getTime().toString(), open, high, low, close, vol_cur, vol));
 
                     if (showdebugOnly)
                         InsertSQLTable(path, high, low, vol, vol_cur, open, close, time); 
