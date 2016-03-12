@@ -31,7 +31,7 @@ public class TickerHistory_Dgex implements TickerHistoryInterface {
     }
 
     @Override
-    public TickerHistoryData connectAndParseHistoryResult(TickerCacheTask.TickerCacheTask_ExchangeHistory _TickerCacheTaskSource, String ExchangeCurrencyPair, String ExchangeSite, String CurrencyPair, long LastPurchaseTime, int LastTradeId) {
+    public TickerHistoryData connectAndParseHistoryResult(TickerCacheTask.TickerCacheTask_ExchangeHistory _TickerCacheTaskSource, String ExchangeCurrencyPair, String ExchangeSite, String CurrencyPair, long LastPurchaseTime, long LastTradeId) {
         //String Uri = "https://dgex.com/API/trades.json";
         String Uri = "https://dgex.com/API/trades3h.json";
         String GetResult = HttpClient.httpsGet(Uri, "");
@@ -62,7 +62,7 @@ public class TickerHistory_Dgex implements TickerHistoryInterface {
                 while (itr.hasNext()) { // Loop through things in proper sequence
                     LinkedHashMap obj = itr.next();
 
-                    int tradeid = 0;
+                    long tradeid = 0;
                     long date = Integer.parseInt(obj.get("timestamp").toString()) * 1000l;
                     float price = Float.parseFloat(obj.get("unitprice").toString());
                     float amount = Float.parseFloat(obj.get("units").toString());
@@ -106,7 +106,7 @@ public class TickerHistory_Dgex implements TickerHistoryInterface {
                     }
                 }
             } catch (Exception parseExp) {
-                //parseExp.printStackTrace();
+                parseExp.printStackTrace();
                 //System.out.println(GetResult);
                 //ServerLog.RegisterForLogging(ServerLogType.HistoryCacheTask, parseExp.getMessage());
             }

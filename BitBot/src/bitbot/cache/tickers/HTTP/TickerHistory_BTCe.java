@@ -31,7 +31,7 @@ public class TickerHistory_BTCe implements TickerHistoryInterface {
     }
 
     @Override
-    public TickerHistoryData connectAndParseHistoryResult(TickerCacheTask.TickerCacheTask_ExchangeHistory _TickerCacheTaskSource, String ExchangeCurrencyPair, String ExchangeSite, String CurrencyPair, long LastPurchaseTime, int LastTradeId) {
+    public TickerHistoryData connectAndParseHistoryResult(TickerCacheTask.TickerCacheTask_ExchangeHistory _TickerCacheTaskSource, String ExchangeCurrencyPair, String ExchangeSite, String CurrencyPair, long LastPurchaseTime, long LastTradeId) {
         String Uri = String.format("https://btc-e.com/api/2/%s/trades", CurrencyPair);
         String GetResult = HttpClient.httpsGet(Uri, "");
 
@@ -61,7 +61,7 @@ public class TickerHistory_BTCe implements TickerHistoryInterface {
                 while (itr.hasNext()) { // Loop through things in proper sequence
                     LinkedHashMap obj = itr.next();
 
-                    int tradeid = Integer.parseInt(obj.get("tid").toString());
+                    long tradeid = Long.parseLong(obj.get("tid").toString());
                     long date = Integer.parseInt(obj.get("date").toString()) * 1000l;
                     float price = Float.parseFloat(obj.get("price").toString());
                     float amount = Float.parseFloat(obj.get("amount").toString());
@@ -102,7 +102,7 @@ public class TickerHistory_BTCe implements TickerHistoryInterface {
                     }
                 }
             } catch (Exception parseExp) {
-                //parseExp.printStackTrace();
+                parseExp.printStackTrace();
                 //System.out.println(GetResult);
                 //ServerLog.RegisterForLogging(ServerLogType.HistoryCacheTask, parseExp.getMessage());
             }

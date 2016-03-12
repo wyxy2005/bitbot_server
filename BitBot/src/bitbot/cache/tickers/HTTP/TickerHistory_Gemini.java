@@ -32,7 +32,7 @@ public class TickerHistory_Gemini implements TickerHistoryInterface {
     }
 
     @Override
-    public TickerHistoryData connectAndParseHistoryResult(TickerCacheTask.TickerCacheTask_ExchangeHistory _TickerCacheTaskSource, String ExchangeCurrencyPair, String ExchangeSite, String CurrencyPair, long LastPurchaseTime, int LastTradeId) {
+    public TickerHistoryData connectAndParseHistoryResult(TickerCacheTask.TickerCacheTask_ExchangeHistory _TickerCacheTaskSource, String ExchangeCurrencyPair, String ExchangeSite, String CurrencyPair, long LastPurchaseTime, long LastTradeId) {
         final String formattedExchangeName = CurrencyPair.toUpperCase().replace("_", "");
         final String Uri;
 
@@ -76,7 +76,7 @@ public class TickerHistory_Gemini implements TickerHistoryInterface {
                 for (int i = tradesArray.size() - 1; i > 0; i--) {
                     LinkedHashMap obj = tradesArray.get(i);
 
-                    final int tradeid = Integer.parseInt(obj.get("tid").toString());
+                    final long tradeid = Long.parseLong(obj.get("tid").toString());
                     final long date = Integer.parseInt(obj.get("timestamp").toString()) * 1000l;
                     final float price = Float.parseFloat(obj.get("price").toString());
                     final float amount = Float.parseFloat(obj.get("amount").toString());

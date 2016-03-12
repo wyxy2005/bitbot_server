@@ -41,7 +41,7 @@ public class TickerHistory_CoinbaseExchange implements TickerHistoryInterface {
     }
 
     @Override
-    public TickerHistoryData connectAndParseHistoryResult(TickerCacheTask.TickerCacheTask_ExchangeHistory _TickerCacheTaskSource, String ExchangeCurrencyPair, String ExchangeSite, String CurrencyPair, long LastPurchaseTime, int LastTradeId) {
+    public TickerHistoryData connectAndParseHistoryResult(TickerCacheTask.TickerCacheTask_ExchangeHistory _TickerCacheTaskSource, String ExchangeCurrencyPair, String ExchangeSite, String CurrencyPair, long LastPurchaseTime, long LastTradeId) {
         String Uri = String.format("https://api.exchange.coinbase.com/products/%s/trades", CurrencyPair.toUpperCase().replace("_", "-")); // 2015-01-29 10:58:56.370375+00
         String GetResult = HttpClient.httpsGet(Uri, "");
 
@@ -71,7 +71,7 @@ public class TickerHistory_CoinbaseExchange implements TickerHistoryInterface {
                 while (itr.hasNext()) { // Loop through things in proper sequence
                     LinkedHashMap obj = itr.next();
 
-                    int tradeid = Integer.parseInt(obj.get("trade_id").toString());
+                    long tradeid = Long.parseLong(obj.get("trade_id").toString());
                     String strdate = obj.get("time").toString();  // 2015-01-30 11:00:44.583563+00
                     float price = Float.parseFloat(obj.get("price").toString());
                     float amount = Float.parseFloat(obj.get("size").toString());

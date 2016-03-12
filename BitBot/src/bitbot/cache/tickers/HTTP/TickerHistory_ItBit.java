@@ -30,7 +30,7 @@ public class TickerHistory_ItBit implements TickerHistoryInterface {
     }
 
     @Override
-    public TickerHistoryData connectAndParseHistoryResult(TickerCacheTask.TickerCacheTask_ExchangeHistory _TickerCacheTaskSource, String ExchangeCurrencyPair, String ExchangeSite, String CurrencyPair, long LastPurchaseTime, int LastTradeId) {
+    public TickerHistoryData connectAndParseHistoryResult(TickerCacheTask.TickerCacheTask_ExchangeHistory _TickerCacheTaskSource, String ExchangeCurrencyPair, String ExchangeSite, String CurrencyPair, long LastPurchaseTime, long LastTradeId) {
         String Uri = String.format("https://www.itbit.com/api/v2/markets/%s/trades?since=%d", CurrencyPair.replace("_", "").toUpperCase(), LastTradeId);
         String GetResult = HttpClient.httpsGet(Uri, "");
 
@@ -61,7 +61,7 @@ public class TickerHistory_ItBit implements TickerHistoryInterface {
                     float price = Float.parseFloat(obj.get("price").toString());
                     long date = (long) Double.parseDouble(obj.get("date").toString()) * 1000l;
                     TradeHistoryBuySellEnum type = TradeHistoryBuySellEnum.Unknown;
-                    int tradeid = Integer.parseInt(obj.get("tid").toString());
+                    long tradeid = Long.parseLong(obj.get("tid").toString());
 
                     // Initialize last purchase time if neccessary
                     if (LastPurchaseTime == 0) {

@@ -32,7 +32,7 @@ public class TickerHistory_CexIo implements TickerHistoryInterface {
     }
 
     @Override
-    public TickerHistoryData connectAndParseHistoryResult(TickerCacheTask.TickerCacheTask_ExchangeHistory _TickerCacheTaskSource, String ExchangeCurrencyPair, String ExchangeSite, String CurrencyPair, long LastPurchaseTime, int LastTradeId) {
+    public TickerHistoryData connectAndParseHistoryResult(TickerCacheTask.TickerCacheTask_ExchangeHistory _TickerCacheTaskSource, String ExchangeCurrencyPair, String ExchangeSite, String CurrencyPair, long LastPurchaseTime, long LastTradeId) {
         String[] CurrencyPairSplit = CurrencyPair.toUpperCase().split("_");
         String Uri = String.format("https://cex.io/api/trade_history/%s/%s", CurrencyPairSplit[0], CurrencyPairSplit[1]);
         String GetResult = HttpClient.httpsGet(Uri, "");
@@ -62,7 +62,7 @@ public class TickerHistory_CexIo implements TickerHistoryInterface {
                 for (int i = tradesArray.size() - 1; i >= 0; i--) {
                     LinkedHashMap obj = tradesArray.get(i);
 
-                    int tradeid = Integer.parseInt(obj.get("tid").toString());
+                    long tradeid = Long.parseLong(obj.get("tid").toString());
                     long date = Integer.parseInt(obj.get("date").toString()) * 1000l;
                     float price = Float.parseFloat(obj.get("price").toString());
                     float amount = Float.parseFloat(obj.get("amount").toString());
@@ -104,7 +104,7 @@ public class TickerHistory_CexIo implements TickerHistoryInterface {
                     }
                 }
             } catch (Exception parseExp) {
-                //parseExp.printStackTrace();
+                parseExp.printStackTrace();
                 //System.out.println(GetResult);
                 //ServerLog.RegisterForLogging(ServerLogType.HistoryCacheTask, parseExp.getMessage());
             }

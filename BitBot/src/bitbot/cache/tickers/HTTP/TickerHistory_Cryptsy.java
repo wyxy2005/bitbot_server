@@ -32,7 +32,7 @@ public class TickerHistory_Cryptsy implements TickerHistoryInterface {
     }
 
     @Override
-    public TickerHistoryData connectAndParseHistoryResult(TickerCacheTask.TickerCacheTask_ExchangeHistory _TickerCacheTaskSource, String ExchangeCurrencyPair, String ExchangeSite, String CurrencyPair, long LastPurchaseTime, int LastTradeId) {
+    public TickerHistoryData connectAndParseHistoryResult(TickerCacheTask.TickerCacheTask_ExchangeHistory _TickerCacheTaskSource, String ExchangeCurrencyPair, String ExchangeSite, String CurrencyPair, long LastPurchaseTime, long LastTradeId) {
         // General market data
         String Uri = String.format("http://pubapi.cryptsy.com/api.php?method=singlemarketdata&marketid=%d", getCryptsyMarketId(CurrencyPair));
         String GetResult = HttpClient.httpGet(Uri, "");
@@ -91,7 +91,7 @@ public class TickerHistory_Cryptsy implements TickerHistoryInterface {
                         cal.set(Calendar.SECOND, Integer.parseInt(timeSplit[2]));
 
                         // Etc
-                        int tradeid = Integer.parseInt(obj.get("id").toString());
+                        long tradeid = Long.parseLong(obj.get("id").toString());
                         float price = Float.parseFloat(obj.get("price").toString());
                         float amount = Float.parseFloat(obj.get("quantity").toString());
                         TradeHistoryBuySellEnum type = obj.get("type").toString().equals("Buy") ? TradeHistoryBuySellEnum.Buy : TradeHistoryBuySellEnum.Sell;
@@ -128,7 +128,7 @@ public class TickerHistory_Cryptsy implements TickerHistoryInterface {
                     }
                 }
             } catch (Exception parseExp) {
-                //parseExp.printStackTrace();
+                parseExp.printStackTrace();
                 //System.out.println(GetResult);
                 //ServerLog.RegisterForLogging(ServerLogType.HistoryCacheTask, parseExp.getMessage());
             }

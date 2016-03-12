@@ -25,7 +25,7 @@ public class TickerHistoryData {
     private double Volume_Cur; // BTC/USD, cur = BTC.
     private long LastPurchaseTime;
     private long LastServerUTCTime;
-    private int LastTradeId;
+    private long LastTradeId;
 
     private double TotalBuyVolume = 1, TotalSellVolume = 1;
 
@@ -37,7 +37,7 @@ public class TickerHistoryData {
     // Since reference is much cheaper ;) 
     private TickerCacheTask_ExchangeHistory _TickerCacheTaskSource;
     
-    public TickerHistoryData(TickerCacheTask_ExchangeHistory _TickerCacheTaskSource, long LastPurchaseTime, int LastTradeId, float LastPrice, boolean IsCoinbaseOrCexIO) {
+    public TickerHistoryData(TickerCacheTask_ExchangeHistory _TickerCacheTaskSource, long LastPurchaseTime, long LastTradeId, float LastPrice, boolean IsCoinbaseOrCexIO) {
         this.High = 0;
         this.Low = Float.MAX_VALUE;
         this.LastPurchaseTime = LastPurchaseTime;
@@ -222,7 +222,7 @@ public class TickerHistoryData {
         this.LastPrice = dataNow.getLastPrice();
     }
 
-    public void merge(float price, float amount, long LastPurchaseTime, int LastTradeId, TradeHistoryBuySellEnum type) {
+    public void merge(float price, float amount, long LastPurchaseTime, long LastTradeId, TradeHistoryBuySellEnum type) {
         if (price > this.High) {
             this.High = price;
         }
@@ -363,11 +363,11 @@ public class TickerHistoryData {
         return this.Low;
     }
 
-    public void setLastTradeId(int LastTradeId) {
+    public void setLastTradeId(long LastTradeId) {
         this.LastTradeId = LastTradeId;
     }
 
-    public int getLastTradeId() {
+    public long getLastTradeId() {
         return this.LastTradeId;
     }
 

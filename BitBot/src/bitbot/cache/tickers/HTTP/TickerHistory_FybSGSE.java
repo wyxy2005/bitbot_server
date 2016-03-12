@@ -30,7 +30,7 @@ public class TickerHistory_FybSGSE implements TickerHistoryInterface {
     }
 
     @Override
-    public TickerHistoryData connectAndParseHistoryResult(TickerCacheTask.TickerCacheTask_ExchangeHistory _TickerCacheTaskSource, String ExchangeCurrencyPair, String ExchangeSite, String CurrencyPair, long LastPurchaseTime, int LastTradeId) {
+    public TickerHistoryData connectAndParseHistoryResult(TickerCacheTask.TickerCacheTask_ExchangeHistory _TickerCacheTaskSource, String ExchangeCurrencyPair, String ExchangeSite, String CurrencyPair, long LastPurchaseTime, long LastTradeId) {
         String[] split = CurrencyPair.split("_");
 
         boolean IsFybSG = CurrencyPair.contains("sgd");
@@ -67,7 +67,7 @@ public class TickerHistory_FybSGSE implements TickerHistoryInterface {
                 for (int i = tradesArray.size() - 1; i >= 0; i--) {
                     LinkedHashMap obj = tradesArray.get(i);
 
-                    int tradeid = Integer.parseInt(obj.get("tid").toString());
+                    long tradeid = Long.parseLong(obj.get("tid").toString());
                     long date = Long.parseLong(obj.get("date").toString()) * 1000;
                     float price = Float.parseFloat(obj.get("price").toString());
                     float amount = Float.parseFloat(obj.get("amount").toString());
@@ -111,7 +111,7 @@ public class TickerHistory_FybSGSE implements TickerHistoryInterface {
                     }
                 }
             } catch (Exception parseExp) {
-                //parseExp.printStackTrace();
+                parseExp.printStackTrace();
                 //System.out.println(GetResult);
                 //ServerLog.RegisterForLogging(ServerLogType.HistoryCacheTask, parseExp.getMessage());
             }

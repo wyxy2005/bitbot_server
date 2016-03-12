@@ -31,7 +31,7 @@ public class TickerHistory_Coinbase implements TickerHistoryInterface {
     }
     
     @Override
-    public TickerHistoryData connectAndParseHistoryResult(TickerCacheTask.TickerCacheTask_ExchangeHistory _TickerCacheTaskSource, String ExchangeCurrencyPair, String ExchangeSite, String CurrencyPair, long LastPurchaseTime, int LastTradeId) {
+    public TickerHistoryData connectAndParseHistoryResult(TickerCacheTask.TickerCacheTask_ExchangeHistory _TickerCacheTaskSource, String ExchangeCurrencyPair, String ExchangeSite, String CurrencyPair, long LastPurchaseTime, long LastTradeId) {
         String UriSell = "https://coinbase.com/api/v1/prices/sell";
         String SellResult = HttpClient.httpsGet(UriSell, "");
 

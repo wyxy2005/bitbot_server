@@ -30,7 +30,7 @@ public class TickerHistory_Okcoin implements TickerHistoryInterface {
     }
 
     @Override
-    public TickerHistoryData connectAndParseHistoryResult(TickerCacheTask.TickerCacheTask_ExchangeHistory _TickerCacheTaskSource, String ExchangeCurrencyPair, String ExchangeSite, String CurrencyPair, long LastPurchaseTime, int LastTradeId) {
+    public TickerHistoryData connectAndParseHistoryResult(TickerCacheTask.TickerCacheTask_ExchangeHistory _TickerCacheTaskSource, String ExchangeCurrencyPair, String ExchangeSite, String CurrencyPair, long LastPurchaseTime, long LastTradeId) {
         //String Uri = String.format("https://www.okcoin.com/api/trades.do?symbol=%s&since=%d", CurrencyPair, LastPurchaseTime);
         String Uri = String.format("https://www.okcoin.cn/api/trades.do?symbol=%s", CurrencyPair);
         String GetResult = HttpClient.httpsGet(Uri, "");
@@ -64,7 +64,7 @@ public class TickerHistory_Okcoin implements TickerHistoryInterface {
                     float price = Float.parseFloat(obj.get("price").toString());
                     long date = (long) Double.parseDouble(obj.get("date").toString()) * 1000l;
                     final TradeHistoryBuySellEnum type = obj.get("type").toString().equals("buy") ? TradeHistoryBuySellEnum.Buy : TradeHistoryBuySellEnum.Sell; // buy sell
-                    int tid = Integer.parseInt(obj.get("tid").toString());
+                    long tid = Long.parseLong(obj.get("tid").toString());
 
                     // Initialize last purchase time if neccessary
                     if (LastPurchaseTime == 0) {

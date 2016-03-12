@@ -11,5 +11,5 @@ public interface TickerHistoryInterface {
     public boolean enableTrackTrades();
     
     public TickerHistoryData connectAndParseHistoryResult(TickerCacheTask_ExchangeHistory _TickerCacheTaskSource,
-            String ExchangeCurrencyPair, String ExchangeSite, String CurrencyPair, long LastPurchaseTime, int LastTradeId);
+            String ExchangeCurrencyPair, String ExchangeSite, String CurrencyPair, long LastPurchaseTime, long LastTradeId);
 }
