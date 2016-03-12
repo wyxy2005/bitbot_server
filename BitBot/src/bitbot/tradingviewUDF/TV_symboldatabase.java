@@ -40,6 +40,9 @@ public class TV_SymbolDatabase {
         symbols.add(new TV_Symbol("LTC_BTC", "Litecoin/ Bitcoin", "Bitfinex", "bitcoin"));
         symbols.add(new TV_Symbol("DRK_USD", "Darkcoin/ Dollar", "Bitfinex", "bitcoin"));
         symbols.add(new TV_Symbol("DRK_BTC", "Darkcoin / Bitcoin", "Bitfinex", "bitcoin"));
+        symbols.add(new TV_Symbol("ETH_USD", "Ethereum/ Dollar", "Bitfinex", "bitcoin"));
+        symbols.add(new TV_Symbol("ETH_BTC", "Ethereum / Bitcoin", "Bitfinex", "bitcoin"));
+        
         symbols.add(new TV_Symbol("SWAPS_TOTALBTC", "Total BTC swaps", "Bitfinex", "bitcoin", "bitfinex-btc"));
         symbols.add(new TV_Symbol("SWAPS_TOTALLTC", "Total LTC swaps", "Bitfinex", "bitcoin", "bitfinex-ltc"));
         symbols.add(new TV_Symbol("SWAPS_TOTALUSD", "Total USD swaps", "Bitfinex", "bitcoin", "bitfinex-usd"));
