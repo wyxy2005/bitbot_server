@@ -27,7 +27,7 @@ public class WorldServer {
         return instance;
     }
 
-    public void initializeWorldServer() {
+    public static void initializeWorldServer(String serverPropertyFilePath) {
         try {
             if (System.getSecurityManager() == null) {
                 System.setSecurityManager(new RMISecurityManager() {
@@ -47,7 +47,7 @@ public class WorldServer {
 
             if (props == null) {
                 props = new Properties();
-                try (FileReader is = new FileReader("server.properties")) {
+                try (FileReader is = new FileReader(serverPropertyFilePath)) {
                     props.load(is);
                 }
             }

@@ -96,14 +96,11 @@ public class ChannelServer {
     }
 
     public static ChannelServer getInstance() {
-        if (ch.serverExchangeHandler == null) {
-            ch.initializeChannelServer();
-        }
         return ch;
     }
 
-    public void initializeChannelServer() {
-        if (serverExchangeHandler == null) {
+    public static void initializeChannelServer(String serverPropertyFilePath) {
+        if (ch.serverExchangeHandler == null) {
             try {
                 if (System.getSecurityManager() == null) {
                     System.setSecurityManager(new RMISecurityManager() {
@@ -124,7 +121,7 @@ public class ChannelServer {
 
                 if (props == null) {
                     props = new Properties();
-                    try (FileReader is = new FileReader("server.properties")) {
+                    try (FileReader is = new FileReader(serverPropertyFilePath)) {
                         props.load(is);
                     }
                 }
@@ -163,26 +160,26 @@ public class ChannelServer {
 
                 final Registry registry = LocateRegistry.getRegistry(Props_WorldIPAddress, Props_WorldRMIPort/*, new SslRMIClientSocketFactory()*/);
                 worldRegistry = (WorldRegistry) registry.lookup(Constants.Server_AzureAuthorization);
-                cwi = new ChannelWorldInterfaceImpl(this);
-                wci = worldRegistry.registerChannelServer(Props_WorldRMIHash, cwi, false);
+                ch.cwi = new ChannelWorldInterfaceImpl(ch);
+                ch.wci = worldRegistry.registerChannelServer(Props_WorldRMIHash, ch.cwi, false);
 
                 // End
                 System.out.println("[Info] Loading tasks..");
-                serverExchangeHandler = ServerHTTPExchangeHandler.Connect(Props_HTTPPort, Props_HTTPsPort);
+                ch.serverExchangeHandler = ServerHTTPExchangeHandler.Connect(Props_HTTPPort, Props_HTTPsPort);
 
-                LoadCurrencyPairTables(false);
+                ch.LoadCurrencyPairTables(false);
 
-                tickerTask = new TickerCacheTask(); // init automatically
-                tradesTask = new TradesCacheTask();
+                ch.tickerTask = new TickerCacheTask(); // init automatically
+                ch.tradesTask = new TradesCacheTask();
                 if (Props_EnableTelegramBot) {
-                    telegramBotTask = new TelegramBot();
+                    ch.telegramBotTask = new TelegramBot();
                 }
-                newsTask = new NewsCacheTask();
-                swapTask = new SwapsCacheTask();
+                ch.newsTask = new NewsCacheTask();
+                ch.swapTask = new SwapsCacheTask();
 
-                if (isEnableSocketStreaming()) {
+                if (Props_EnableSocketStreaming) {
                     System.out.println("[Info] Loading sockets..");
-                    serverSocketExchangeHandler = ServerSocketExchangeHandler.connect(Props_SelfIPAddress);
+                    ch.serverSocketExchangeHandler = ServerSocketExchangeHandler.connect(Props_SelfIPAddress);
                 }
 
                 // Shutdown hooks
@@ -192,10 +189,10 @@ public class ChannelServer {
                 System.out.println("[Warning] Failed to start Channel server, please ensure the port is unused.");
                 exp.printStackTrace();
 
-                if (serverExchangeHandler != null) {
-                    serverExchangeHandler.Disconnect();
+                if (ch.serverExchangeHandler != null) {
+                    ch.serverExchangeHandler.Disconnect();
                 }
-                serverExchangeHandler = null;
+                ch.serverExchangeHandler = null;
             }
         }
     }
@@ -452,7 +449,7 @@ public class ChannelServer {
         }
     }
 
-    private final class ShutDownListener implements Runnable {
+    private static final class ShutDownListener implements Runnable {
 
         @Override
         public void run() {

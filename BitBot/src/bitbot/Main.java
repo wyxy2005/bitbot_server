@@ -27,15 +27,19 @@ import org.apache.commons.lang3.time.DateUtils;
  * @author z
  */
 public class Main {
-    
+
     public static void main(String args[]) throws Exception {
         String command = args[0];
         switch (command) {
             case "startWorld": {
-                 WorldServer.getInstance().initializeWorldServer();
+                String serverPropertyFilePath = args[1];
+                
+                WorldServer.getInstance().initializeWorldServer(serverPropertyFilePath);
                 break;
             }
             case "start": {
+                String serverPropertyFilePath = args[1];
+                
                 /*
                  *  fix for
                  *    Exception in thread "main" javax.net.ssl.SSLHandshakeException:
@@ -78,7 +82,7 @@ public class Main {
                 MultiThreadExecutor.start();
                 TimerManager.start();
 
-                ChannelServer.getInstance().initializeChannelServer();
+                ChannelServer.initializeChannelServer(serverPropertyFilePath);
 
                 /*Scanner sc = new Scanner(System.in);
                  System.out.println(":::::::: Enter commands ::::::::");
@@ -97,12 +101,12 @@ public class Main {
             }
             case "readRestoreFromLocalDatabase": {
                 // 1445439600 before
-                
+
                 String sqlPat = args[1];
                 String ExchangeCurrencyPair = "_796-btc Futures_usd";
-                
+
                 boolean showdebugOnly = Boolean.parseBoolean(args[2]);
-                
+
                 LocalStorageDataReader.ReadJsonFile(sqlPat, ExchangeCurrencyPair, showdebugOnly);
                 break;
             }
@@ -130,7 +134,7 @@ public class Main {
             }
             case "testtime": {
                 int intervalMinutes = Integer.parseInt(args[1]);
-                
+
                 final Calendar dtCal = Calendar.getInstance();
                 dtCal.setTimeInMillis(System.currentTimeMillis());
 
@@ -144,15 +148,15 @@ public class Main {
                 } else if (intervalMinutes < 60 * 24 * 30) {
                     // below 30 days
                     truncateField = Calendar.MONTH;
-               } else if (intervalMinutes < 60 * 24 * 30 * 12 * 100) {
+                } else if (intervalMinutes < 60 * 24 * 30 * 12 * 100) {
                     // below 100 years
                     truncateField = Calendar.YEAR;
                 } else {
-                   // wtf
+                    // wtf
                     truncateField = Calendar.ERA;
-               }
+                }
                 long LastUsedTime = DateUtils.truncate(dtCal, truncateField).getTimeInMillis();
-                
+
                 final Calendar dtCal_final = Calendar.getInstance();
                 dtCal_final.setTimeInMillis(LastUsedTime);
                 System.out.println(dtCal_final.getTime().toString());
@@ -160,18 +164,30 @@ public class Main {
             }
             case "testbits": {
                 double val = 5540.5464d;
-                
+
                 PacketLittleEndianWriter mplew = new PacketLittleEndianWriter();
                 mplew.writeDouble(val);
-                
+
                 byte[] packetdata = mplew.getPacket();
-                
+
                 final SeekableLittleEndianAccessor slea = new GenericSeekableLittleEndianAccessor(new ByteArrayByteStream(packetdata));
-                
+
                 double val2 = slea.readDouble();
-                
-                System.out.println((float)val2);
+
+                System.out.println((float) val2);
                 break;
+            }
+            case "testThreads": {
+                while (true) {
+                    new Thread(new Runnable() {
+                        public void run() {
+                            try {
+                                Thread.sleep(10000000);
+                            } catch (InterruptedException e) {
+                            }
+                        }
+                    }).start();
+                }
             }
             default: {
                 System.out.println(CustomXorEncryption.custom_xor_encrypt("test", 1015561));
