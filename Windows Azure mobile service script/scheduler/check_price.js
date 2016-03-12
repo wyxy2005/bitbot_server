@@ -1,10 +1,10 @@
-function check_price() {
+﻿function check_price() {
     var SendGrid = require('sendgrid').SendGrid;
     var util = require('util');
 
     var date = new Date();
     var dateStr = date.toISOString().replace(/T/, ' ').replace(/\..+/, '');
-    //console.log("Scheduled price check task: " + dateStr);
+    console.log("Scheduled price check task: " + dateStr);
 
     // start
     fetchItem('btc_usd', 'btce');
@@ -56,8 +56,8 @@ function check_price() {
     fetchItem('btc_usd', 'bitfinex');
     fetchItem('ltc_usd', 'bitfinex');
     fetchItem('ltc_btc', 'bitfinex');
-    fetchItem('drk_usd', 'bitfinex');
-    fetchItem('drk_btc', 'bitfinex');
+    //fetchItem('drk_usd', 'bitfinex');
+    //fetchItem('drk_btc', 'bitfinex');
 
     fetchItem('btc_usd', 'campbx');
 
@@ -72,21 +72,21 @@ function check_price() {
 
     //fetchItem('nxt_btc', 'dgex');
 
-    fetchItem('btc_usd', 'cryptsy');
-    fetchItem('doge_usd', 'cryptsy');
-    fetchItem('drk_usd', 'cryptsy');
-    fetchItem('ftc_usd', 'cryptsy');
-    fetchItem('ltc_usd', 'cryptsy');
-    fetchItem('rdd_usd', 'cryptsy');
-    fetchItem('nxt_btc', 'cryptsy');
-    fetchItem('ltc_btc', 'cryptsy');
-    fetchItem('doge_btc', 'cryptsy');
-    fetchItem('cann_btc', 'cryptsy');
-    fetchItem('drk_btc', 'cryptsy');
-    fetchItem('rdd_btc', 'cryptsy');
-    fetchItem('uro_btc', 'cryptsy');
-    fetchItem('bc_btc', 'cryptsy');
-    fetchItem('btcd_btc', 'cryptsy');
+    /*   fetchItem('btc_usd', 'cryptsy');
+       fetchItem('doge_usd', 'cryptsy');
+       fetchItem('drk_usd', 'cryptsy');
+       fetchItem('ftc_usd', 'cryptsy');
+       fetchItem('ltc_usd', 'cryptsy');
+       fetchItem('rdd_usd', 'cryptsy');
+       fetchItem('nxt_btc', 'cryptsy');
+       fetchItem('ltc_btc', 'cryptsy');
+       fetchItem('doge_btc', 'cryptsy');
+       fetchItem('cann_btc', 'cryptsy');
+       fetchItem('drk_btc', 'cryptsy');
+       fetchItem('rdd_btc', 'cryptsy');
+       fetchItem('uro_btc', 'cryptsy');
+       fetchItem('bc_btc', 'cryptsy');
+       fetchItem('btcd_btc', 'cryptsy');*/
 
     fetchItem('btc Futures_usd', '_796');
     fetchItem('btc Futures_cny', '_796');
@@ -104,8 +104,8 @@ function check_price() {
             } else if (source == 'btcchina') {
                 fetchfromSource(currencypair, source,
                     currencypair == 'ltc_cny' ? 'https://data.btcchina.com/data/ticker?market=cnyltc' :
-                    currencypair == 'btc_cny' ? 'https://data.btcchina.com/data/ticker?market=cnybtc' :
-                    'https://data.btcchina.com/data/ticker?market=btcltc');
+                        currencypair == 'btc_cny' ? 'https://data.btcchina.com/data/ticker?market=cnybtc' :
+                            'https://data.btcchina.com/data/ticker?market=btcltc');
             } else if (source == 'mtgox') {
                 fetchfromSource(currencypair, source, 'http://data.mtgox.com/api/2/BTCUSD/money/ticker');
             } else if (source == 'okcoin') {
@@ -144,7 +144,7 @@ function check_price() {
                 }
             } else if (source == 'campbx') {
                 fetchfromSource(currencypair, source, 'http://CampBX.com/api/xticker.php')
-        } else if (source == 'bitfinex') {
+            } else if (source == 'bitfinex') {
                 var symbol = currencypair.replace('_', "");
                 fetchfromSource(currencypair, source, 'https://api.bitfinex.com/v1/ticker/' + symbol);
             } else if (source == 'cexio') {
@@ -178,7 +178,7 @@ function check_price() {
             headers: {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.9600'
             }
-        }, function(error, response, body) {
+        }, function (error, response, body) {
                 if (!error && response.statusCode == 200) {
                     var returnJson = source === 'dgex' ? null : JSON.parse(body);
 
@@ -266,7 +266,7 @@ function check_price() {
 
                     var query = "SELECT * FROM push_price WHERE (low >= ? OR high <= ? OR (increment_percent_daily <= ? AND increment_percent_daily != 0)) AND __updatedAt < dateadd(ss, - (SELECT delay_between_notification), getdate()) AND exchange_pair = ? AND times > 0;";
                     mssql.query(query, [currentPrice, currentPrice, average24Hrs, source + '_' + currencypair], {
-                        success: function(results) {
+                        success: function (results) {
                             if (results.length > 0) {
                                 // Permission record was found. Continue normal execution. 
                                 console.log('%d items available for %s - %s %d', results.length, source, currencypair, average24Hrs);
@@ -278,7 +278,7 @@ function check_price() {
                             } else {
                                 //console.log('%d items available for %s', results.length, currencypair);
                             }
-                        }, error: function(err) {
+                        }, error: function (err) {
                             console.log("error is: " + err);
                         }
                     });
@@ -321,8 +321,8 @@ function check_price() {
         var alertMsg_Toast =
             isPercentageNotification ? (currencypairStr + "+- " + average24Hrs.toFixed(2) + "%! [" + source + "]") :
 
-            (isFalling ? (currencypairStr + "↓ fell below " + clientLow + ". [" + source + "]") :
-            (currencypairStr + "↑ went above " + clientHigh + ". [" + source + "]"));
+                (isFalling ? (currencypairStr + "↓ fell below " + clientLow + ". [" + source + "]") :
+                    (currencypairStr + "↑ went above " + clientHigh + ". [" + source + "]"));
         var alertMsg_Tile = (((isFalling ? clientLow : clientHigh) / currentPrice * 100 - 100) * -1).toFixed(5) +
             "% - " + currencypairStr + "\r\n\r\nPrice: $" + currentPrice;
 
@@ -336,256 +336,220 @@ function check_price() {
         }
 
         // Start sending
-        if (platform == "WindowsPhone8" || platform == "WindowsPhone8.1") {
-            push.mpns.sendToast(clientUniqueId,
-                {
-                    text1: currentPrice.toString(),
-                    text2: alertMsg_Toast,
-                    param: alertMsg_ToastNavigateURI,
-                    Sound: 'Assets/CustomRingtone/Cat.wav'
-                }, {
-                    success: function(response) {
-                        // pinned tile
-                        push.mpns.sendTile(clientUniqueId, {
-                            count: 1,
-                            id: '/DetailedPricePage.xaml?QuoteDataSource=' + source + '&CurrencyPair=' + currencypair,
-                        }, {
-                                success: function(pushResponse) {
-                                    //console.log("Sent push:", pushResponse);
+        if (platform == "Android") {
+            var payload = {
+                "data": {
+                    "message": alertMsg_Toast,
+                    "title": currentPrice.toString(),
+                }
+            };
+            push.gcm.send(clientUniqueId, payload, {
+                success: function (pushResponse) {
+                    console.log("Sent push:", pushResponse, payload);
+                },
+                error: function (error) {
+                    console.log("Error Sending push:", error);
 
-                                    updateNotificationCount(sqlTable, client.pushuri, client, source, currencypair, platform);
-                                }
-                            });
-                        // sent another tile update to the main
-                        push.mpns.sendTile(clientUniqueId, {
-                            count: 1,
-                            backContent: currentPrice.toString() + ':' + alertMsg_Toast,
-                        }, {
-                                success: function(pushResponse) {
-                                }
-                            });
-                    },
-                    error: function(error) {
-                        // exired channel
-                        if (error.statusCode == 410 || error.statusCode == 404 || error.statusCode == 412) {
-                            removeExpiredChannel(sqlTable, client.pushuri, clientuniqueid);
-                        }
-                        console.log(error);
-                    }
-                });
-
-            /*var toast = '<?xml version="1.0" encoding="utf-8"?>' +
-                '<wp:Notification xmlns:wp="WPNotification">' +
-                '<wp:Toast>' +
-                '<wp:Text1>test</wp:Text1>' +
-                '<wp:Text2>test2</wp:Text2>' +
-                '<wp:Sound>Assets/CustomRingtone/Cat.wav</wp:Sound>' +
-                '<wp:Param>test3</wp:Param>' +
-                '</wp:Toast>' +
-                '</wp:Notification>';
-
-            console.log(toast);
-            push.mpns.sendRaw(clientUniqueId, toast, {
-                success: function(error) {
-                    if (error) {
-                        if (error.statusCode == 410 || error.statusCode == 404 || error.statusCode == 412)
-                            removeExpiredChannel(sqlTable, client.pushuri, clientuniqueid);
-                        console.log(error);
-                    } else {
-
+                    if (error.statusCode == 410 || error.statusCode == 404 || error.statusCode == 412) {
+                        removeExpiredChannel(sqlTable, client.pushuri, clientuniqueid);
                     }
                 }
-            });*/
-        } else if (platform == "Windows8" || platform == "Windows8.1") {
-            push.wns.sendToastImageAndText04(clientUniqueId, {
+            });
+        },
+    } else if (platform == "WindowsPhone8" || platform == "WindowsPhone8.1") {
+        push.mpns.sendToast(clientUniqueId,
+            {
                 text1: currentPrice.toString(),
                 text2: alertMsg_Toast,
-                text3: "",
-                image: "ms-appx:///Assets/ToastImage.png"
+                param: alertMsg_ToastNavigateURI,
+                Sound: 'Assets/CustomRingtone/Cat.wav'
             }, {
-                    launch: alertMsg_ToastNavigateURI,
-                    duration: 'long',
-                }, {
-                    success: function(pushResponse) {
-                        push.wns.sendBadge(clientUniqueId, {
-                            value: 1,
-                            text1: alertMsg_Toast
-                        }, {
-                                success: function(pushResponse) {
-                                    updateNotificationCount(sqlTable, client.pushuri, client, source, currencypair, platform);
-                                }
-                            });
-                    }, error: function(error) {
-                        // expired channel
-                        if (error.statusCode == 410 || error.statusCode == 404 || error.statusCode == 412) {
-                            removeExpiredChannel(sqlTable, client.pushuri, clientuniqueid);
-                        }
-                        console.log(error);
-                    }
-                }, {
-                    error: function(error) {
-                        // expired channel
-                        if (error.statusCode == 410 || error.statusCode == 404 || error.statusCode == 412) {
-                            removeExpiredChannel(sqlTable, client.pushuri, clientuniqueid);
-                        }
-                        console.log(error);
-                    }
-                });
-        }
+                success: function (response) {
+                    // pinned tile
+                    push.mpns.sendTile(clientUniqueId, {
+                        count: 1,
+                        id: '/DetailedPricePage.xaml?QuoteDataSource=' + source + '&CurrencyPair=' + currencypair,
+                    }, {
+                            success: function (pushResponse) {
+                                //console.log("Sent push:", pushResponse);
 
+                                updateNotificationCount(sqlTable, client.pushuri, client, source, currencypair, platform);
+                            }
+                        });
+                    // sent another tile update to the main
+                    push.mpns.sendTile(clientUniqueId, {
+                        count: 1,
+                        backContent: currentPrice.toString() + ':' + alertMsg_Toast,
+                    }, {
+                            success: function (pushResponse) {
+                            }
+                        });
+                },
+                error: function (error) {
+                    // exired channel
+                    if (error.statusCode == 410 || error.statusCode == 404 || error.statusCode == 412) {
+                        removeExpiredChannel(sqlTable, client.pushuri, clientuniqueid);
+                    }
+                    console.log(error);
+                }
+            });
+
+        /*var toast = '<?xml version="1.0" encoding="utf-8"?>' +
+            '<wp:Notification xmlns:wp="WPNotification">' +
+            '<wp:Toast>' +
+            '<wp:Text1>test</wp:Text1>' +
+            '<wp:Text2>test2</wp:Text2>' +
+            '<wp:Sound>Assets/CustomRingtone/Cat.wav</wp:Sound>' +
+            '<wp:Param>test3</wp:Param>' +
+            '</wp:Toast>' +
+            '</wp:Notification>';
+
+        console.log(toast);
+        push.mpns.sendRaw(clientUniqueId, toast, {
+            success: function(error) {
+                if (error) {
+                    if (error.statusCode == 410 || error.statusCode == 404 || error.statusCode == 412)
+                        removeExpiredChannel(sqlTable, client.pushuri, clientuniqueid);
+                    console.log(error);
+                } else {
+
+                }
+            }
+        });*/
+    } else if (platform == "Windows8" || platform == "Windows8.1") {
+        push.wns.sendToastImageAndText04(clientUniqueId, {
+            text1: currentPrice.toString(),
+            text2: alertMsg_Toast,
+            text3: "",
+            image: "ms-appx:///Assets/ToastImage.png"
+        }, {
+                launch: alertMsg_ToastNavigateURI,
+                duration: 'long',
+            }, {
+                success: function (pushResponse) {
+                    push.wns.sendBadge(clientUniqueId, {
+                        value: 1,
+                        text1: alertMsg_Toast
+                    }, {
+                            success: function (pushResponse) {
+                                updateNotificationCount(sqlTable, client.pushuri, client, source, currencypair, platform);
+                            }
+                        });
+                }, error: function (error) {
+                    // expired channel
+                    if (error.statusCode == 410 || error.statusCode == 404 || error.statusCode == 412) {
+                        removeExpiredChannel(sqlTable, client.pushuri, clientuniqueid);
+                    }
+                    console.log(error);
+                }
+            }, {
+                error: function (error) {
+                    // expired channel
+                    if (error.statusCode == 410 || error.statusCode == 404 || error.statusCode == 412) {
+                        removeExpiredChannel(sqlTable, client.pushuri, clientuniqueid);
+                    }
+                    console.log(error);
+                }
+            });
     }
 
-    function updateNotificationCount(sqlTable, pushuri, client, source, currencypair, platform) {
-        var uniqueid = client.uniqueid;
-        var notifyTimes = parseInt(client.times);
-        notifyTimes--;
+}
 
-        if (notifyTimes <= 0) {
-            removeExpiredChannel(sqlTable, client.pushuri, client.uniqueid, source, currencypair, platform);
-        } else {
-            var sql = "UPDATE TOP (1) push_price SET times = ? WHERE uniqueid = ? AND exchange_pair = ? AND operating_system = ?;";
-            var params = [notifyTimes, uniqueid, source + '_' + currencypair, platform];
+function updateNotificationCount(sqlTable, pushuri, client, source, currencypair, platform) {
+    var uniqueid = client.uniqueid;
+    var notifyTimes = parseInt(client.times);
+    notifyTimes--;
 
-            mssql.query(sql, params,
-                {
-                    success: function(results) {
-                        console.log('Updated push ID: ' + uniqueid)
-                     }
-                });
-        }
-    }
+    if (notifyTimes <= 0) {
+        removeExpiredChannel(sqlTable, client.pushuri, client.uniqueid, source, currencypair, platform);
+    } else {
+        var sql = "UPDATE TOP (1) push_price SET times = ? WHERE uniqueid = ? AND exchange_pair = ? AND operating_system = ?;";
+        var params = [notifyTimes, uniqueid, source + '_' + currencypair, platform];
 
-    function removeExpiredChannel(sqlTable, pushuri, clientuniqueid, source, currencypair, platform) {
-        var sql = "DELETE TOP (1) FROM push_price WHERE uniqueid = ? AND exchange_pair = ? AND operating_system = ?;";
-        var params = [clientuniqueid, source + '_' + currencypair, platform];
         mssql.query(sql, params,
             {
-                success: function(results) {
-                    console.log('Removed Expired Channel: ' + pushuri)
-        }
+                success: function (results) {
+                    console.log('Updated push ID: ' + uniqueid)
+                }
             });
     }
+}
 
-    function insertTickerData(returnJson, currencypair, source) {
-      /*  if (
-            (source == 'kraken' && currencypair == 'xbt_usd') ||
-            (source == 'kraken' && currencypair == 'xbt_eur')
-            ) {
-
-            // Insert only if we've yet to support these exchange to cache at second interval
-            // via an external VPS.
-
-            if (source == 'kraken') {
-                insertTickerData_Kraken(returnJson, currencypair, source);
-            } else if (source == 'cexio') {
-                insertTickerData_CexIO(returnJson, currencypair, source);
+function removeExpiredChannel(sqlTable, pushuri, clientuniqueid, source, currencypair, platform) {
+    var sql = "DELETE TOP (1) FROM push_price WHERE uniqueid = ? AND exchange_pair = ? AND operating_system = ?;";
+    var params = [clientuniqueid, source + '_' + currencypair, platform];
+    mssql.query(sql, params,
+        {
+            success: function (results) {
+                console.log('Removed Expired Channel: ' + pushuri)
             }
-        }*/
+        });
+}
+
+function insertTickerData(returnJson, currencypair, source) {
+    /*  if (
+          (source == 'kraken' && currencypair == 'xbt_usd') ||
+          (source == 'kraken' && currencypair == 'xbt_eur')
+          ) {
+ 
+          // Insert only if we've yet to support these exchange to cache at second interval
+          // via an external VPS.
+      }*/
+}
+
+function sendEmail(subject, toEmail, context) {
+    var sendgrid;
+    if (Math.floor((Math.random() * 1) + 1) == 1) // double the amount of free shit.. lol
+        sendgrid = new SendGrid('azure_d44639a993ad34c480950382904b1ba8@azure.com', '7WaCk2st2Zn7Pyu');
+    else
+        sendgrid = new SendGrid('azure_98436b19da666fc83288cb45033966f2@azure.com', 'cj9X26r1R15SN7x');
+
+    sendgrid.send({
+        to: toEmail,
+        from: 'bitbotlive@outlook.com',
+        subject: subject,
+        text: context
+    }, function (success, message) {
+            // If the email failed to send, log it as an error so we can investigate
+            if (!success) {
+                console.error(message);
+            }
+        });
+}
+
+function GetCryptsyMarketId(pair) {
+    switch (pair) {
+        case "ltc_usd":
+            return 1;
+        case "btc_usd":
+            return 2;
+        case "ltc_btc":
+            return 3;
+        case "ftc_usd":
+            return 6;
+        case "doge_btc":
+            return 132;
+        case "drk_btc":
+            return 155;
+        case "nxt_btc":
+            return 159;
+        case "rdd_btc":
+            return 169;
+        case "bc_btc":
+            return 179;
+        case "doge_usd":
+            return 182;
+        case "drk_usd":
+            return 213;
+        case "uro_btc":
+            return 247;
+        case "btcd_btc":
+            return 256;
+        case "rdd_usd":
+            return 262;
+        case "cann_btc":
+            return 300;
     }
-
-
-    function insertTickerData_Kraken(returnJson, currencypair, source) {
-        var pushTable = source + '_price_' + currencypair;
-
-        var pairName2 = "X" + currencypair.replace("_", "Z").toUpperCase();
-        var pairresult = returnJson.result[pairName2];
-
-        var epochdate = new Date().valueOf() / 1000;
-
-        var query_insert = 'INSERT INTO bitcoinbot.' + pushTable + ' ("high","low","open","vol","vol_cur","server_time","close") VALUES (?,?,?,?,?,?,?);';
-        mssql.query(query_insert, [
-            parseFloat(pairresult.h[0]),
-            parseFloat(pairresult.l[0]),
-            parseFloat(pairresult.b[0]), // buy
-            parseFloat(pairresult.v[0]) * parseFloat(pairresult.b[0]),
-            parseFloat(pairresult.v[0]),
-            epochdate, // server time
-            parseFloat(pairresult.b[0]) // close
-        ],
-            {
-                success: function(results) {
-                }, error: function(err) {
-                    console.log('Unable to log current currency ticker ' + currencypair + ' for source:' + source + '. ' + err);
-                }
-            });
-    }
-
-    function insertTickerData_CexIO(returnJson, currencypair, source) {
-        var pushTable = source + '_price_' + currencypair;
-
-        var epochdate = parseInt(returnJson.timestamp);
-
-        var query_insert = 'INSERT INTO bitcoinbot.' + pushTable + ' ("high","low","open","vol","vol_cur","server_time","close") VALUES (?,?,?,?,?,?,?);';
-        mssql.query(query_insert, [
-            parseFloat(returnJson.high),
-            parseFloat(returnJson.low),
-            parseFloat(returnJson.bid),
-            parseFloat(returnJson.volume) * parseFloat(returnJson.bid),
-            parseFloat(returnJson.volume),
-            epochdate, // server time
-            parseFloat(returnJson.bid)], // close
-            {
-                success: function(results) {
-                }, error: function(err) {
-                    console.log('Unable to log current currency ticker ' + currencypair + ' for source:' + source + '. ' + err);
-                }
-            });
-    }
-
-
-    function sendEmail(subject, toEmail, context) {
-        var sendgrid;
-        if (Math.floor((Math.random() * 1) + 1) == 1) // double the amount of free shit.. lol
-            sendgrid = new SendGrid('azure_d44639a993ad34c480950382904b1ba8@azure.com', '7WaCk2st2Zn7Pyu');
-        else
-            sendgrid = new SendGrid('azure_98436b19da666fc83288cb45033966f2@azure.com', 'cj9X26r1R15SN7x');
-
-        sendgrid.send({
-            to: toEmail,
-            from: 'bitbotlive@outlook.com',
-            subject: subject,
-            text: context
-        }, function(success, message) {
-                // If the email failed to send, log it as an error so we can investigate
-                if (!success) {
-                    console.error(message);
-                }
-            });
-    }
-
-    function GetCryptsyMarketId(pair) {
-        switch (pair) {
-            case "ltc_usd":
-                return 1;
-            case "btc_usd":
-                return 2;
-            case "ltc_btc":
-                return 3;
-            case "ftc_usd":
-                return 6;
-            case "doge_btc":
-                return 132;
-            case "drk_btc":
-                return 155;
-            case "nxt_btc":
-                return 159;
-            case "rdd_btc":
-                return 169;
-            case "bc_btc":
-                return 179;
-            case "doge_usd":
-                return 182;
-            case "drk_usd":
-                return 213;
-            case "uro_btc":
-                return 247;
-            case "btcd_btc":
-                return 256;
-            case "rdd_usd":
-                return 262;
-            case "cann_btc":
-                return 300;
-        }
-        return -1;
-    }
+    return -1;
+}
 }
