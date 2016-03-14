@@ -1,2 +1,3 @@
 *.class
 /BitBot/build/
+/BitBot/dist/
