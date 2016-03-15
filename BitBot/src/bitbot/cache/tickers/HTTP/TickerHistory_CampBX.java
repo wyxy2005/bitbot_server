@@ -73,6 +73,7 @@ public class TickerHistory_CampBX implements TickerHistoryInterface {
                 ReturnData.merge_CoinbaseOrCampBX(buy, sell, cTime, type);
 
             } catch (Exception parseExp) {
+                System.out.println(ExchangeSite + " " + CurrencyPair);
                 parseExp.printStackTrace();
                 //System.out.println(GetResult);
                 //ServerLog.RegisterForLogging(ServerLogType.HistoryCacheTask, parseExp.getMessage());

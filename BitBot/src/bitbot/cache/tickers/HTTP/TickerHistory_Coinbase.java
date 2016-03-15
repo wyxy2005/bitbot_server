@@ -86,6 +86,7 @@ public class TickerHistory_Coinbase implements TickerHistoryInterface {
                 //System.out.println(String.format("[Trades history] Got [%s], Buy: %f, Sell: %f", cal.getTime().toString(), buy, sell));
                 ReturnData.merge_CoinbaseOrCampBX(buy, sell, cTime, type);
             } catch (Exception parseExp) {
+                System.out.println(ExchangeSite + " " + CurrencyPair);
                 parseExp.printStackTrace();
                 //System.out.println(GetResult);
                 //ServerLog.RegisterForLogging(ServerLogType.HistoryCacheTask, parseExp.getMessage());

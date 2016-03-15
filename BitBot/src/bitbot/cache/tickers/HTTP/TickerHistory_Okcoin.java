@@ -100,6 +100,7 @@ public class TickerHistory_Okcoin implements TickerHistoryInterface {
                     }
                 }
             } catch (Exception parseExp) {
+                System.out.println(ExchangeSite + " " + CurrencyPair);
                 parseExp.printStackTrace();
                 //System.out.println(GetResult);
                 //ServerLog.RegisterForLogging(ServerLogType.HistoryCacheTask, parseExp.getMessage());

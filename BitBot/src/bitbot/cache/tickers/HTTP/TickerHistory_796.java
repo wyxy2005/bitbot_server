@@ -110,6 +110,7 @@ public class TickerHistory_796 implements TickerHistoryInterface {
                     }
                 }
             } catch (Exception parseExp) {
+                System.out.println(ExchangeSite + " " + CurrencyPair);
                 parseExp.printStackTrace();
                 //System.out.println(GetResult);
                 //ServerLog.RegisterForLogging(ServerLogType.HistoryCacheTask, parseExp.getMessage());
