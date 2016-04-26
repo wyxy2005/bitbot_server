@@ -12,6 +12,9 @@ public class TV_SymbolDatabase {
     public static final List<TV_Symbol> symbols = new ArrayList();
     
     static {        
+        // Mtgox
+        symbols.add(new TV_Symbol("BTC_USD", "Bitcoin/ Dollar", "MtGox", "bitcoin"));
+        
         // BTCe
         symbols.add(new TV_Symbol("BTC_USD", "Bitcoin/ Dollar", "BTCe", "bitcoin"));
         symbols.add(new TV_Symbol("BTC_EUR", "Bitcoin/ Euro", "BTCe", "bitcoin"));
@@ -57,6 +60,7 @@ public class TV_SymbolDatabase {
         
         // Bitstamp
         symbols.add(new TV_Symbol("BTC_USD", "Bitcoin/ Dollar", "Bitstamp", "bitcoin"));
+        symbols.add(new TV_Symbol("BTC_EUR", "Bitcoin/ Euro", "Bitstamp", "bitcoin"));
         
         // Coinbase
         symbols.add(new TV_Symbol("BTC_USD", "Bitcoin/ Dollar", "Coinbase", "bitcoin"));

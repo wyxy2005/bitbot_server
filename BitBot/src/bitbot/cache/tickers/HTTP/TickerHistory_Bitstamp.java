@@ -31,7 +31,7 @@ public class TickerHistory_Bitstamp implements TickerHistoryInterface {
 
     @Override
     public TickerHistoryData connectAndParseHistoryResult(TickerCacheTask.TickerCacheTask_ExchangeHistory _TickerCacheTaskSource, String ExchangeCurrencyPair, String ExchangeSite, String CurrencyPair, long LastPurchaseTime, long LastTradeId) {
-        String Uri = "https://www.bitstamp.net/api/transactions/?time=minute";
+        final String Uri = String.format("https://www.bitstamp.net/api/v2/transactions/%s/?time=minute", CurrencyPair.replace("_", "").toLowerCase());
         String GetResult = HttpClient.httpsGet(Uri, "");
 
         if (GetResult != null) {
