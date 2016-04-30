@@ -38,11 +38,14 @@ public class TickerHistory_FybSGSE implements TickerHistoryInterface {
                 IsFybSG ? "sg" : "se",
                 IsFybSG ? "com" : "se",
                 split[1].toUpperCase(),
-                LastTradeId != 0 ? "?since=" + LastTradeId : "");
+                LastTradeId != 0 ? ("?since=" + LastTradeId) : "");
 
         String GetResult = HttpClient.httpsGet(Uri, "");
 
         if (GetResult != null) {
+            if (GetResult.equals("null")) { // fybSG and fybSE returns 'null' string if no trades have occured since that tradeid
+                return null;
+            }
             TickerHistoryData ReturnData = new TickerHistoryData(_TickerCacheTaskSource, LastPurchaseTime, LastTradeId, 0, false);
 
             JSONParser parser = new JSONParser(); // Init parser
