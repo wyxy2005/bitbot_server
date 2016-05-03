@@ -13,6 +13,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.Calendar;
+import java.util.TimeZone;
 
 /**
  *
@@ -20,6 +21,8 @@ import java.util.Calendar;
  */
 public class TickerHistoryData {
 
+    private static final TimeZone utc = TimeZone.getTimeZone("UTC");
+    
     private float Open, LastPrice, High, Low;
     private double Volume; // BTC * USD
     private double Volume_Cur; // BTC/USD, cur = BTC.
@@ -280,9 +283,12 @@ public class TickerHistoryData {
         // Broadcast to peers on other servers
         try {
             final String ExchangeCurrencyPair = String.format("%s-%s", _TickerCacheTaskSource.getExchangeSite(), _TickerCacheTaskSource.getCurrencyPair());
+           // Calendar cal_UTC = Calendar.getInstance(utc);
+            
             ChannelServer.getInstance().getWorldInterface().broadcastNewGraphEntry(
                     ExchangeCurrencyPair, 
                     LastServerUTCTime / 1000l, 
+                 //   cal_UTC.getTimeInMillis() / 1000l, // Have to broadcast current time, otherwise TV charts will not be updated
                     LastPrice, 
                     High, 
                     Low, 

@@ -41,7 +41,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -63,6 +62,9 @@ public class TickerCacheTask {
     private final Map<String, List<TickerItemData>> list_mssql;
     private final Map<String, List<TickerItemData>> list_unmaturedData;
 
+    // List of currencies eligible to show a 24 hour snapshot
+    private static final List<String> list_currenciesAllowedFor24HSnapshot = new ArrayList();
+
     // Acquiring of data directly from the trades
     private final List<LoggingSaveRunnable> runnable_exchangeHistory = new ArrayList();
 
@@ -74,6 +76,15 @@ public class TickerCacheTask {
     }
 
     public void StartScheduleTask() {
+        // List of currencies eligible to show a 24 hour snapshot 
+        // Loading from Azure App Services
+        final String[] currencies = MicrosoftAzureDatabaseExt.selectShowSummaryCurrencyPairs();
+        for (String s : currencies) {
+            list_currenciesAllowedFor24HSnapshot.add(s);
+        }
+
+        // List of currencies this instance server is to cache or to index, 
+        // As defined under currencypairs.properties
         for (String ExchangeCurrencyPair : ChannelServer.getInstance().getCachingCurrencyPair()) {
             final String[] Source_pair = ExchangeCurrencyPair.split("-");
             final String ExchangeSite = Source_pair[0];
@@ -223,6 +234,28 @@ public class TickerCacheTask {
         }
     }
 
+    private static long truncateTimeToRound(int intervalMinutes, long LastUsedTime) {
+        final Calendar dtCal = Calendar.getInstance();
+        dtCal.setTimeInMillis(LastUsedTime);
+
+        int truncateField;
+        if (intervalMinutes < 60) { // below 1 hour
+            truncateField = Calendar.HOUR;
+
+        } else if (intervalMinutes < 60 * 60 * 24) { // below 1 day
+            truncateField = Calendar.DATE;
+
+        } else if (intervalMinutes < 60 * 60 * 24 * 30) { // below 30 days
+            truncateField = Calendar.MONTH;
+
+        } else if (intervalMinutes < 60 * 60 * 24 * 30 * 12 * 100) { // below 100 years
+            truncateField = Calendar.YEAR;
+        } else { // wtf
+            truncateField = Calendar.ERA;
+        }
+        return DateUtils.truncate(dtCal, truncateField).getTimeInMillis();
+    }
+
     public List<TickerItem_CandleBar> getTickerList_Candlestick(
             final String ticker,
             final int backtestHours,
@@ -230,7 +263,8 @@ public class TickerCacheTask {
             String ExchangeSite,
             long ServerTimeFrom, // Epoch in seconds
             long ServerTimeEnd, // Epoch in seconds
-            boolean returnExactRequestedFromAndToTime) {
+            boolean returnExactRequestedFromAndToTime,
+            boolean requestSummary) {
 
         final List<TickerItem_CandleBar> list_chart = new ArrayList(); // create a new array first
         final String dataSet = ExchangeSite + "-" + ticker;
@@ -250,8 +284,10 @@ public class TickerCacheTask {
 
         // Etc
         final boolean isTradingViewData = ServerTimeFrom != 0;
-        final boolean isLastCandleRequest = ServerTimeEnd - ServerTimeFrom == intervalMinutes;
+        final int numCandlesReturned = (int) (ServerTimeEnd - ServerTimeFrom) / intervalMinutes;
+        final boolean returnAllPossibleLatestData = requestSummary || (isTradingViewData && (numCandlesReturned > 100));
 
+        //System.out.println("[" + intervalMinutes / 60 + "] Return all: " + returnAllPossibleLatestData + " " + numCandlesReturned);
         // truncate the ending time to max current time
         // This could also prevent DOS
         long timeDilusion = cTime - ServerTimeEnd;
@@ -271,7 +307,7 @@ public class TickerCacheTask {
         }
         LastUsedTime = LastUsedTime_;
 
-        float high = 0, low = Float.MAX_VALUE, open = -1, lastPriceSet = 0;
+        float high = 0, low = Float.MAX_VALUE, open = -1, lastPriceSet = 0, lastCloseSet = 0;
         double Volume = 0, VolumeCur = 0;
         float buysell_ratio_Total = 0, buysellratio_sets = 1;
 
@@ -279,25 +315,7 @@ public class TickerCacheTask {
         // to start processing the return data
         // Post process, for the variables and stuff
         // round the last used time to best possible time for the chart period
-        final Calendar dtCal = Calendar.getInstance();
-        dtCal.setTimeInMillis(LastUsedTime);
-
-        int truncateField;
-        if (intervalMinutes < 60) { // below 1 hour
-            truncateField = Calendar.HOUR;
-
-        } else if (intervalMinutes < 60 * 60 * 24) { // below 1 day
-            truncateField = Calendar.DATE;
-
-        } else if (intervalMinutes < 60 * 60 * 24 * 30) { // below 30 days
-            truncateField = Calendar.MONTH;
-
-        } else if (intervalMinutes < 60 * 60 * 24 * 30 * 12 * 100) { // below 100 years
-            truncateField = Calendar.YEAR;
-        } else { // wtf
-            truncateField = Calendar.ERA;
-        }
-        LastUsedTime = DateUtils.truncate(dtCal, truncateField).getTimeInMillis();
+        LastUsedTime = truncateTimeToRound(intervalMinutes, LastUsedTime);
 
         // Gets the list of data relevent to this request, sorted by time in ascending order
         final List<TickerItemData> currentList = list_mssql.get(dataSet);
@@ -305,10 +323,14 @@ public class TickerCacheTask {
         synchronized (currentList) {
             items_stream = currentList.stream().
                     filter((data)
-                            -> (data.getServerTime() >= LastUsedTime_ && data.getServerTime() <= _ServerTimeEnd)).
+                            -> (data.getServerTime() >= LastUsedTime_ && (returnAllPossibleLatestData || data.getServerTime() <= _ServerTimeEnd))).
                     sorted(TickerItemComparator);         // No need to lock this thread, if we are creating a new ArrayList off existing since its a copy :)
 
             boolean processedFirstTime = false;
+
+            // Uncompleted candle data
+            boolean haveUncompletedCandle = false;
+            long lastUncompletedCandleTime = 0;
 
             // Now we create the candle data chain
             final Iterator<TickerItemData> items = items_stream.iterator();
@@ -359,6 +381,7 @@ public class TickerCacheTask {
                                     false);
                         }
                         list_chart.add(item_ret);
+                        haveUncompletedCandle = false;
 
                         high = item.getHigh();
                         low = item.getLow();
@@ -374,6 +397,7 @@ public class TickerCacheTask {
 
                         // Reset emptybar data
                         isEmptyBar = true;
+                        lastUncompletedCandleTime = item.getServerTime();
                     }
 
                     // Otherwise, create a new candle data
@@ -389,11 +413,24 @@ public class TickerCacheTask {
                     }
                     buysell_ratio_Total += item.getBuySell_Ratio();
                     buysellratio_sets += 1.0f;
+
+                    haveUncompletedCandle = true;
                 }
                 lastPriceSet = item.getClose();
             }
+            if (haveUncompletedCandle && lastUncompletedCandleTime != 0) {
+                list_chart.add(new TickerItem_CandleBar(
+                        lastUncompletedCandleTime,
+                        lastPriceSet,
+                        high,
+                        low,
+                        open,
+                        Volume,
+                        VolumeCur,
+                        (buysell_ratio_Total == 0.0f ? 1.0f : buysell_ratio_Total) / buysellratio_sets,
+                        false));
+            }
         }
-
         /*for (int i = 0; i < 100; ++i) {
          if (LastUsedTime > ServerTimeEnd) {
          break;
@@ -424,7 +461,7 @@ public class TickerCacheTask {
          break;
          }
          }*/
-        /*if (returnExactRequestedFromAndToTime) {
+ /*if (returnExactRequestedFromAndToTime) {
          boolean breakloop = false;
          while (!(LastUsedTime >= ServerTimeEnd || breakloop)) {
          long time;
@@ -495,25 +532,7 @@ public class TickerCacheTask {
         // to start processing the return data
         // Post process, for the variables and stuff
         // round the last used time to best possible time for the chart period
-        final Calendar dtCal = Calendar.getInstance();
-        dtCal.setTimeInMillis(LastUsedTime);
-
-        int truncateField;
-        if (intervalMinutes < 60) { // below 1 hour
-            truncateField = Calendar.HOUR;
-
-        } else if (intervalMinutes < 60 * 60 * 24) { // below 1 day
-            truncateField = Calendar.DATE;
-
-        } else if (intervalMinutes < 60 * 60 * 24 * 30) { // below 30 days
-            truncateField = Calendar.MONTH;
-
-        } else if (intervalMinutes < 60 * 60 * 24 * 30 * 12 * 100) { // below 100 years
-            truncateField = Calendar.YEAR;
-        } else { // wtf
-            truncateField = Calendar.ERA;
-        }
-        LastUsedTime = DateUtils.truncate(dtCal, truncateField).getTimeInMillis();
+        LastUsedTime = truncateTimeToRound(intervalMinutes, LastUsedTime);
 
         // Gets the list of data relevent to this request, sorted by time in ascending order
         final List<TickerItemData> currentList = list_mssql.get(dataSet);
@@ -626,6 +645,12 @@ public class TickerCacheTask {
         final long cTime = cTime_Millis / 1000;
         final long startTime = cTime - (hoursFromNow * 60l * 60l);
 
+        // Get the first element and re-calibrate the time to be used 
+        // to start processing the return data
+        // Post process, for the variables and stuff
+        // round the last used time to best possible time for the chart period
+        long LastUsedTime = truncateTimeToRound(60, startTime);
+
         double totalBuyVolume_Cur = 0, totalSellVolume_Cur = 0;
         double totalBuyVolume = 0, totalSellVolume = 0;
 
@@ -635,13 +660,14 @@ public class TickerCacheTask {
         final Iterator<TickerItemData> items;
         synchronized (currentList) {
             items = currentList.stream().
-                    filter((data) -> (data.getServerTime() > startTime)).
+                    filter((data) -> (data.getServerTime() >= startTime)).
                     sorted(TickerItemComparator).
                     iterator();
 
             while (items.hasNext()) {
-                TickerItemData item = items.next();
-//System.out.println("["+item.getServerTime()+"] " + item.getBuySell_Ratio());
+                final TickerItemData item = items.next();
+                //System.out.println("["+item.getServerTime()+"] " + item.getBuySell_Ratio());
+
                 if (item.getBuySell_Ratio() != 0f && item.getBuySell_Ratio() != 1.0f) {
                     float buyAndSellRatio = item.getBuySell_Ratio() + 1.0f;
 
@@ -760,6 +786,10 @@ public class TickerCacheTask {
         }
         return -1;
     };
+
+    public List<String> getlistCurrenciesAllowedFor24HSnapshot() {
+        return list_currenciesAllowedFor24HSnapshot;
+    }
 
     private static final TimeZone utc = TimeZone.getTimeZone("UTC");
 
@@ -1000,6 +1030,7 @@ public class TickerCacheTask {
                             fis = new FileInputStream(f_data);
 
                             byte[] byte_line = new byte[fis.available()];
+
                             int readbytes = fis.read(byte_line, 0, fis.available());
                             if (readbytes != -1) {
                                 final SeekableLittleEndianAccessor slea = new GenericSeekableLittleEndianAccessor(new ByteArrayByteStream(byte_line));
@@ -1263,7 +1294,7 @@ public class TickerCacheTask {
                     currentList_Unmatured.add(new TickerItemData(server_time, close, high, low, open, volume, volume_cur, buysell_ratio, true));
                 }
             }
-            
+
             /*final List<TickerItemData> currentList = list_mssql.get(ExchangeCurrencyPair);
 
             synchronized (currentList) {

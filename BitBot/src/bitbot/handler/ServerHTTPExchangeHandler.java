@@ -38,12 +38,12 @@ public class ServerHTTPExchangeHandler implements Container {
     @Override
     public void handle(Request request, Response response) {
         String IPAddress = request.getClientAddress().getAddress().getHostAddress();
-        String CloudFlareForwardAddress = request.getValue("X-Forwarded-For");
+        final String CloudFlareForwardAddress = request.getValue("X-Forwarded-For"); // this will just be overrided by CloudFlare network if the user tries to insert it.
 
         //System.out.println("Session started by IP: " + IPAddress);
         //System.out.println("Session CloudFlare by IP: " + CloudFlareForwardAddress == null ? "" : CloudFlareForwardAddress);
         //System.out.println("Enforce cloudflare: " + ChannelServer.getInstance().isEnforceCloudFlareNetwork());
-        boolean isCloudFlareAddress = CloudflareIPValidator.isCloudFlareIPAddress(IPAddress);
+        final boolean isCloudFlareAddress = CloudflareIPValidator.isCloudFlareIPAddress(IPAddress);
         //.out.println("IsCloudFlare: " + isCloudFlareAddress);
 
         // Source validation
@@ -59,7 +59,7 @@ public class ServerHTTPExchangeHandler implements Container {
         //System.out.println("EndUserIP : " + IPAddress);
 
         // Query
-        Query query = request.getQuery();
+        final Query query = request.getQuery();
         final String path = request.getPath().getPath();
         final String queryType = query.get("Type"); // Chart  
 
@@ -77,7 +77,6 @@ public class ServerHTTPExchangeHandler implements Container {
                     MultiThreadExecutor.submit(new SpamErrorTask(request, response));
                     return;
                 }
-
                 switch (queryType) {
                     case "Chart": {
                         r = new ChartTask(request, response, query);
@@ -101,6 +100,10 @@ public class ServerHTTPExchangeHandler implements Container {
                     }
                     case "Swaps": {
                         r = new SwapTask(request, response, query);
+                        break;
+                    }
+                    case "PriceSummaryChartTask": {
+                        r = new PriceSummaryChartTask(request, response, query);
                         break;
                     }
                     case "MLTest": {

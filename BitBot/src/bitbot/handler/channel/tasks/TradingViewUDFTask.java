@@ -37,7 +37,7 @@ public class TradingViewUDFTask implements Runnable {
     }
 
     @Override
-    public void run() { 
+    public void run() {
         try (PrintStream body = response.getPrintStream()) {
             _ResponseHeader.addBasicResponseHeader(response);
 //System.out.println("Geting path: " + path);
@@ -48,8 +48,7 @@ public class TradingViewUDFTask implements Runnable {
                         this.sendConfig(body);
                         break;
                     case "/symbols":
-                        this.sendSymbolInfo(body,
-                                query.get("symbol"));
+                        this.sendSymbolInfo(body, query.get("symbol"));
                         break;
                     case "/search":
                         this.sendSymbolSearchResults(body,
@@ -100,7 +99,8 @@ public class TradingViewUDFTask implements Runnable {
         } finally {
             try {
                 response.close();
-            } catch (IOException e) {}
+            } catch (IOException e) {
+            }
         }
     }
 
@@ -145,14 +145,10 @@ public class TradingViewUDFTask implements Runnable {
     private void sendSymbolHistory(PrintStream body, String symbolName, long startDateTimestamp, long endDateTimestamp, String resolution, String hash, long nonce) {
         // Check hash first
         final long cTime_Seconds = System.currentTimeMillis() / 1000;
-        if (cTime_Seconds - (60 * 60 * 24 * 1000) > nonce || cTime_Seconds + (60 * 60 * 24 * 1000) < nonce) {
-            sendError(body, "Invalid nonce.");
-            return;
-        }
-
-        final String sha256hex = DigestUtils.sha256Hex(symbolName + (startDateTimestamp & endDateTimestamp) + resolution + nonce);
-        if (!sha256hex.equals(hash)) {
-            sendError(body, "Invalid hash.");
+        
+        if (cTime_Seconds - (60 * 60 * 24 * 1000) > nonce || cTime_Seconds + (60 * 60 * 24 * 1000) < nonce ||
+                !DigestUtils.sha256Hex(symbolName + (startDateTimestamp & endDateTimestamp) + resolution + nonce).equals(hash) ) {
+            sendError(body, "Invalid request.");
             return;
         }
 
@@ -216,6 +212,7 @@ public class TradingViewUDFTask implements Runnable {
         //long datesRangeLeft = datesRangeRight - periodLengthSeconds(resolution); //	BEWARE: please note we really need 2 bars, not the only last one see the explanation below. `10` is the `large enough` value to work around holidays
         final long timeDifference = endDateTimestamp - startDateTimestamp;
         final int candlesRequested = (int) (timeDifference / (60 * time));
+        final boolean returnAllPossibleLatestData = candlesRequested > 100;
 
         //System.out.println(timeDifference + " server diff: " + (datesRangeLeft - datesRangeRight));
         int limit = 0;
@@ -233,18 +230,27 @@ public class TradingViewUDFTask implements Runnable {
         }
 
         if (candlesRequested < limit) { // TV usually request 2041 at once... 
-            if (symbol.getSymbolType() == TVSymbolType.CumulativeVolume) {
-                // make sure that cumulative volume only return on the first request
-                // because cumulative volume calculates starting from the first request, it cannot be continious unless the first request time is given
-                // which unfortunately not available on TradingView chart
-                        
-                if (candlesRequested > 100) {
-                    ret = ChannelServer.getInstance().getTickerTask().GetTickerList_CumulativeVolume(
-                            symbol.getName().replace("VOL", "").toLowerCase(), 0, time, symbol.getExchange().toLowerCase(), startDateTimestamp, endDateTimestamp, true);
+            switch (symbol.getSymbolType()) {
+                case CumulativeVolume: {
+                    // make sure that cumulative volume only return on the first request
+                    // because cumulative volume calculates starting from the first request, it cannot be continious unless the first request time is given
+                    // which unfortunately not available on TradingView chart
+
+                    if (candlesRequested > 100) {
+                        ret = ChannelServer.getInstance().getTickerTask().GetTickerList_CumulativeVolume(
+                                symbol.getName().replace("VOL", "").toLowerCase(), 0, time, symbol.getExchange().toLowerCase(), startDateTimestamp, endDateTimestamp, true);
+                    }
+                    break;
                 }
-            } else {
-                ret = ChannelServer.getInstance().getTickerTask().getTickerList_Candlestick(
-                        symbol.getName().toLowerCase(), 0, time, symbol.getExchange().toLowerCase(), startDateTimestamp, endDateTimestamp, true);
+                case Swaps: {
+                    
+                    break;
+                }
+                case Price: {
+                    ret = ChannelServer.getInstance().getTickerTask().getTickerList_Candlestick(
+                        symbol.getName().toLowerCase(), 0, time, symbol.getExchange().toLowerCase(), startDateTimestamp, endDateTimestamp, true, false);
+                    break;
+                }
             }
         } else {
             // should we auto ban?

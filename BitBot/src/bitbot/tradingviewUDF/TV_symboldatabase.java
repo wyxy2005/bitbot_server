@@ -37,6 +37,11 @@ public class TV_SymbolDatabase {
         symbols.add(new TV_Symbol("PPC_USD", "Peercoin/ Dollar", "BTCe", "bitcoin"));
         symbols.add(new TV_Symbol("NVC_BTC", "Peercoin/ Bitcoin", "BTCe", "bitcoin"));
         
+        symbols.add(new TV_Symbol("ETH_BTC", "Ethereum/ Bitcoin", "BTCe", "bitcoin"));
+        symbols.add(new TV_Symbol("ETH_USD", "Ethereum/ Dollar", "BTCe", "bitcoin"));
+        symbols.add(new TV_Symbol("DSH_BTC", "Dash/ Bitcoin", "BTCe", "bitcoin"));
+        
+        
         // Bitfinex
         symbols.add(new TV_Symbol("BTC_USD", "Bitcoin/ Dollar", "Bitfinex", "bitcoin"));
         symbols.add(new TV_Symbol("LTC_USD", "Litecoin/ Dollar", "Bitfinex", "bitcoin"));

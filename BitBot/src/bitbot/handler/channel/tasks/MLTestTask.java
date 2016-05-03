@@ -97,7 +97,7 @@ public class MLTestTask implements Runnable {
                             ExchangeSite, 
                             ServerTimeFrom,  
                             System.currentTimeMillis() / 1000, 
-                            true);
+                            true, false);
 
                     switch (APIVersion) {
                         case 1: { // encrypted

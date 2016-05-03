@@ -99,7 +99,7 @@ public class ChartTask_Candlestick implements Runnable {
 
                 if (isAuthorized) {
                     List<TickerItem_CandleBar> ret = ChannelServer.getInstance().getTickerTask().getTickerList_Candlestick(
-                            currencypair, hours, interval, ExchangeSite, ServerTimeFrom, System.currentTimeMillis() / 1000, true);
+                            currencypair, hours, interval, ExchangeSite, ServerTimeFrom, System.currentTimeMillis() / 1000, true, false);
 
                     switch (APIVersion) {
                         case 3: { // encrypted

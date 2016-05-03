@@ -34,7 +34,7 @@ public class MicrosoftAzureDatabaseExt {
     /*   
     * Returns the graph data selected from the MSSQL Datababase
     * @return long (biggest server time), -2 if error, -1 if no result
-    */
+     */
     public static long selectGraphData(String ExchangeSite, String currencyPair, int depthSelection, long start_server_time, List<TickerItemData> list_BTCe2) {
         // currencyPair = eg: btc_usd
         String tableName = DatabaseTablesConstants.getDatabaseTableName(ExchangeSite, currencyPair);
@@ -56,7 +56,7 @@ public class MicrosoftAzureDatabaseExt {
                     TickerItemData item = new TickerItemData(rs);
 
                     list_BTCe2.add(item);
-                    
+
                     if (item.getServerTime() > biggest_ServerTime) {
                         biggest_ServerTime = item.getServerTime();
                     }
@@ -84,7 +84,7 @@ public class MicrosoftAzureDatabaseExt {
     /*   
     * Returns the swaps data selected from the MSSQL Datababase
     * @return long (biggest server time), -1 if error
-    */
+     */
     public static long selectSwapsData(String ExchangeSite, String currency, int depthSelection, long start_server_time, List<SwapsItemData> list_items) {
         final String tableName = String.format("%s_swaps_%s", ExchangeSite, currency);
 
@@ -105,7 +105,7 @@ public class MicrosoftAzureDatabaseExt {
                     SwapsItemData item = new SwapsItemData(rs);
 
                     list_items.add(item);
-                    
+
                     if (item.getTimestamp() > biggest_ServerTime) {
                         biggest_ServerTime = item.getTimestamp();
                     }
@@ -128,7 +128,7 @@ public class MicrosoftAzureDatabaseExt {
         }
         return -1;
     }
-    
+
     public static long selectTradesData(String ExchangeSite, String currency, int depthSelection, long start_server_time, List<TradesItemData> list_items) {
         final String tableName = DatabaseTablesConstants.getDatabaseTableName_Trades(ExchangeSite, currency);
 
@@ -148,7 +148,7 @@ public class MicrosoftAzureDatabaseExt {
                     TradesItemData item = new TradesItemData(rs);
 
                     list_items.add(item);
-                    
+
                     if (item.getLastPurchaseTime() > biggest_ServerTime) {
                         biggest_ServerTime = item.getLastPurchaseTime();
                     }
@@ -171,7 +171,7 @@ public class MicrosoftAzureDatabaseExt {
         }
         return -1;
     }
-    
+
     @Deprecated
     public static boolean btce_Select_Graph_Data_AzureMobileAPI(String ExchangeSite, String currencyPair, int depthSelection, int hoursSelection, long start_server_time, ArrayList<TickerItemData> list_BTCe2) {
         // currencyPair = eg: btc_usd
@@ -198,6 +198,26 @@ public class MicrosoftAzureDatabaseExt {
         return true;
     }
 
+    public static String[] selectShowSummaryCurrencyPairs() {
+        final String Result = get("https://bitcoinbot.azure-mobile.net/api/list_currencies?", "");
+        if (Result != null) {
+
+            final JSONParser parser = new JSONParser();
+            try {
+                final JSONObject jsonObj = (JSONObject) parser.parse(Result);
+
+                final String retmsg = jsonObj.get("message").toString();
+
+                return retmsg.split("---");
+            } catch (ParseException exp) {
+                exp.printStackTrace();
+            }
+        }
+        // gonna return something regardless.
+        return "gemini-btc_usd---btce-btc_usd---btce-btc_eur---btce-btc_rur---btce-ltc_usd---btce-ltc_btc---btce-ltc_eur---btce-ltc_rur---btce-nmc_usd---btce-nmc_btc---btce-usd_rur---btce-eur_usd---btce-nvc_usd---btce-nvc_btc---btce-ppc_usd---btce-ppc_btc---btce-eth_usd---btce-eth_btc---btce-dsh_btc---bitstamp-btc_usd---bitstamp-btc_eur---okcoin-btc_cny---okcoin-ltc_cny---okcoininternational-btc_usd---okcoininternational-ltc_usd---okcoininternational-btc Futures Weekly_usd---okcoininternational-btc Futures BiWeekly_usd---okcoininternational-btc Futures Quarterly_usd---okcoininternational-ltc Futures Weekly_usd---okcoininternational-ltc Futures BiWeekly_usd---okcoininternational-ltc Futures Quarterly_usd---huobi-btc_cny---huobi-ltc_cny---coinbase-btc_usd---coinbaseexchange-btc_usd---coinbaseexchange-btc_gbp---coinbaseexchange-btc_eur---coinbaseexchange-btc_cad---btcchina-btc_cny---btcchina-ltc_btc---btcchina-ltc_cny---campbx-btc_usd---itbit-xbt_usd---itbit-xbt_sgd---itbit-xbt_eur---bitfinex-btc_usd---bitfinex-ltc_usd---bitfinex-ltc_btc---bitfinex-eth_usd---bitfinex-eth_btc---kraken-xbt_usd---kraken-xbt_eur---kraken-eth_xbt---cexio-ghs_btc---fybsg-btc_sgd---fybse-btc_sek---_796-btc Futures_usd---bitvc-btc Futures Weekly_cny---bitvc-btc Futures Quarterly_cny---bitvc-btc Futures BiWeekly_cny"
+                .split("---");
+    }
+
     private static String post(String URL, String parameters, String PostStr) {
         BufferedReader in = null;
         try {
@@ -217,6 +237,50 @@ public class MicrosoftAzureDatabaseExt {
                 wr.writeBytes(PostStr);
                 wr.flush();
             }
+            int responseCode = con.getResponseCode();
+            //System.out.println("\nSending 'POST' request to URL : " + obj.toString());
+            //System.out.println("Post parameters : " + PostStr);
+            //System.out.println("Response Code : " + responseCode);
+
+            in = new BufferedReader(
+                    new InputStreamReader(con.getInputStream()));
+            String inputLine;
+            StringBuilder response = new StringBuilder();
+
+            while ((inputLine = in.readLine()) != null) {
+                response.append(inputLine);
+            }
+            in.close();
+
+            //print result
+            return response.toString();
+
+        } catch (IOException exp) {
+            exp.printStackTrace();
+        } finally {
+            if (in != null) {
+                try {
+                    in.close();
+                } catch (IOException exp) {
+                }
+            }
+        }
+        return null;
+    }
+
+    private static String get(String URL, String parameters) {
+        BufferedReader in = null;
+        try {
+            URL obj = new URL(URL + parameters);
+            HttpsURLConnection con = (HttpsURLConnection) obj.openConnection();
+
+            //add reuqest header
+            con.setRequestMethod("GET");
+            con.setRequestProperty("User-Agent", Constants.Server_UserAgent);
+            con.setRequestProperty("Auth", Constants.Server_UserAgent);
+            con.setRequestProperty("Server", Constants.Server_UserAgentAzure);
+            con.setRequestProperty("X-ZUMO-APPLICATION", Constants.Azure_X_ZUMO_APPLICATION);
+
             int responseCode = con.getResponseCode();
             //System.out.println("\nSending 'POST' request to URL : " + obj.toString());
             //System.out.println("Post parameters : " + PostStr);

@@ -23,8 +23,9 @@ public class SwapTask implements Runnable {
 
     private final Response response;
     private final Request request;
-    private final int hours;
-    private final int interval;
+    //private final int hours;
+    private final int numCandles;
+    private final int timeframe;
     private final String Exchange;
     private final String currencies, serverAuthorization;
     private final long nonce;
@@ -36,19 +37,31 @@ public class SwapTask implements Runnable {
     public SwapTask(Request request, Response response, Query query) {
         this.response = response;
         this.request = request;
+        
         this.nonce = Long.parseLong(query.get("nonce"));
-
         final long cTime = System.currentTimeMillis();
         if (cTime - (60 * 60 * 24 * 1000) > nonce || cTime + (60 * 60 * 24 * 1000) < nonce) {
             isAuthorized = false;
         }
 
         // hours
-        int hours_ = Integer.parseInt(query.get("hours"));
-        if (hours_ <= 0 || hours_ >= (24 * 30 * 12 * 10)) {
+        /*int hours_ = Integer.parseInt(query.get("hours"));
+         if (hours_ <= 0 || hours_ >= (24 * 30 * 12 * 10)) {
+         isAuthorized = false;
+         }
+         this.hours = hours_; */ // Obsolete
+        // num candles
+        numCandles = Integer.parseInt(query.get("numcandles"));
+        if (numCandles <= 0 || numCandles > 4000) {
             isAuthorized = false;
         }
-        this.hours = hours_;
+
+        // timeframe
+        int timeframe_ = Integer.parseInt(query.get("timeframe"));
+        if (timeframe_ > 20160 || timeframe_ < 1) {
+            isAuthorized = false;
+        }
+        this.timeframe = timeframe_;
 
         // exchange site
         if (query.containsKey("Exchange")) {
@@ -56,13 +69,6 @@ public class SwapTask implements Runnable {
         } else {
             Exchange = "btce";
         }
-
-        // depth
-        int interval_ = Integer.parseInt(query.get("depth"));
-        if (interval_ > 20160 || interval_ < 1) {
-            isAuthorized = false;
-        }
-        this.interval = interval_;
 
         // currency pair
         this.currencies = query.get("currencies");
@@ -79,13 +85,14 @@ public class SwapTask implements Runnable {
 
         // checks
         this.serverAuthorization = query.get("serverAuthorization").replace(' ', '+');
-
-        final String encoded = HMACSHA1.encode(String.valueOf(nonce), currencies + (hours ^ interval ^ nonce ^ ServerTimeFrom) + Exchange);
-        //System.out.println("FromClient: " + serverAuthorization);
-        //System.out.println("Real: " + encoded);
+        final String encoded = HMACSHA1.encode(String.valueOf(nonce), currencies + (numCandles ^ timeframe ^ nonce ^ ServerTimeFrom ^ APIVersion) + Exchange);
         if (!serverAuthorization.equals(encoded)) {
             isAuthorized = false;
         }
+
+      /*  System.out.println("FromClient: " + serverAuthorization);
+         System.out.println("Real: " + encoded);
+         System.out.println("isAuthorized: " + isAuthorized);*/
     }
 
     @Override
@@ -95,12 +102,11 @@ public class SwapTask implements Runnable {
                 _ResponseHeader.addBasicResponseHeader(response);
 
                 if (isAuthorized) {
-                    JSONObject obj = new JSONObject();
-
-                    List<List<SwapsItemData>> ret = ChannelServer.getInstance().getSwapsTask().getSwapsData(Exchange, currencies, ServerTimeFrom, hours, interval);
+                    final List<List<SwapsItemData>> ret = ChannelServer.getInstance().getSwapsTask().getSwapsData(Exchange, currencies, ServerTimeFrom, numCandles, timeframe);
 
                     switch (APIVersion) {
                         case 1: {
+                            JSONObject obj = new JSONObject();
                             int arrayPrintCount = 1;
 
                             for (List<SwapsItemData> swap : ret) {
@@ -133,6 +139,7 @@ public class SwapTask implements Runnable {
                             break;
                         }
                         case 2: { // encrypted return data
+                            JSONObject obj = new JSONObject();
                             int arrayPrintCount = 1;
 
                             for (List<SwapsItemData> swap : ret) {
@@ -166,7 +173,7 @@ public class SwapTask implements Runnable {
                         }
                         case 3: { // byte, compressed data type
                             final PacketLittleEndianWriter plew = new PacketLittleEndianWriter();
-                            
+
                             int arrayPrintCount = 1;
 
                             // Write size
@@ -174,14 +181,13 @@ public class SwapTask implements Runnable {
                             for (List<SwapsItemData> swap : ret) {
                                 plew.writeMapleAsciiString("cur" + arrayPrintCount);
                                 plew.writeInt(swap.size());
-                                
+
                                 for (SwapsItemData item : swap) {
-                                    plew.writeInt(item.getTimestamp());
+                                    plew.writeInt((int) item.getTimestamp());
                                     plew.writeFloat(item.getSpotPrice());
                                     plew.writeFloat(item.getRate());
                                     plew.writeDouble(item.getAmountLent());
                                 }
-
                                 arrayPrintCount++;
                             }
 

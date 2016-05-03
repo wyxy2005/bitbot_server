@@ -9,11 +9,11 @@ import java.sql.SQLException;
  */
 public class SwapsItemData {
     
-    private final int timestamp;
+    private final long timestamp;
     private final float rate, spot_price;
     private final double amount_lent;
     
-    public SwapsItemData(float rate, float spot_price, double amount_lent, int timestamp) {
+    public SwapsItemData(float rate, float spot_price, double amount_lent, long timestamp) {
         this.rate = rate;
         this.spot_price = spot_price;
         this.amount_lent = amount_lent;
@@ -21,13 +21,13 @@ public class SwapsItemData {
     }
     
     public SwapsItemData(ResultSet rs) throws SQLException {
-        this.timestamp = rs.getInt("timestamp");//DateTimeUtil.convertDateTime(Long.parseLong(obj.get("server_time").toString()));
+        this.timestamp = rs.getLong("timestamp");//DateTimeUtil.convertDateTime(Long.parseLong(obj.get("server_time").toString()));
         this.rate = rs.getFloat("rate");
         this.amount_lent = rs.getDouble("amount_lent");
         this.spot_price = rs.getFloat("spot_price");
     }
     
-    public int getTimestamp() {
+    public long getTimestamp() {
         return timestamp;
     }
     

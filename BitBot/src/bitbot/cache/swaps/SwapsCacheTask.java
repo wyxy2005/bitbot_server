@@ -1,6 +1,8 @@
 package bitbot.cache.swaps;
 
 import bitbot.cache.swaps.HTTP.Swaps_Bitfinex;
+import bitbot.cache.tickers.TickerItemData;
+import bitbot.cache.tickers.TickerItem_CandleBar;
 import bitbot.util.database.MicrosoftAzureDatabaseExt;
 import bitbot.handler.channel.ChannelServer;
 import bitbot.logging.ServerLog;
@@ -18,12 +20,15 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
+import org.apache.commons.lang3.time.DateUtils;
 
 /**
  *
@@ -104,11 +109,43 @@ public class SwapsCacheTask {
         }
     }
 
-    public List<List<SwapsItemData>> getSwapsData(String Exchange, String currencies, long ServerTimeFrom, final int backtestHours, int intervalMinutes) {
+    private static long truncateTimeToRound(int intervalMinutes, long LastUsedTime) {
+        final Calendar dtCal = Calendar.getInstance();
+        dtCal.setTimeInMillis(LastUsedTime);
+
+        int truncateField;
+        if (intervalMinutes < 60) { // below 1 hour
+            truncateField = Calendar.HOUR;
+
+        } else if (intervalMinutes < 60 * 60 * 24) { // below 1 day
+            truncateField = Calendar.DATE;
+
+        } else if (intervalMinutes < 60 * 60 * 24 * 30) { // below 30 days
+            truncateField = Calendar.MONTH;
+
+        } else if (intervalMinutes < 60 * 60 * 24 * 30 * 12 * 100) { // below 100 years
+            truncateField = Calendar.YEAR;
+        } else { // wtf
+            truncateField = Calendar.ERA;
+        }
+        return DateUtils.truncate(dtCal, truncateField).getTimeInMillis();
+    }
+
+    public List<List<SwapsItemData>> getSwapsData(String Exchange, String currencies, long ServerTimeFrom_, final int numPastCandlesToReturn, int timeframe) {
         final List<List<SwapsItemData>> list_chart = new ArrayList(); // create a new array first
 
         // currencies seperated by '-'
-        String[] currenciesArray = currencies.split("-");
+        final String[] currenciesArray = currencies.split("-");
+
+        final long cTime = (System.currentTimeMillis() / 1000l);
+        final long startTime = truncateTimeToRound(timeframe, cTime - ((numPastCandlesToReturn * timeframe) * 60));
+
+        final long ServerTimeFrom;
+        if (ServerTimeFrom_ == 0) {
+            ServerTimeFrom = startTime;
+        } else {
+            ServerTimeFrom = ServerTimeFrom_;
+        }
 
         for (String currency : currenciesArray) {
             final String dataSet = String.format("%s-%s", Exchange, currency);
@@ -117,72 +154,245 @@ public class SwapsCacheTask {
             if (!list_mssql.containsKey(dataSet)) {
                 return list_chart;
             }
+            final List<SwapsItemData> currentList = list_mssql.get(dataSet);
+            final Stream<SwapsItemData> items_stream;
+            synchronized (currentList) {
+                items_stream = currentList.stream().
+                        filter((data) -> (data.getTimestamp() > ServerTimeFrom)).
+                        sorted(TickerItemComparator);
 
-            final Iterator<SwapsItemData> items_swapsDataset = list_mssql.get(dataSet).stream().
-                    filter((data) -> (data.getTimestamp() > ServerTimeFrom)).
-                    sorted(TickerItemComparator).
-                    iterator();
+                final List<SwapsItemData> newArray = new ArrayList<>();
+                list_chart.add(newArray);
 
-            list_chart.add(new ArrayList<>());
-
-            getSwapsDataInternal(items_swapsDataset, backtestHours, intervalMinutes, list_chart.get(list_chart.size() - 1));
+                getSwapsDataInternal(items_stream, startTime, timeframe, newArray);
+            }
         }
         return list_chart;
     }
 
-    private void getSwapsDataInternal(Iterator<SwapsItemData> items_swapsDataset, final int backtestHours, int intervalMinutes, List<SwapsItemData> outputData) {
+    private void getSwapsDataInternal(Stream<SwapsItemData> items_stream, final long startTime, int intervalMinutes, List<SwapsItemData> outputData) {
         // Timestamp
-        final long cTime = (System.currentTimeMillis() / 1000l);
-        final long startTime = cTime - (60l * 60l * backtestHours);
         long LastUsedTime = 0;
 
         float rate = 0, spot_price = 0;
         double amount_lent = 0;
 
-        while (items_swapsDataset.hasNext()) {
-            SwapsItemData item = items_swapsDataset.next();
+        boolean processedFirstTime = false;
 
-            // Check if last added tick is above the threshold 'intervalMinutes'
-            if (LastUsedTime + (intervalMinutes * 60) < item.getTimestamp()) {
-                while (LastUsedTime + (intervalMinutes * 60) < item.getTimestamp()) {
+        final int interval_seconds = intervalMinutes * 60;
 
-                    if (item.getTimestamp() > startTime) {
-                        rate = item.getRate();
-                        spot_price = item.getSpotPrice();
-                        amount_lent = item.getAmountLent();
+        // Now we create the candle data chain
+        final Iterator<SwapsItemData> items = items_stream.iterator();
+        while (items.hasNext()) {
+            // Loop through the entire data chain, which each data representing 1 minute of the snapshot.
+            // However if that minute does not have any trading activity, the data will not be present. We detect this missing data by its time.
+            final SwapsItemData item = items.next();
 
-                        // Add to list
-                        outputData.add(
-                                new SwapsItemData(
-                                        rate,
-                                        spot_price,
-                                        amount_lent,
-                                        (int) (LastUsedTime + (intervalMinutes * 60))));
-                    }
-                    // Reset
-                    rate = 0;
-                    spot_price = 0;
-                    amount_lent = 0;
-
-                    if (LastUsedTime == 0) {
-                        LastUsedTime = item.getTimestamp();
-                    }
-                    LastUsedTime += (intervalMinutes * 60);
+            if (!processedFirstTime) {
+                while (LastUsedTime < item.getTimestamp()) {
+                    LastUsedTime += interval_seconds;
                 }
+                processedFirstTime = true;
             }
-        }
-        // For unmatured chart
-        if (rate != 0 && spot_price != 0 && amount_lent != 0) {
-            // Add to list
-            outputData.add(
-                    new SwapsItemData(
-                            rate,
-                            spot_price,
-                            amount_lent,
-                            (int) (LastUsedTime + (intervalMinutes * 60))));
+
+            // Real stuff here
+            final long endCandleTime = LastUsedTime + (long) interval_seconds;
+
+            // If the stored item time is above the supposed expected
+            // end candle time 
+            if (item.getTimestamp() > endCandleTime) {
+                long endCandleTime2 = endCandleTime;
+
+                boolean isEmptyBar = false;
+
+                while (item.getTimestamp() > endCandleTime2) {
+                    
+                    final SwapsItemData item_ret;
+                    if (!isEmptyBar) {
+                        item_ret = new SwapsItemData(rate, spot_price, amount_lent, endCandleTime2);
+                    } else {
+                        item_ret = new SwapsItemData(rate, spot_price, amount_lent, endCandleTime2);
+                    }
+                    outputData.add(item_ret);
+
+                    rate = item.getRate();
+                    spot_price = item.getSpotPrice();
+                    amount_lent = item.getAmountLent();
+
+                    // Update the next time 
+                    LastUsedTime = endCandleTime2;
+                    endCandleTime2 = LastUsedTime + (long) interval_seconds;
+
+                    // Reset emptybar data
+                    isEmptyBar = true;
+                }
+                // Otherwise, create a new candle data
+            } else { 
+                // here is meant for combining high/low/volume data, but since its bitfinex swaps
+                // nothing much for us to do
+                
+                rate = item.getRate();
+                spot_price = item.getSpotPrice();
+                amount_lent = item.getAmountLent();
+            }
         }
     }
 
+    /*public List<TickerItem_CandleBar> getSwapsDataInternal_TradingView(
+     final String tickers,
+     final int backtestHours,
+     int intervalMinutes,
+     String ExchangeSite,
+     long ServerTimeFrom, // Epoch in seconds
+     long ServerTimeEnd, // Epoch in seconds
+     boolean returnExactRequestedFromAndToTime) {
+
+     final List<TickerItem_CandleBar> list_chart = new ArrayList(); // create a new array first
+     final String[] currenciesArray = tickers.split("-");
+
+     // Timestamp
+     final long cTime_Millis = System.currentTimeMillis();
+     intervalMinutes *= 60; // convert to seconds
+
+     final long cTime = cTime_Millis / 1000;
+
+     // Etc
+     final boolean isTradingViewData = ServerTimeFrom != 0;
+     final boolean isLastCandleRequest = ServerTimeEnd - ServerTimeFrom == intervalMinutes;
+
+     // truncate the ending time to max current time
+     // This could also prevent DOS
+     long timeDilusion = cTime - ServerTimeEnd;
+     if (Math.abs(cTime - ServerTimeEnd) > 60 * 5) { // Time difference is 5 minutes, just use the server time. This could also prevent denial of service by sending long.maxvalue
+     ServerTimeEnd = cTime_Millis;
+     timeDilusion = 0;
+     }
+     final long _ServerTimeEnd = ServerTimeEnd;
+
+     // Determine where to start the candlestick
+     final long LastUsedTime_;
+     long LastUsedTime = 0;
+     if (isTradingViewData) { // tradingview
+     LastUsedTime_ = ServerTimeFrom - intervalMinutes;
+     } else {
+     LastUsedTime_ = cTime - (60l * 60l * backtestHours);
+     }
+     LastUsedTime = LastUsedTime_;
+
+     float lastPriceSet = 0;
+
+     // Get the first element and re-calibrate the time to be used 
+     // to start processing the return data
+     // Post process, for the variables and stuff
+     // round the last used time to best possible time for the chart period
+     final Calendar dtCal = Calendar.getInstance();
+     dtCal.setTimeInMillis(LastUsedTime);
+
+     int truncateField;
+     if (intervalMinutes < 60) { // below 1 hour
+     truncateField = Calendar.HOUR;
+
+     } else if (intervalMinutes < 60 * 60 * 24) { // below 1 day
+     truncateField = Calendar.DATE;
+
+     } else if (intervalMinutes < 60 * 60 * 24 * 30) { // below 30 days
+     truncateField = Calendar.MONTH;
+
+     } else if (intervalMinutes < 60 * 60 * 24 * 30 * 12 * 100) { // below 100 years
+     truncateField = Calendar.YEAR;
+     } else { // wtf
+     truncateField = Calendar.ERA;
+     }
+     LastUsedTime = DateUtils.truncate(dtCal, truncateField).getTimeInMillis();
+
+     // Loop through all currency list
+     final List<Object[]> listitems_swapsDataset = new ArrayList();
+     for (String currency : currenciesArray) {
+     final String dataSet = String.format("%s-%s", ExchangeSite, currency);
+
+     // Is the data set available?
+     if (!list_mssql.containsKey(dataSet)) {
+     return list_chart;
+     }
+
+     final Object[] items_swapsDataset = list_mssql.get(dataSet).stream().
+     filter((data) -> (data.getTimestamp() > ServerTimeFrom && data.getTimestamp() <= _ServerTimeEnd)).
+     sorted(TickerItemComparator).toArray();
+
+     listitems_swapsDataset.add(items_swapsDataset);
+     }
+
+     if (listitems_swapsDataset.isEmpty()) {
+     return list_chart; // ERROR!
+     }
+        
+     // Process all items in the list together
+     // Always use the first dataset as reference 
+     boolean processedFirstTime = false;
+
+     // Now we create the candle data chain
+     for (int i = 0; i < listitems_swapsDataset.get(0).length; i++) {
+     // Loop through the entire data chain, which each data representing 1 minute of the snapshot.
+     // However if that minute does not have any trading activity, the data will not be present. We detect this missing data by its time.
+     final SwapsItemData item = (SwapsItemData) listitems_swapsDataset.get(0)[i];
+
+     if (!processedFirstTime) {
+     while (LastUsedTime < item.getTimestamp()) {
+     LastUsedTime += intervalMinutes;
+     }
+     processedFirstTime = true;
+     }
+
+     // Real stuff here
+     final long endCandleTime = LastUsedTime + (long) intervalMinutes;
+
+     // If the stored item time is above the supposed expected
+     // end candle time 
+     if (item.getTimestamp() > endCandleTime) {
+     long endCandleTime2 = endCandleTime;
+     boolean isEmptyBar = false;
+
+     while (item.getTimestamp() > endCandleTime2) {
+     TickerItem_CandleBar item_ret;
+     if (!isEmptyBar) {
+     item_ret = new TickerItem_CandleBar(
+     endCandleTime2,
+     CumulativeVolume, CumulativeVolume, CumulativeVolume, CumulativeVolume,
+     0,
+     0,
+     (buysell_ratio_Total == 0.0f ? 1.0f : buysell_ratio_Total) / buysellratio_sets,
+     false);
+     } else {
+     item_ret = new TickerItem_CandleBar(
+     endCandleTime2, // Time
+     CumulativeVolume, // Last
+     CumulativeVolume, // High
+     CumulativeVolume, // Low
+     CumulativeVolume, // Open
+     0.0, // Volume
+     0.0, // Volume cur
+     1.0f, // Ratio
+     false);
+     }
+     list_chart.add(item_ret);
+
+     LastUsedTime = endCandleTime2;
+     endCandleTime2 = LastUsedTime + (long) intervalMinutes;
+
+     // Reset emptybar data
+     isEmptyBar = true;
+     }
+
+     // Otherwise, create a new candle data
+     } else {
+     buysell_ratio_Total += item.getBuySell_Ratio();
+     buysellratio_sets += 1.0f;
+     }
+     lastPriceSet = item.getClose();
+     }
+
+     return list_chart;
+     }*/
     private static final Comparator<Object> TickerItemComparator = (Object obj1, Object obj2) -> {
         SwapsItemData data1 = (SwapsItemData) obj1;
         SwapsItemData data2 = (SwapsItemData) obj2;
@@ -200,10 +410,11 @@ public class SwapsCacheTask {
 
         if (list_mssql.containsKey(ExchangeCurrency)
                 && canAcceptNewInfoFromOtherPeers.contains(ExchangeCurrency.hashCode())) { // First item, no sync needed
-            List<SwapsItemData> currentList = list_mssql.get(ExchangeCurrency);
+            final List<SwapsItemData> currentList = list_mssql.get(ExchangeCurrency);
 
-            currentList.add(new SwapsItemData(rate, spot_price, amount_lent, timestamp));
-
+            synchronized (currentList) {
+                currentList.add(new SwapsItemData(rate, spot_price, amount_lent, timestamp));
+            }
             //System.out.println("[Info] Added New info from other peers");
         }
     }
@@ -457,7 +668,7 @@ public class SwapsCacheTask {
 
                             plew2.writeFloat(data.getRate());
                             plew2.writeFloat(data.getSpotPrice());
-                            plew2.writeInt(data.getTimestamp());
+                            plew2.writeInt((int) data.getTimestamp());
                             plew2.writeDouble(data.getAmountLent());
 
                             final byte[] dataWrite2 = plew2.getPacket();
