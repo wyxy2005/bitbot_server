@@ -69,10 +69,14 @@ public class TV_SymbolDatabase {
         
         // Coinbase
         symbols.add(new TV_Symbol("BTC_USD", "Bitcoin/ Dollar", "Coinbase", "bitcoin"));
+        
+        // Coinbase exchange , GDAX
         symbols.add(new TV_Symbol("BTC_USD", "Bitcoin/ Dollar", "CoinbaseExchange", "bitcoin"));
         symbols.add(new TV_Symbol("BTC_GBP", "Bitcoin/ Pound Sterling", "CoinbaseExchange", "bitcoin"));
         symbols.add(new TV_Symbol("BTC_CAD", "Bitcoin/ Canadian Dollar", "CoinbaseExchange", "bitcoin"));
         symbols.add(new TV_Symbol("BTC_EUR", "Bitcoin/ Euro", "CoinbaseExchange", "bitcoin"));
+        symbols.add(new TV_Symbol("ETH_BTC", "Ethereum / Bitcoin", "CoinbaseExchange", "bitcoin"));
+        symbols.add(new TV_Symbol("ETH_USD", "Ethereum / Dollar", "CoinbaseExchange", "bitcoin"));
         
         // Itbit
         symbols.add(new TV_Symbol("XBT_USD", "Bitcoin/ Dollar", "Itbit", "bitcoin"));
@@ -150,6 +154,8 @@ public class TV_SymbolDatabase {
         
         // Gemini
         symbols.add(new TV_Symbol("BTC_USD", "Bitcoin/ Dollar", "Gemini", "bitcoin"));
+        symbols.add(new TV_Symbol("ETH_USD", "Ethereum/ Dollar", "Gemini", "bitcoin"));
+        symbols.add(new TV_Symbol("ETH_BTC", "Ethereum/ Bitcoin", "Gemini", "bitcoin"));
         //kraken-xbt_usd---kraken-xbt_eur---
         // test
        //symbols.add(new TV_Symbol("^NSEI", "CNX NIFTY", "NSE", "index"));
