@@ -124,7 +124,7 @@ public class TickerCacheTask {
                     // UpdateTime_Millis = 10000; // Check the socket state once every 10 seconds
                 } else if (ExchangeCurrencyPair.contains("bitvc")) {
                     history = new TickerHistory_BitVC(trackLargeTrades);
-                    UpdateTime_Millis = 10000;
+                    UpdateTime_Millis = 5000;
 
                 } else if (ExchangeCurrencyPair.contains("btce")) {
                     history = new TickerHistory_BTCe(trackLargeTrades);
@@ -159,7 +159,7 @@ public class TickerCacheTask {
                 } else if (ExchangeCurrencyPair.contains("coinbase")) {
                     if (ExchangeCurrencyPair.contains("coinbaseexchange")) {
                         history = new TickerHistory_CoinbaseExchange(trackLargeTrades);
-                        UpdateTime_Millis = 5000;
+                        UpdateTime_Millis = 3000;
                     } else {
                         history = new TickerHistory_Coinbase(trackLargeTrades);
                         UpdateTime_Millis = 15000; // Coinbase is just a broker....

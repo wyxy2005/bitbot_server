@@ -152,6 +152,14 @@ public class TV_SymbolDatabase {
         symbols.add(new TV_Symbol("XBT_EUR", "Bitcoin/ Euro", "Kraken", "bitcoin"));
         symbols.add(new TV_Symbol("ETH_XBT", "Ethereum/ Bitcoin", "Kraken", "bitcoin"));
         
+        symbols.add(new TV_Symbol("DAO_XBT", "DAO/ Bitcoin", "Kraken", "bitcoin"));
+        symbols.add(new TV_Symbol("DAO_ETH", "DAO/ Ethereum", "Kraken", "bitcoin"));
+        symbols.add(new TV_Symbol("DAO_EUR", "DAO/ Euro", "Kraken", "bitcoin"));
+        symbols.add(new TV_Symbol("DAO_USD", "DAO/ Dollar", "Kraken", "bitcoin"));
+        symbols.add(new TV_Symbol("DAO_CAD", "DAO/ Canadian Dollar", "Kraken", "bitcoin"));
+        symbols.add(new TV_Symbol("DAO_GBP", "DAO/ Pound Sterling", "Kraken", "bitcoin"));
+        symbols.add(new TV_Symbol("DAO_JPY", "DAO/ Japanese Yen", "Kraken", "bitcoin"));
+        
         // Gemini
         symbols.add(new TV_Symbol("BTC_USD", "Bitcoin/ Dollar", "Gemini", "bitcoin"));
         symbols.add(new TV_Symbol("ETH_USD", "Ethereum/ Dollar", "Gemini", "bitcoin"));

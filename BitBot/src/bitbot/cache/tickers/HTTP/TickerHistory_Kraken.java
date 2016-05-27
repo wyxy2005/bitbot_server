@@ -59,6 +59,12 @@ public class TickerHistory_Kraken implements TickerHistoryInterface {
                 String pairName2 = "X" + CurrencyPair.replace("_", isEthereum ? "X" : "Z" ).toUpperCase(); // XETHXXBT
 
                 LinkedHashMap tradesMainObj = (LinkedHashMap) parser.parse(GetResult, containerFactory);
+                final String error = tradesMainObj.get("error").toString();
+                
+                if (error.equals("[EQuery:Unknown asset pair]")) {
+                    return null;
+                }
+                
                 LinkedList<LinkedList> resultMainObj = (LinkedList) ((LinkedHashMap) tradesMainObj.get("result")).get(pairName2);
 
                 for (int i = resultMainObj.size() - 1; i >= 0; i--) {

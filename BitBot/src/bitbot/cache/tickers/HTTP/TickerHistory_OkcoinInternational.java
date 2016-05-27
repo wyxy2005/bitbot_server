@@ -30,7 +30,8 @@ public class TickerHistory_OkcoinInternational implements TickerHistoryInterface
     }
 
     @Override
-    public TickerHistoryData connectAndParseHistoryResult(TickerCacheTask.TickerCacheTask_ExchangeHistory _TickerCacheTaskSource, String ExchangeCurrencyPair, String ExchangeSite, String CurrencyPair, long LastPurchaseTime, long LastTradeId) {
+    public TickerHistoryData connectAndParseHistoryResult(TickerCacheTask.TickerCacheTask_ExchangeHistory _TickerCacheTaskSource, String ExchangeCurrencyPair, 
+            String ExchangeSite, String CurrencyPair, long LastPurchaseTime, long LastTradeId)  {
         String Uri;
 
         if (CurrencyPair.contains("Futures")) {
