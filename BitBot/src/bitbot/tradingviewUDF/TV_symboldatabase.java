@@ -66,6 +66,7 @@ public class TV_SymbolDatabase {
         // Bitstamp
         symbols.add(new TV_Symbol("BTC_USD", "Bitcoin/ Dollar", "Bitstamp", "bitcoin"));
         symbols.add(new TV_Symbol("BTC_EUR", "Bitcoin/ Euro", "Bitstamp", "bitcoin"));
+        symbols.add(new TV_Symbol("EUR_USD", "Euro/ Dollar", "Bitstamp", "bitcoin"));
         
         // Coinbase
         symbols.add(new TV_Symbol("BTC_USD", "Bitcoin/ Dollar", "Coinbase", "bitcoin"));

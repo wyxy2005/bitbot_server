@@ -34,7 +34,8 @@ public class TickerHistory_Kraken implements TickerHistoryInterface {
         String Uri = String.format("https://api.kraken.com/0/public/Trades?pair=%s", CurrencyPair.replace("_", "").toUpperCase());
         String GetResult = HttpClient.httpsGet(Uri, "");
 
-        boolean isEthereum = CurrencyPair.contains("eth");
+        final boolean isEthereum = CurrencyPair.contains("eth");
+        final boolean isDaoXBT = CurrencyPair.contains("dao_xbt");
         
         if (GetResult != null) {
             TickerHistoryData ReturnData = new TickerHistoryData(_TickerCacheTaskSource, LastPurchaseTime, LastTradeId, 0, false);
@@ -56,7 +57,7 @@ public class TickerHistory_Kraken implements TickerHistoryInterface {
                         return new LinkedHashMap();
                     }
                 };
-                String pairName2 = "X" + CurrencyPair.replace("_", isEthereum ? "X" : "Z" ).toUpperCase(); // XETHXXBT
+                String pairName2 = "X" + CurrencyPair.replace("_", isDaoXBT || isEthereum ? "X" : "Z" ).toUpperCase(); // XETHXXBT
 
                 LinkedHashMap tradesMainObj = (LinkedHashMap) parser.parse(GetResult, containerFactory);
                 final String error = tradesMainObj.get("error").toString();
