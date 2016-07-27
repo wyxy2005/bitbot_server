@@ -153,6 +153,11 @@ public class TV_SymbolDatabase {
         symbols.add(new TV_Symbol("XBT_EUR", "Bitcoin/ Euro", "Kraken", "bitcoin"));
         symbols.add(new TV_Symbol("ETH_XBT", "Ethereum/ Bitcoin", "Kraken", "bitcoin"));
         
+        symbols.add(new TV_Symbol("ETC_USD", "Ethereum Classic/ Dollar", "Kraken", "bitcoin"));
+        symbols.add(new TV_Symbol("ETC_EUR", "Ethereum Classic/ Euro", "Kraken", "bitcoin"));
+        symbols.add(new TV_Symbol("ETC_ETH", "Ethereum Classic/ Ethereum", "Kraken", "bitcoin"));
+        symbols.add(new TV_Symbol("ETC_XBT", "Ethereum Classic/ Bitcoin", "Kraken", "bitcoin"));
+        
         symbols.add(new TV_Symbol("DAO_XBT", "DAO/ Bitcoin", "Kraken", "bitcoin"));
         symbols.add(new TV_Symbol("DAO_ETH", "DAO/ Ethereum", "Kraken", "bitcoin"));
         symbols.add(new TV_Symbol("DAO_EUR", "DAO/ Euro", "Kraken", "bitcoin"));

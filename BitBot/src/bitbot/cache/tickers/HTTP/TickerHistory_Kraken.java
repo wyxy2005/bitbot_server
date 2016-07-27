@@ -36,6 +36,7 @@ public class TickerHistory_Kraken implements TickerHistoryInterface {
 
         final boolean isEthereum = CurrencyPair.contains("eth");
         final boolean isDaoXBT = CurrencyPair.contains("dao_xbt");
+        final boolean isETCXBT = CurrencyPair.contains("etc_xbt");
         
         if (GetResult != null) {
             TickerHistoryData ReturnData = new TickerHistoryData(_TickerCacheTaskSource, LastPurchaseTime, LastTradeId, 0, false);
@@ -57,7 +58,7 @@ public class TickerHistory_Kraken implements TickerHistoryInterface {
                         return new LinkedHashMap();
                     }
                 };
-                String pairName2 = "X" + CurrencyPair.replace("_", isDaoXBT || isEthereum ? "X" : "Z" ).toUpperCase(); // XETHXXBT
+                String pairName2 = "X" + CurrencyPair.replace("_", isDaoXBT || isEthereum || isETCXBT ? "X" : "Z" ).toUpperCase(); // XETHXXBT
 
                 LinkedHashMap tradesMainObj = (LinkedHashMap) parser.parse(GetResult, containerFactory);
                 final String error = tradesMainObj.get("error").toString();
