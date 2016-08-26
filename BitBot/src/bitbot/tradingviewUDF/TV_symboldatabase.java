@@ -50,6 +50,8 @@ public class TV_SymbolDatabase {
         symbols.add(new TV_Symbol("DRK_BTC", "Darkcoin / Bitcoin", "Bitfinex", "bitcoin"));
         symbols.add(new TV_Symbol("ETH_USD", "Ethereum/ Dollar", "Bitfinex", "bitcoin"));
         symbols.add(new TV_Symbol("ETH_BTC", "Ethereum / Bitcoin", "Bitfinex", "bitcoin"));
+        symbols.add(new TV_Symbol("ETC_USD", "Ethereum Classic/ Dollar", "Bitfinex", "bitcoin"));
+        symbols.add(new TV_Symbol("ETC_BTC", "Ethereum Classic/ Bitcoin", "Bitfinex", "bitcoin"));
         
         symbols.add(new TV_Symbol("SWAPS_TOTALBTC", "Total BTC swaps", "Bitfinex", "bitcoin", "bitfinex-btc"));
         symbols.add(new TV_Symbol("SWAPS_TOTALLTC", "Total LTC swaps", "Bitfinex", "bitcoin", "bitfinex-ltc"));
@@ -78,6 +80,8 @@ public class TV_SymbolDatabase {
         symbols.add(new TV_Symbol("BTC_EUR", "Bitcoin/ Euro", "CoinbaseExchange", "bitcoin"));
         symbols.add(new TV_Symbol("ETH_BTC", "Ethereum / Bitcoin", "CoinbaseExchange", "bitcoin"));
         symbols.add(new TV_Symbol("ETH_USD", "Ethereum / Dollar", "CoinbaseExchange", "bitcoin"));
+        symbols.add(new TV_Symbol("LTC_USD", "Litecoin / Dollar", "CoinbaseExchange", "bitcoin"));
+        symbols.add(new TV_Symbol("LTC_BTC", "Litecoin / Bitcoin", "CoinbaseExchange", "bitcoin"));
         
         // Itbit
         symbols.add(new TV_Symbol("XBT_USD", "Bitcoin/ Dollar", "Itbit", "bitcoin"));
