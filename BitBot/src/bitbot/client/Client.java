@@ -5,7 +5,6 @@ import bitbot.server.threads.TimerManager;
 import bitbot.util.encryption.AESOFB;
 import bitbot.util.packets.ServerSocketExchangePacket;
 import java.io.Serializable;
-import java.util.Calendar;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import org.apache.mina.core.session.IoSession;

@@ -22,6 +22,7 @@ import bitbot.Constants;
 import bitbot.cache.tickers.HTTP.TickerHistory_BitVC;
 import bitbot.cache.tickers.HTTP.TickerHistory_Gemini;
 import bitbot.cache.tickers.HTTP.TickerHistory_Huobi;
+import bitbot.cache.tickers.socket.SocketTickerHistory_Coinpit;
 import bitbot.server.threads.LoggingSaveRunnable;
 import bitbot.server.threads.TimerManager;
 import bitbot.util.encryption.input.ByteArrayByteStream;
@@ -55,7 +56,7 @@ import org.apache.commons.lang3.time.DateUtils;
 public class TickerCacheTask {
 
     // MSSQL
-    private static final int MSSQL_CacheRefreshTime_Seconds = 60;
+    private static final int MSSQL_CACHE_REFRESH_TIME = 60;
 
     // Acquiring of old data from mssql database
     private final List<LoggingSaveRunnable> runnable_mssql = new ArrayList();
@@ -93,7 +94,7 @@ public class TickerCacheTask {
             // graph fetching from database
             if (ChannelServer.getInstance().isEnableSQLDataAcquisition()) {
                 TickerCacheTask_MSSql tickercache = new TickerCacheTask_MSSql(ExchangeCurrencyPair, ExchangeSite, CurrencyPair);
-                LoggingSaveRunnable runnable = TimerManager.register(tickercache, MSSQL_CacheRefreshTime_Seconds * 1000, Integer.MAX_VALUE);
+                LoggingSaveRunnable runnable = TimerManager.register(tickercache, MSSQL_CACHE_REFRESH_TIME * 1000, Integer.MAX_VALUE);
 
                 // set this reference so we are able to cancel this task later when we dont need the database anymore
                 tickercache.setLoggingSaveRunnable(runnable);
@@ -122,10 +123,15 @@ public class TickerCacheTask {
 
                     // history = new SocketTickerHistory_Huobi(trackLargeTrades, ExchangeSite, CurrencyPair);
                     // UpdateTime_Millis = 10000; // Check the socket state once every 10 seconds
+                    
                 } else if (ExchangeCurrencyPair.contains("bitvc")) {
                     history = new TickerHistory_BitVC(trackLargeTrades);
                     UpdateTime_Millis = 5000;
 
+                } else if (ExchangeCurrencyPair.contains("coinpit")) {
+                    history = new SocketTickerHistory_Coinpit(trackLargeTrades, ExchangeSite, CurrencyPair);
+                    UpdateTime_Millis = 60000; // coinpit relies on socket, this is really just to validate socket state
+                    
                 } else if (ExchangeCurrencyPair.contains("btce")) {
                     history = new TickerHistory_BTCe(trackLargeTrades);
 

@@ -12,11 +12,7 @@ public class Constants {
     public static final String Azure_X_ZUMO_APPLICATION = "SuYSMlztVWyxmrOrIcgNeiTtFkiFYd36";
     
     public static final String IE11_UserAgent = "Mozilla/5.0 (Windows NT 6.3; Trident/7.0; rv:11.0) like Gecko";
-    
-    /// etc
-    
-    public static final String CurrencyPairFile = "CurrencyPairs.properties";
-    public static final String CurrencyPairSwapsFile = "CurrencyPairs_swaps.properties";
+   
 
     // server-client
     public static final boolean enableUnhandledPacketLogging = false;

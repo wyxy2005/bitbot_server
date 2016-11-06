@@ -81,6 +81,9 @@ public class ChannelServer {
     private static int Props_RequiredTradeSizeForLogging = 10;
     private static short Props_WorldRMIPort = 22155,
             Props_HTTPPort = 80, Props_HTTPsPort = 443;
+    private static String 
+            Props_CurrencyPairsFile,
+            Props_CurrencyPairsSwapsFile;
     private static final List<String> Props_CurrencyPairsForLargeTrades = new ArrayList();
 
     // Etc
@@ -148,6 +151,9 @@ public class ChannelServer {
                 Props_WorldRMIHash = SHA256.sha256(SHA256.sha256(props.getProperty("server.WorldRMIHash")));
                 Props_HTTPPort = Short.parseShort(props.getProperty("server.HTTPPort"));
                 Props_HTTPsPort = Short.parseShort(props.getProperty("server.HTTPsPort"));
+                
+                Props_CurrencyPairsFile = props.getProperty("server.CurrencyPairsFile");
+                Props_CurrencyPairsSwapsFile = props.getProperty("server.CurrencyPairsSwapsFile");
                 
                 final String[] CurrencyPairsForLargeTrades = props.getProperty("server.trackTrades").split("---");
                 for (String str : CurrencyPairsForLargeTrades) {
@@ -265,7 +271,7 @@ public class ChannelServer {
         }
 
         // Currency pairs
-        File f = new File(Constants.CurrencyPairFile);
+        File f = new File(Props_CurrencyPairsFile);
         if (!f.exists()) {
             try {
                 f.createNewFile();
@@ -273,7 +279,7 @@ public class ChannelServer {
                 System.out.println(ioe.toString() + " Error accessing file system to read currency pairs");
             }
         }
-        try (FileReader Reader = new FileReader(Constants.CurrencyPairFile)) {
+        try (FileReader Reader = new FileReader(Props_CurrencyPairsFile)) {
             try (BufferedReader bufReader = new BufferedReader(Reader)) {
                 String str = bufReader.readLine();
 
@@ -291,7 +297,7 @@ public class ChannelServer {
         }
 
         // Swap currency pairs
-        File f2 = new File(Constants.CurrencyPairSwapsFile);
+        File f2 = new File(Props_CurrencyPairsSwapsFile);
         if (!f2.exists()) {
             try {
                 f2.createNewFile();
@@ -299,7 +305,7 @@ public class ChannelServer {
                 System.out.println(ioe.toString() + " Error accessing file system to read swap currency pairs");
             }
         }
-        try (FileReader Reader = new FileReader(Constants.CurrencyPairSwapsFile)) {
+        try (FileReader Reader = new FileReader(Props_CurrencyPairsSwapsFile)) {
             try (BufferedReader bufReader = new BufferedReader(Reader)) {
                 String str = bufReader.readLine();
 
