@@ -2,17 +2,14 @@ package bitbot.cache.trades;
 
 import bitbot.cache.tickers.BacklogCommitTask_Trades;
 import bitbot.cache.tickers.HistoryDatabaseCommitEnum;
-import bitbot.cache.trades.TradeHistoryBuySellEnum;
 import bitbot.handler.channel.ChannelServer;
 import bitbot.logging.ServerLog;
 import bitbot.logging.ServerLogType;
-import bitbot.util.FileoutputUtil;
 import bitbot.util.database.DatabaseConnection;
 import bitbot.util.database.DatabaseTablesConstants;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.util.Calendar;
 
 /**
  *

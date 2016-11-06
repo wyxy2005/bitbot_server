@@ -5,6 +5,7 @@ import bitbot.cache.tickers.TickerHistoryInterface;
 import bitbot.cache.tickers.TickerHistoryData;
 import bitbot.cache.trades.TradeHistoryBuySellEnum;
 import bitbot.util.HttpClient;
+import java.util.Calendar;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -95,13 +96,13 @@ public class TickerHistory_OkcoinInternational implements TickerHistoryInterface
 
                     //http://tutorials.jenkov.com/java-date-time/java-util-timezone.html
                     // Timestamp for trades
-                    /*Calendar cal = Calendar.getInstance(); // BTCe time
+                /*    Calendar cal = Calendar.getInstance(); // BTCe time
                      cal.set(Calendar.YEAR, 1970);
                      cal.set(Calendar.MONTH, 0);
                      cal.set(Calendar.DATE, 0);
                     
                      cal.add(Calendar.SECOND, (int) (date / 1000));*/
-                    //System.out.println(String.format("[Trades history] Got [%s], Price: %f, Sum: %f ", cal.getTime().toString(), price, amount));
+                   // System.out.println(String.format("[Trades history] Got [%s], Price: %f, Sum: %f ", cal.getTime().toString(), price, amount));
                     // Assume things are read in ascending order
                     if (date > LastPurchaseTime) {
                         //System.out.println(String.format("[Trades history] Added [%s], Price: %f, Sum: %f ", cal.getTime().toString(), price, amount));

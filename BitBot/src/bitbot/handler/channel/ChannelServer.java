@@ -171,7 +171,8 @@ public class ChannelServer {
 
                 // End
                 System.out.println("[Info] Loading tasks..");
-                ch.serverExchangeHandler = ServerHTTPExchangeHandler.Connect(Props_HTTPPort, Props_HTTPsPort);
+                if (Props_HTTPPort != 0 || Props_HTTPsPort != 0)
+                    ch.serverExchangeHandler = ServerHTTPExchangeHandler.Connect(Props_HTTPPort, Props_HTTPsPort);
 
                 ch.LoadCurrencyPairTables(false);
 

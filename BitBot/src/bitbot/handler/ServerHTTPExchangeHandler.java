@@ -168,22 +168,27 @@ public class ServerHTTPExchangeHandler implements Container {
         Connection connection = new SocketConnection(server);
 
         // Init HTTP 
-        System.out.println("[Info] Starting HTTP server at port " + Props_HTTPPort);
+        if (Props_HTTPPort != 0) {
+            System.out.println("[Info] Starting HTTP server at port " + Props_HTTPPort);
 
-        SocketAddress address = new InetSocketAddress(Props_HTTPPort);
-        connection.connect(address);
+            SocketAddress address = new InetSocketAddress(Props_HTTPPort);
+            connection.connect(address);
+        }
 
-        System.out.println("[Info] Starting HTTP Legacy server at port " + Constants.SocketPortLegacy);
+        if (Constants.SocketPortLegacy != 0) {
+            System.out.println("[Info] Starting HTTP Legacy server at port " + Constants.SocketPortLegacy);
 
-        SocketAddress addressL = new InetSocketAddress(Constants.SocketPortLegacy);
-        connection.connect(addressL);
+            SocketAddress addressL = new InetSocketAddress(Constants.SocketPortLegacy);
+            connection.connect(addressL);
+        }
 
         // Init HTTPs
-        System.out.println("[Info] Starting HTTPs server at port " + Props_HTTPsPort);
+        if (Props_HTTPsPort != 0) {
+            System.out.println("[Info] Starting HTTPs server at port " + Props_HTTPsPort);
 
-        SocketAddress address_secure = new InetSocketAddress(Props_HTTPsPort);
-        connection.connect(address_secure, GenerateKeyStore());
-
+            SocketAddress address_secure = new InetSocketAddress(Props_HTTPsPort);
+            connection.connect(address_secure, GenerateKeyStore());
+        }
         return serverhandler;
     }
 
