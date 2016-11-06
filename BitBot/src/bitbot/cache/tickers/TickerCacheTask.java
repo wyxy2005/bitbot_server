@@ -325,117 +325,121 @@ public class TickerCacheTask {
 
         // Gets the list of data relevent to this request, sorted by time in ascending order
         final List<TickerItemData> currentList = list_mssql.get(dataSet);
-        final Stream<TickerItemData> items_stream;
+       // final Stream<TickerItemData> items_stream;
+        final Object[] items_filtered;
+        
         synchronized (currentList) {
-            items_stream = currentList.stream().
+            items_filtered = currentList.stream().
                     filter((data)
                             -> (data.getServerTime() >= LastUsedTime_ && (returnAllPossibleLatestData || data.getServerTime() <= _ServerTimeEnd))).
-                    sorted(TickerItemComparator);         // No need to lock this thread, if we are creating a new ArrayList off existing since its a copy :)
+                    sorted(TickerItemComparator).toArray();         // No need to lock this thread, if we are creating a new ArrayList off existing since its a copy :)
+        }
+        
+        boolean processedFirstTime = false;
 
-            boolean processedFirstTime = false;
+        // Uncompleted candle data
+        boolean haveUncompletedCandle = false;
+        long lastUncompletedCandleTime = 0;
 
-            // Uncompleted candle data
-            boolean haveUncompletedCandle = false;
-            long lastUncompletedCandleTime = 0;
+        // Now we create the candle data chain
+        //final Iterator<TickerItemData> items = items_stream.iterator();
+        //while (items.hasNext()) {
+        for (Object o : items_filtered) {
+            // Loop through the entire data chain, which each data representing 1 minute of the snapshot.
+            // However if that minute does not have any trading activity, the data will not be present. We detect this missing data by its time.
+            //final TickerItemData item = items.next();
+            final TickerItemData item = (TickerItemData) o;
 
-            // Now we create the candle data chain
-            final Iterator<TickerItemData> items = items_stream.iterator();
-            while (items.hasNext()) {
-                // Loop through the entire data chain, which each data representing 1 minute of the snapshot.
-                // However if that minute does not have any trading activity, the data will not be present. We detect this missing data by its time.
-                final TickerItemData item = items.next();
-
-                if (!processedFirstTime) {
-                    while (LastUsedTime < item.getServerTime()) {
-                        LastUsedTime += intervalMinutes;
-                    }
-                    processedFirstTime = true;
+            if (!processedFirstTime) {
+                while (LastUsedTime < item.getServerTime()) {
+                    LastUsedTime += intervalMinutes;
                 }
+                processedFirstTime = true;
+            }
 
-                // Real stuff here
-                final long endCandleTime = LastUsedTime + (long) intervalMinutes;
+            // Real stuff here
+            final long endCandleTime = LastUsedTime + (long) intervalMinutes;
 
-                // If the stored item time is above the supposed expected
-                // end candle time 
-                if (item.getServerTime() > endCandleTime) {
-                    long endCandleTime2 = endCandleTime;
-                    boolean isEmptyBar = false;
+            // If the stored item time is above the supposed expected
+            // end candle time 
+            if (item.getServerTime() > endCandleTime) {
+                long endCandleTime2 = endCandleTime;
+                boolean isEmptyBar = false;
 
-                    while (item.getServerTime() > endCandleTime2) {
-                        TickerItem_CandleBar item_ret;
-                        if (!isEmptyBar) {
-                            item_ret = new TickerItem_CandleBar(
-                                    endCandleTime2,
-                                    lastPriceSet == -1.0f ? item.getOpen() : lastPriceSet,
-                                    high,
-                                    low,
-                                    open,
-                                    Volume,
-                                    VolumeCur,
-                                    (buysell_ratio_Total == 0.0f ? 1.0f : buysell_ratio_Total) / buysellratio_sets,
-                                    false);
-                        } else {
-                            item_ret = new TickerItem_CandleBar(
-                                    endCandleTime2, // Time
-                                    lastPriceSet, // Last
-                                    lastPriceSet, // High
-                                    lastPriceSet, // Low
-                                    lastPriceSet, // Open
-                                    0.0, // Volume
-                                    0.0, // Volume cur
-                                    1.0f, // Ratio
-                                    false);
-                        }
-                        list_chart.add(item_ret);
-                        haveUncompletedCandle = false;
-
-                        high = item.getHigh();
-                        low = item.getLow();
-                        open = item.getOpen();
-
-                        if (includeVolumeData) {
-                            Volume = item.getVol();
-                            VolumeCur = item.getVol_Cur();
-                        }
-
-                        LastUsedTime = endCandleTime2;
-                        endCandleTime2 = LastUsedTime + (long) intervalMinutes;
-
-                        // Reset emptybar data
-                        isEmptyBar = true;
-                        lastUncompletedCandleTime = item.getServerTime();
+                while (item.getServerTime() > endCandleTime2) {
+                    TickerItem_CandleBar item_ret;
+                    if (!isEmptyBar) {
+                        item_ret = new TickerItem_CandleBar(
+                                endCandleTime2,
+                                lastPriceSet == -1.0f ? item.getOpen() : lastPriceSet,
+                                high,
+                                low,
+                                open,
+                                Volume,
+                                VolumeCur,
+                                (buysell_ratio_Total == 0.0f ? 1.0f : buysell_ratio_Total) / buysellratio_sets,
+                                false);
+                    } else {
+                        item_ret = new TickerItem_CandleBar(
+                                endCandleTime2, // Time
+                                lastPriceSet, // Last
+                                lastPriceSet, // High
+                                lastPriceSet, // Low
+                                lastPriceSet, // Open
+                                0.0, // Volume
+                                0.0, // Volume cur
+                                1.0f, // Ratio
+                                false);
                     }
+                    list_chart.add(item_ret);
+                    haveUncompletedCandle = false;
 
-                    // Otherwise, create a new candle data
-                } else {
-                    high = Math.max(item.getHigh(), high);
-                    low = Math.min(item.getLow(), low);
-                    if (open == -1.0f) {
-                        open = item.getOpen();
-                    }
+                    high = item.getHigh();
+                    low = item.getLow();
+                    open = item.getOpen();
+
                     if (includeVolumeData) {
-                        Volume += item.getVol();
-                        VolumeCur += item.getVol_Cur();
+                        Volume = item.getVol();
+                        VolumeCur = item.getVol_Cur();
                     }
-                    buysell_ratio_Total += item.getBuySell_Ratio();
-                    buysellratio_sets += 1.0f;
 
-                    haveUncompletedCandle = true;
+                    LastUsedTime = endCandleTime2;
+                    endCandleTime2 = LastUsedTime + (long) intervalMinutes;
+
+                    // Reset emptybar data
+                    isEmptyBar = true;
+                    lastUncompletedCandleTime = item.getServerTime();
                 }
-                lastPriceSet = item.getClose();
+
+                // Otherwise, create a new candle data
+            } else {
+                high = Math.max(item.getHigh(), high);
+                low = Math.min(item.getLow(), low);
+                if (open == -1.0f) {
+                    open = item.getOpen();
+                }
+                if (includeVolumeData) {
+                    Volume += item.getVol();
+                    VolumeCur += item.getVol_Cur();
+                }
+                buysell_ratio_Total += item.getBuySell_Ratio();
+                buysellratio_sets += 1.0f;
+
+                haveUncompletedCandle = true;
             }
-            if (haveUncompletedCandle && lastUncompletedCandleTime != 0) {
-                list_chart.add(new TickerItem_CandleBar(
-                        lastUncompletedCandleTime,
-                        lastPriceSet,
-                        high,
-                        low,
-                        open,
-                        Volume,
-                        VolumeCur,
-                        (buysell_ratio_Total == 0.0f ? 1.0f : buysell_ratio_Total) / buysellratio_sets,
-                        false));
-            }
+            lastPriceSet = item.getClose();
+        }
+        if (haveUncompletedCandle && lastUncompletedCandleTime != 0) {
+            list_chart.add(new TickerItem_CandleBar(
+                    lastUncompletedCandleTime,
+                    lastPriceSet,
+                    high,
+                    low,
+                    open,
+                    Volume,
+                    VolumeCur,
+                    (buysell_ratio_Total == 0.0f ? 1.0f : buysell_ratio_Total) / buysellratio_sets,
+                    false));
         }
         /*for (int i = 0; i < 100; ++i) {
          if (LastUsedTime > ServerTimeEnd) {
@@ -542,87 +546,88 @@ public class TickerCacheTask {
 
         // Gets the list of data relevent to this request, sorted by time in ascending order
         final List<TickerItemData> currentList = list_mssql.get(dataSet);
-        final Stream<TickerItemData> items_stream;
+        //final Stream<TickerItemData> items_stream;
+        final Object[] items_filtered;
+        
         synchronized (currentList) {
-            items_stream = currentList.stream().
+            items_filtered = currentList.stream().
                     filter((data)
                             -> (data.getServerTime() >= LastUsedTime_ && data.getServerTime() <= _ServerTimeEnd)).
-                    sorted(TickerItemComparator);         // No need to lock this thread, if we are creating a new ArrayList off existing since its a copy :)
+                    sorted(TickerItemComparator).toArray();         // No need to lock this thread, if we are creating a new ArrayList off existing since its a copy :)
+        }
+        boolean processedFirstTime = false;
 
-            boolean processedFirstTime = false;
+        // Now we create the candle data chain
+        //final Iterator<TickerItemData> items = items_stream.iterator();
+        for (Object o : items_filtered ) {
+            // Loop through the entire data chain, which each data representing 1 minute of the snapshot.
+            // However if that minute does not have any trading activity, the data will not be present. We detect this missing data by its time.
+            final TickerItemData item = (TickerItemData) o;
 
-            // Now we create the candle data chain
-            final Iterator<TickerItemData> items = items_stream.iterator();
-            while (items.hasNext()) {
-                // Loop through the entire data chain, which each data representing 1 minute of the snapshot.
-                // However if that minute does not have any trading activity, the data will not be present. We detect this missing data by its time.
-                final TickerItemData item = items.next();
-
-                if (!processedFirstTime) {
-                    while (LastUsedTime < item.getServerTime()) {
-                        LastUsedTime += intervalMinutes;
-                    }
-                    processedFirstTime = true;
+            if (!processedFirstTime) {
+                while (LastUsedTime < item.getServerTime()) {
+                    LastUsedTime += intervalMinutes;
                 }
-
-                // Real stuff here
-                final long endCandleTime = LastUsedTime + (long) intervalMinutes;
-
-                if (item.getBuySell_Ratio() != 0f && item.getBuySell_Ratio() != 1.0f) {
-                    float buyAndSellRatio = item.getBuySell_Ratio() + 1.0f;
-
-                    // volume cur
-                    double buyVolumeCur = (item.getVol_Cur() / buyAndSellRatio) * item.getBuySell_Ratio();
-                    double sellVolumeCur = item.getVol_Cur() - buyVolumeCur;
-
-                    CumulativeVolume += buyVolumeCur;
-                    CumulativeVolume -= sellVolumeCur;
-                }
-
-                // If the stored item time is above the supposed expected
-                // end candle time 
-                if (item.getServerTime() > endCandleTime) {
-                    long endCandleTime2 = endCandleTime;
-                    boolean isEmptyBar = false;
-
-                    while (item.getServerTime() > endCandleTime2) {
-                        TickerItem_CandleBar item_ret;
-                        if (!isEmptyBar) {
-                            item_ret = new TickerItem_CandleBar(
-                                    endCandleTime2,
-                                    CumulativeVolume, CumulativeVolume, CumulativeVolume, CumulativeVolume,
-                                    0,
-                                    0,
-                                    (buysell_ratio_Total == 0.0f ? 1.0f : buysell_ratio_Total) / buysellratio_sets,
-                                    false);
-                        } else {
-                            item_ret = new TickerItem_CandleBar(
-                                    endCandleTime2, // Time
-                                    CumulativeVolume, // Last
-                                    CumulativeVolume, // High
-                                    CumulativeVolume, // Low
-                                    CumulativeVolume, // Open
-                                    0.0, // Volume
-                                    0.0, // Volume cur
-                                    1.0f, // Ratio
-                                    false);
-                        }
-                        list_chart.add(item_ret);
-
-                        LastUsedTime = endCandleTime2;
-                        endCandleTime2 = LastUsedTime + (long) intervalMinutes;
-
-                        // Reset emptybar data
-                        isEmptyBar = true;
-                    }
-
-                    // Otherwise, create a new candle data
-                } else {
-                    buysell_ratio_Total += item.getBuySell_Ratio();
-                    buysellratio_sets += 1.0f;
-                }
-                lastPriceSet = item.getClose();
+                processedFirstTime = true;
             }
+
+            // Real stuff here
+            final long endCandleTime = LastUsedTime + (long) intervalMinutes;
+
+            if (item.getBuySell_Ratio() != 0f && item.getBuySell_Ratio() != 1.0f) {
+                float buyAndSellRatio = item.getBuySell_Ratio() + 1.0f;
+
+                // volume cur
+                double buyVolumeCur = (item.getVol_Cur() / buyAndSellRatio) * item.getBuySell_Ratio();
+                double sellVolumeCur = item.getVol_Cur() - buyVolumeCur;
+
+                CumulativeVolume += buyVolumeCur;
+                CumulativeVolume -= sellVolumeCur;
+            }
+
+            // If the stored item time is above the supposed expected
+            // end candle time 
+            if (item.getServerTime() > endCandleTime) {
+                long endCandleTime2 = endCandleTime;
+                boolean isEmptyBar = false;
+
+                while (item.getServerTime() > endCandleTime2) {
+                    TickerItem_CandleBar item_ret;
+                    if (!isEmptyBar) {
+                        item_ret = new TickerItem_CandleBar(
+                                endCandleTime2,
+                                CumulativeVolume, CumulativeVolume, CumulativeVolume, CumulativeVolume,
+                                0,
+                                0,
+                                (buysell_ratio_Total == 0.0f ? 1.0f : buysell_ratio_Total) / buysellratio_sets,
+                                false);
+                    } else {
+                        item_ret = new TickerItem_CandleBar(
+                                endCandleTime2, // Time
+                                CumulativeVolume, // Last
+                                CumulativeVolume, // High
+                                CumulativeVolume, // Low
+                                CumulativeVolume, // Open
+                                0.0, // Volume
+                                0.0, // Volume cur
+                                1.0f, // Ratio
+                                false);
+                    }
+                    list_chart.add(item_ret);
+
+                    LastUsedTime = endCandleTime2;
+                    endCandleTime2 = LastUsedTime + (long) intervalMinutes;
+
+                    // Reset emptybar data
+                    isEmptyBar = true;
+                }
+
+                // Otherwise, create a new candle data
+            } else {
+                buysell_ratio_Total += item.getBuySell_Ratio();
+                buysellratio_sets += 1.0f;
+            }
+            lastPriceSet = item.getClose();
         }
         return list_chart;
     }
@@ -663,36 +668,38 @@ public class TickerCacheTask {
         final List<TickerItemData> currentList = list_mssql.get(dataSet);
 
         //System.out.println("Start time: " + startTime + " , Cur time: " + cTime + " , " + currentList.get(currentList.size() - 1).getServerTime());
-        final Iterator<TickerItemData> items;
+        //final Iterator<TickerItemData> items;
+        final Object[] items_filtered;
+        
         synchronized (currentList) {
-            items = currentList.stream().
+            items_filtered = currentList.stream().
                     filter((data) -> (data.getServerTime() >= startTime)).
-                    sorted(TickerItemComparator).
-                    iterator();
+                    sorted(TickerItemComparator).toArray();
+        }
 
-            while (items.hasNext()) {
-                final TickerItemData item = items.next();
-                //System.out.println("["+item.getServerTime()+"] " + item.getBuySell_Ratio());
+        for (Object o : items_filtered) {
+            final TickerItemData item = (TickerItemData) o;
 
-                if (item.getBuySell_Ratio() != 0f && item.getBuySell_Ratio() != 1.0f) {
-                    float buyAndSellRatio = item.getBuySell_Ratio() + 1.0f;
+            //System.out.println("["+item.getServerTime()+"] " + item.getBuySell_Ratio());
+            if (item.getBuySell_Ratio() != 0f && item.getBuySell_Ratio() != 1.0f) {
+                float buyAndSellRatio = item.getBuySell_Ratio() + 1.0f;
 
-                    // volume cur
-                    double buyVolumeCur = (item.getVol_Cur() / buyAndSellRatio) * item.getBuySell_Ratio();
-                    double sellVolumeCur = item.getVol_Cur() - buyVolumeCur;
+                // volume cur
+                double buyVolumeCur = (item.getVol_Cur() / buyAndSellRatio) * item.getBuySell_Ratio();
+                double sellVolumeCur = item.getVol_Cur() - buyVolumeCur;
 
-                    totalBuyVolume_Cur += buyVolumeCur;
-                    totalSellVolume_Cur += sellVolumeCur;
+                totalBuyVolume_Cur += buyVolumeCur;
+                totalSellVolume_Cur += sellVolumeCur;
 
-                    // volume
-                    double buyVolume = (item.getVol() / buyAndSellRatio) * item.getBuySell_Ratio();
-                    double sellVolume = item.getVol() - buyVolume;
+                // volume
+                double buyVolume = (item.getVol() / buyAndSellRatio) * item.getBuySell_Ratio();
+                double sellVolume = item.getVol() - buyVolume;
 
-                    totalBuyVolume += buyVolume;
-                    totalSellVolume += sellVolume;
-                }
+                totalBuyVolume += buyVolume;
+                totalSellVolume += sellVolume;
             }
         }
+
         profile.TotalBuyVolume_Cur = totalBuyVolume_Cur;
         profile.TotalSellVolume_Cur = totalSellVolume_Cur;
 
@@ -723,35 +730,36 @@ public class TickerCacheTask {
         final List<TickerItemData> currentList = list_mssql.get(dataSet);
 
         //System.out.println("Start time: " + startTime + " , Cur time: " + cTime + " , " + currentList.get(currentList.size() - 1).getServerTime());
-        final Iterator<TickerItemData> items;
+        //final Iterator<TickerItemData> items;
+        final Object[] items_filtered;
+        
         synchronized (currentList) {
-            items = currentList.stream().
+            items_filtered = currentList.stream().
                     filter((data) -> (data.getServerTime() > startTime)).
-                    sorted(TickerItemComparator).
-                    iterator();
-
-            while (items.hasNext()) {
-                TickerItemData item = items.next();
+                    sorted(TickerItemComparator).toArray();
+        }
+        for (Object o : items_filtered) {
+            TickerItemData item = (TickerItemData) o;
 //System.out.println("["+item.getServerTime()+"] " + item.getBuySell_Ratio());
-                if (item.getBuySell_Ratio() != 0f && item.getBuySell_Ratio() != 1.0f) {
-                    float buyAndSellRatio = item.getBuySell_Ratio() + 1.0f;
+            if (item.getBuySell_Ratio() != 0f && item.getBuySell_Ratio() != 1.0f) {
+                float buyAndSellRatio = item.getBuySell_Ratio() + 1.0f;
 
-                    // volume cur
-                    double buyVolumeCur = (item.getVol_Cur() / buyAndSellRatio) * item.getBuySell_Ratio();
-                    double sellVolumeCur = item.getVol_Cur() - buyVolumeCur;
+                // volume cur
+                double buyVolumeCur = (item.getVol_Cur() / buyAndSellRatio) * item.getBuySell_Ratio();
+                double sellVolumeCur = item.getVol_Cur() - buyVolumeCur;
 
-                    totalBuyVolume_Cur += buyVolumeCur;
-                    totalSellVolume_Cur += sellVolumeCur;
+                totalBuyVolume_Cur += buyVolumeCur;
+                totalSellVolume_Cur += sellVolumeCur;
 
-                    // volume
-                    double buyVolume = (item.getVol() / buyAndSellRatio) * item.getBuySell_Ratio();
-                    double sellVolume = item.getVol() - buyVolume;
+                // volume
+                double buyVolume = (item.getVol() / buyAndSellRatio) * item.getBuySell_Ratio();
+                double sellVolume = item.getVol() - buyVolume;
 
-                    totalBuyVolume += buyVolume;
-                    totalSellVolume += sellVolume;
-                }
+                totalBuyVolume += buyVolume;
+                totalSellVolume += sellVolume;
             }
         }
+
         profile.TotalBuyVolume_Cur = totalBuyVolume_Cur;
         profile.TotalSellVolume_Cur = totalSellVolume_Cur;
 
