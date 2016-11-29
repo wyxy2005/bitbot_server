@@ -44,8 +44,8 @@ public class TickerHistory_CoinbaseExchange implements TickerHistoryInterface {
     public TickerHistoryData connectAndParseHistoryResult(TickerCacheTask.TickerCacheTask_ExchangeHistory _TickerCacheTaskSource, String ExchangeCurrencyPair, String ExchangeSite, String CurrencyPair, long LastPurchaseTime, long LastTradeId) {
         String Uri = String.format("https://api.exchange.coinbase.com/products/%s/trades", CurrencyPair.toUpperCase().replace("_", "-")); // 2015-01-29 10:58:56.370375+00
         String GetResult = HttpClient.httpsGet(Uri, "");
-
-        if (GetResult != null) {
+//{"message":"NotFound"}
+        if (GetResult != null && !GetResult.contains("NotFound")) {
             TickerHistoryData ReturnData = new TickerHistoryData(_TickerCacheTaskSource, LastPurchaseTime, LastTradeId, 0, false);
 
             JSONParser parser = new JSONParser(); // Init parser
@@ -65,6 +65,7 @@ public class TickerHistory_CoinbaseExchange implements TickerHistoryInterface {
                         return new LinkedHashMap();
                     }
                 };
+                
                 LinkedList<LinkedHashMap> tradesArray = (LinkedList<LinkedHashMap>) parser.parse(GetResult, containerFactory);
 
                 Iterator<LinkedHashMap> itr = tradesArray.iterator();

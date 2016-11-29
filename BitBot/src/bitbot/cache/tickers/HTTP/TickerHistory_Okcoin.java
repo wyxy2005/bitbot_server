@@ -32,9 +32,9 @@ public class TickerHistory_Okcoin implements TickerHistoryInterface {
     @Override
     public TickerHistoryData connectAndParseHistoryResult(TickerCacheTask.TickerCacheTask_ExchangeHistory _TickerCacheTaskSource, String ExchangeCurrencyPair, String ExchangeSite, String CurrencyPair, long LastPurchaseTime, long LastTradeId) {
         //String Uri = String.format("https://www.okcoin.com/api/trades.do?symbol=%s&since=%d", CurrencyPair, LastPurchaseTime);
-        String Uri = String.format("https://www.okcoin.cn/api/trades.do?symbol=%s", CurrencyPair);
+        String Uri = String.format("https://www.okcoin.cn/api/v1/trades.do?symbol=%s", CurrencyPair);
         String GetResult = HttpClient.httpsGet(Uri, "");
-
+//System.out.println(Uri + " " + GetResult);
         if (GetResult != null) {
             TickerHistoryData ReturnData = new TickerHistoryData(_TickerCacheTaskSource, LastPurchaseTime, LastTradeId, 0, false);
 
@@ -91,7 +91,7 @@ public class TickerHistory_Okcoin implements TickerHistoryInterface {
                     //System.out.println(String.format("[Trades history] Got [%s], Price: %f, Sum: %f ", cal.getTime().toString(), price, amount));
                     // Assume things are read in ascending order
                     if (date > LastPurchaseTime) {
-                        //System.out.println(String.format("[Trades history] Added [%s], Price: %f, Sum: %f ", cal.getTime().toString(), price, amount));
+                       // System.out.println(String.format("[Trades history] Added [%s], Price: %f, Sum: %f ", cal.getTime().toString(), price, amount));
                         ReturnData.merge(price, amount, date, tid, type);
 
                         if (enableTrackTrades) {
