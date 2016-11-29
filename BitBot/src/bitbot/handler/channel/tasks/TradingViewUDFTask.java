@@ -5,9 +5,9 @@ import bitbot.cache.tickers.TickerItem_CandleBar;
 import bitbot.handler.channel.ChannelServer;
 import bitbot.Constants;
 import bitbot.cache.trades.TradesItemData;
-import bitbot.tradingviewUDF.TVSymbolType;
-import bitbot.tradingviewUDF.TV_Symbol;
-import bitbot.tradingviewUDF.TV_SymbolDatabase;
+import bitbot.tradingviewUDF.TradingViewSymbolType;
+import bitbot.tradingviewUDF.TradingViewSymbol;
+import bitbot.tradingviewUDF.TradingViewSymbolDatabase;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.List;
@@ -112,10 +112,10 @@ public class TradingViewUDFTask implements Runnable {
     }
 
     private void sendSymbolSearchResults(PrintStream body, String query, String type, String exchange, int maxRecords) {
-        List<TV_Symbol> searchResult = TV_SymbolDatabase.search(query, type, exchange, maxRecords);
+        List<TradingViewSymbol> searchResult = TradingViewSymbolDatabase.search(query, type, exchange, maxRecords);
 
         JSONArray json_array = new JSONArray();
-        for (TV_Symbol sym : searchResult) {
+        for (TradingViewSymbol sym : searchResult) {
             JSONObject obj = new JSONObject();
 
             obj.put("symbol", sym.getExchange() + ":" + sym.getName());
@@ -153,7 +153,7 @@ public class TradingViewUDFTask implements Runnable {
         }
 
         // Get symbol from database
-        final TV_Symbol symbol = TV_SymbolDatabase.symbolInfo(symbolName);
+        final TradingViewSymbol symbol = TradingViewSymbolDatabase.symbolInfo(symbolName);
         if (symbol == null) {
             sendError(body, "unknown_symbol");
             return;
@@ -311,7 +311,7 @@ public class TradingViewUDFTask implements Runnable {
      return daysCount * 24 * 60 * 60;
      }*/
     private void sendMarks(PrintStream body, String symbolName, long from, long to, String resolution) {
-        final TV_Symbol symbol = TV_SymbolDatabase.symbolInfo(symbolName);
+        final TradingViewSymbol symbol = TradingViewSymbolDatabase.symbolInfo(symbolName);
         if (symbol == null) {
             sendError(body, "unknown_symbol");
             return;
@@ -382,7 +382,7 @@ public class TradingViewUDFTask implements Runnable {
     }
 
     private void sendSymbolInfo(PrintStream body, String symbolName) {
-        final TV_Symbol symbol = TV_SymbolDatabase.symbolInfo(symbolName);
+        final TradingViewSymbol symbol = TradingViewSymbolDatabase.symbolInfo(symbolName);
         if (symbol == null) {
             sendError(body, "unknown_symbol");
             return;
@@ -416,7 +416,7 @@ public class TradingViewUDFTask implements Runnable {
         json_main.put("has_weekly_and_monthly", true);
         json_main.put("has_empty_bars", true);
         json_main.put("force_session_rebuild", true);
-        json_main.put("has_no_volume", symbol.getSymbolType() != TVSymbolType.Price);  // cumulative volume type doesnt have volume
+        json_main.put("has_no_volume", symbol.getSymbolType() != TradingViewSymbolType.Price);  // cumulative volume type doesnt have volume
         json_main.put("volume_precision", 0); // 0 = volume is an integer, 1 = decimal
         json_main.put("listed_exchange", symbol.getExchange()); // listed and traded exchange for bitcoin is the same
         json_main.put("exchange", symbol.getExchange()); // listed and traded exchange for bitcoin is the same

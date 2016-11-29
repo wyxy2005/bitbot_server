@@ -1,6 +1,5 @@
 package bitbot.handler.channel.tasks;
 
-import bitbot.Constants;
 import java.io.IOException;
 import java.io.PrintStream;
 import org.simpleframework.http.Request;

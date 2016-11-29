@@ -1,4 +1,4 @@
-package bitbot.handler.mina;
+package bitbot.handler;
 
 import bitbot.util.FileoutputUtil;
 import bitbot.util.Pair;

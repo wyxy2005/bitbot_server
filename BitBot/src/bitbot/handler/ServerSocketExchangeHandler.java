@@ -2,8 +2,6 @@ package bitbot.handler;
 
 import bitbot.client.Client;
 import bitbot.handler.channel.ChannelServer;
-import bitbot.handler.mina.BlackListFilter;
-import bitbot.handler.mina.PacketDecoder;
 import bitbot.Constants;
 import bitbot.logging.ServerLog;
 import bitbot.logging.ServerLogType;
@@ -99,7 +97,7 @@ public class ServerSocketExchangeHandler extends IoHandlerAdapter {
         }
         final Client client = new Client(session);
 
-        session.setAttribute(PacketDecoder.DECODER_STATE_KEY, new PacketDecoder.DecoderState());
+        //session.setAttribute(PacketDecoder.DECODER_STATE_KEY, new PacketDecoder.DecoderState());
 
         session.setAttribute(StringPool.CLIENT_KEY, client);
         session.getConfig().setIdleTime(IdleStatus.READER_IDLE, 30);

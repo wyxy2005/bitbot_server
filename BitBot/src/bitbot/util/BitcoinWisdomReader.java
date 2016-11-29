@@ -27,12 +27,12 @@ public class BitcoinWisdomReader {
         
         Thread.sleep(3000);
         
-        Calendar beforeDate = Calendar.getInstance();
+       /* Calendar beforeDate = Calendar.getInstance();
         beforeDate.set(Calendar.MONTH, 9 - 1);
         beforeDate.set(Calendar.DAY_OF_MONTH, 05);
         beforeDate.set(Calendar.YEAR, 2014);
         
-        System.out.println("Before: " + beforeDate.getTimeInMillis() / 1000);
+        System.out.println("Before: " + beforeDate.getTimeInMillis() / 1000);*/
         
      /*  Calendar endDate = Calendar.getInstance();
         endDate.set(Calendar.MONTH, 3 - 1);
@@ -87,7 +87,7 @@ public class BitcoinWisdomReader {
                     //System.out.println(time);
                 }*/
                 
-                if (time <= 1456695720) {
+                if (time >= 1476827583 && time <= 1480408102) {
                     System.out.println(String.format("[%s] Open: %f, High: %f, Low: %f, Close: %f, VolumeCur: %f, Volume: %f", cal.getTime().toString(), open, high, low, close, vol_cur, vol));
 
                     if (showdebugOnly)

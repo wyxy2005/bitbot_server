@@ -4,7 +4,7 @@ package bitbot.tradingviewUDF;
  *
  * @author zheng
  */
-public enum TVSymbolType {
+public enum TradingViewSymbolType {
     Price,
     CumulativeVolume,
     Swaps

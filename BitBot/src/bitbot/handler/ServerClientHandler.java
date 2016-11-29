@@ -2,7 +2,6 @@ package bitbot.handler;
 
 import bitbot.client.Client;
 import bitbot.handler.channel.ChannelServer;
-import bitbot.handler.mina.PacketDecoder;
 import bitbot.Constants;
 import bitbot.logging.ServerLog;
 import bitbot.logging.ServerLogType;
@@ -72,7 +71,7 @@ public class ServerClientHandler extends IoHandlerAdapter {
                 new AESOFB(ivRecv, Constants.ServerClientVersion), // Recv Cypher
                 session);
 
-        session.setAttribute(PacketDecoder.DECODER_STATE_KEY, new PacketDecoder.DecoderState());
+        //session.setAttribute(PacketDecoder.DECODER_STATE_KEY, new PacketDecoder.DecoderState());
 
         session.write(LoginPacket.getHello(Constants.ServerClientVersion, ivSend, ivRecv));
 
