@@ -5,6 +5,7 @@ import bitbot.handler.world.WorldServer;
 import bitbot.server.threads.MultiThreadExecutor;
 import bitbot.server.threads.TimerManager;
 import bitbot.util.BitcoinWisdomReader;
+import bitbot.util.JCERestrictionRemoval;
 import bitbot.util.LocalStorageDataReader;
 import bitbot.util.MT4CVSReader;
 import bitbot.util.encryption.CustomXorEncryption;
@@ -12,14 +13,7 @@ import bitbot.util.encryption.input.ByteArrayByteStream;
 import bitbot.util.encryption.input.GenericSeekableLittleEndianAccessor;
 import bitbot.util.encryption.input.SeekableLittleEndianAccessor;
 import bitbot.util.encryption.output.PacketLittleEndianWriter;
-import java.security.cert.X509Certificate;
 import java.util.Calendar;
-import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSession;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
 import org.apache.commons.lang3.time.DateUtils;
 
 /**
@@ -30,6 +24,10 @@ public class Main {
 
         
     public static void main(String args[]) throws Exception {
+        // Remove JCE cryptographic restriction
+        // stupid US export policy.
+        JCERestrictionRemoval.removeCryptographyRestrictions();
+
         String command = args[0];
         switch (command) {
             case "startWorld": {
@@ -48,15 +46,18 @@ public class Main {
                  *           PKIX path building failed: sun.security.provider.certpath.SunCertPathBuilderException:
                  *               unable to find valid certification path to requested target
                  */
-                TrustManager[] trustAllCerts = new TrustManager[]{
+                /*TrustManager[] trustAllCerts = new TrustManager[]{
                     new X509TrustManager() {
+                        @Override
                         public java.security.cert.X509Certificate[] getAcceptedIssuers() {
                             return null;
                         }
 
+                        @Override
                         public void checkClientTrusted(X509Certificate[] certs, String authType) {
                         }
 
+                        @Override
                         public void checkServerTrusted(X509Certificate[] certs, String authType) {
                         }
 
@@ -68,13 +69,13 @@ public class Main {
                 HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
 
                 // Create all-trusting host name verifier
-                HostnameVerifier allHostsValid = new HostnameVerifier() {
+                // Install the all-trusting host verifier
+                HttpsURLConnection.setDefaultHostnameVerifier(new HostnameVerifier() {
+                    @Override
                     public boolean verify(String hostname, SSLSession session) {
                         return true;
                     }
-                };
-                // Install the all-trusting host verifier
-                HttpsURLConnection.setDefaultHostnameVerifier(allHostsValid);
+                });*/
                 /*
                  * end of the fix
                  */
