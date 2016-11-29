@@ -69,7 +69,7 @@ public class HttpClient {
 
             //add reuqest header
             con.setRequestMethod("GET");
-            con.setRequestProperty("User-Agent", Constants.IE11_UserAgent);
+            con.setRequestProperty("User-Agent", Constants.Chrome_UserAgent_Nov82016);
 
             // Send post request
             con.setDoOutput(false);

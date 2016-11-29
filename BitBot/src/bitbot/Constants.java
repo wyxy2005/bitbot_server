@@ -11,6 +11,7 @@ public class Constants {
     public static final String Server_AzureAuthorization = "a's;d035o3-45034,fgijdmgld-=2";
     public static final String Azure_X_ZUMO_APPLICATION = "SuYSMlztVWyxmrOrIcgNeiTtFkiFYd36";
     
+    public static final String Chrome_UserAgent_Nov82016 = "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2840.71 Safari/537.36";
     public static final String IE11_UserAgent = "Mozilla/5.0 (Windows NT 6.3; Trident/7.0; rv:11.0) like Gecko";
    
 
