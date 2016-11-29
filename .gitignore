@@ -1,3 +1,6 @@
 *.class
 /BitBot/build/
 /BitBot/dist/
+/BitBot/DataLog*
+/BitBot/CachedPrice*
+/BitBot/CachedSwaps*
