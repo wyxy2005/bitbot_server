@@ -54,6 +54,8 @@ public class TradingViewSymbolDatabase {
         symbols.add(new TradingViewSymbol("ETH_BTC", "Ethereum / Bitcoin", "Bitfinex", "bitcoin"));
         symbols.add(new TradingViewSymbol("ETC_USD", "Ethereum Classic/ Dollar", "Bitfinex", "bitcoin"));
         symbols.add(new TradingViewSymbol("ETC_BTC", "Ethereum Classic/ Bitcoin", "Bitfinex", "bitcoin"));
+        symbols.add(new TradingViewSymbol("XMR_USD", "Monero/ Dollar", "Bitfinex", "bitcoin"));
+        symbols.add(new TradingViewSymbol("XMR_BTC", "Monero/ Bitcoin", "Bitfinex", "bitcoin"));
         
         symbols.add(new TradingViewSymbol("SWAPS_TOTALBTC", "Total BTC swaps", "Bitfinex", "bitcoin", "bitfinex-btc"));
         symbols.add(new TradingViewSymbol("SWAPS_TOTALLTC", "Total LTC swaps", "Bitfinex", "bitcoin", "bitfinex-ltc"));
