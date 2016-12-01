@@ -21,9 +21,9 @@ public class AntiFloodValidator {
     
     // Anti flood
     private static final int 
-            AllowedResetInveral = 10000;
-    private static final int SpamCount = 200;
-    private static final String BlockedIPFileList = "BlockedIPs.properties";
+            BLACKLIST_RESET_INTERVAL = 10000;
+    private static final int BLACKLIST_SPAMCOUNT = 200;
+    private static final String BLACKLIST_FILENAME = "BlockedIPs.properties";
     
     // variables
     private static final List<String> blacklist = new ArrayList();
@@ -31,7 +31,7 @@ public class AntiFloodValidator {
     private static final Object mutex = new Object();
     
     static {
-        File f = new File(BlockedIPFileList);
+        File f = new File(BLACKLIST_FILENAME);
         if (!f.exists()) {
             try {
                 f.createNewFile();
@@ -39,7 +39,7 @@ public class AntiFloodValidator {
                 System.out.println(ioe.toString() + " Error accessing file system to create Blocked IP list.");
             }
         }
-        try (FileReader Reader = new FileReader(BlockedIPFileList)) {
+        try (FileReader Reader = new FileReader(BLACKLIST_FILENAME)) {
             try (BufferedReader bufReader = new BufferedReader(Reader)) {
                 String str;
                 while ((str = bufReader.readLine()) != null) { // Read from the underlying StringReader.
@@ -51,7 +51,7 @@ public class AntiFloodValidator {
         }
     }
     
-    public static boolean CheckSpam(String address, int AllowedInterval) {
+    public static boolean checkSpam(String address, int AllowedInterval) {
 	if (isBlocked(address)) {
 //	    if (Randomizer.nextInt(200) == 1) {	
 //		FileoutputUtil.log("DOS_Log.rtf", String.format("DOS activity with : %s : %s", addr.toString(), saaddr.getHostName()));
@@ -80,11 +80,11 @@ public class AntiFloodValidator {
 	    if (difference < AllowedInterval) { // if last packet sent relative to this is within 50~200 ms, add the count.
 		count++;
 	    } 
-            if (difference_Reset > AllowedResetInveral) { // if time > 10 seconds, reset counter
+            if (difference_Reset > BLACKLIST_RESET_INTERVAL) { // if time > 10 seconds, reset counter
 		resetInterval = true;
                 count = 0;
             }
-	    if (count >= SpamCount) { // if count > 200, auto ban
+	    if (count >= BLACKLIST_SPAMCOUNT) { // if count > 200, auto ban
 		synchronized (mutex) {
 		    block(address, true);
 		}
@@ -124,7 +124,7 @@ public class AntiFloodValidator {
     
     private static void system_blockIP(String address) {
 	// now we want to block this IP if it've ever spam once
-	try (FileWriter Writer = new FileWriter(BlockedIPFileList, true)) {
+	try (FileWriter Writer = new FileWriter(BLACKLIST_FILENAME, true)) {
 	    Writer.append(address);
 	    Writer.append(System.getProperty("line.separator"));// windows,mac,linux
             

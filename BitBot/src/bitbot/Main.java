@@ -1,5 +1,6 @@
 package bitbot;
 
+import bitbot.handler.CloudflareIPValidator;
 import bitbot.handler.channel.ChannelServer;
 import bitbot.handler.world.WorldServer;
 import bitbot.server.threads.MultiThreadExecutor;

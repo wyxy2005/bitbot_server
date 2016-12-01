@@ -73,7 +73,7 @@ public class ServerHTTPExchangeHandler implements Container {
                 r = new EchoClientTask(request, response);
             } else {
                 // Anti flood check
-                if (AntiFloodValidator.CheckSpam(IPAddress, 300)) {
+                if (AntiFloodValidator.checkSpam(IPAddress, 300)) {
                     MultiThreadExecutor.submit(new SpamErrorTask(request, response));
                     return;
                 }
@@ -124,7 +124,7 @@ public class ServerHTTPExchangeHandler implements Container {
             switch (path) {
                 case "/search":
                     // Anti flood check
-                    if (AntiFloodValidator.CheckSpam(IPAddress, 50)) {
+                    if (AntiFloodValidator.checkSpam(IPAddress, 50)) {
                         MultiThreadExecutor.submit(new SpamErrorTask(request, response));
                         return;
                     }
@@ -139,7 +139,7 @@ public class ServerHTTPExchangeHandler implements Container {
                 case "/quotes":
                 case "/marks": {
                     // Anti flood check
-                    if (AntiFloodValidator.CheckSpam(IPAddress, 200)) {
+                    if (AntiFloodValidator.checkSpam(IPAddress, 200)) {
                         MultiThreadExecutor.submit(new SpamErrorTask(request, response));
                         return;
                     }

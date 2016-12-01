@@ -1,5 +1,6 @@
 package bitbot.handler;
 
+import bitbot.util.HttpClient;
 import bitbot.util.Pair;
 import java.util.ArrayList;
 import java.util.List;
@@ -40,15 +41,27 @@ public class CloudflareIPValidator {
     private static final List<Pair<Integer, Integer>> CompiledIPAddrRange = new ArrayList<>();
 
     static {
-        /*String[] usingAddressList;
-        
-         String HttpGetResult = HttpClient.httpsGet("https://www.cloudflare.com/ips-v4", "");
-         if (HttpGetResult == null) {
-         usingAddressList = IPAddress_v4;
-         } else {
-         usingAddressList = HttpGetResult.split("\\r?\\n");
-         }
-         System.out.println(HttpGetResult);*/
+        String[] usingAddressList;
+
+        String HttpGetResult = HttpClient.httpsGet("https://www.cloudflare.com/ips-v4", "");
+        if (HttpGetResult == null) {
+            usingAddressList = IPAddress_v4; // fallbacks
+        } else {
+            /*     List<String> addresses = new ArrayList<>();
+
+            Pattern p = Pattern.compile("\\R");
+            Matcher m = p.matcher(HttpGetResult);
+            while (m.find()) {
+                addresses.add(m.group());
+            }
+            
+            usingAddressList = new String[addresses.size()];
+            for (int i = 0; i < addresses.size(); i++) {
+                usingAddressList[i] = addresses.get(i);
+            }*/
+            usingAddressList = HttpGetResult.split("\n");
+        }
+
         for (String CloudFlareIP : IPAddress_v4) {
             /*       if (CloudFlareIP.isEmpty()) {
              continue;
