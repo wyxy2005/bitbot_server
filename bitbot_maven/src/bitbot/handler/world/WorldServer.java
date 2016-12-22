@@ -3,6 +3,7 @@ package bitbot.handler.world;
 import bitbot.remoteRMI.encryption.XorClientSocketFactory;
 import bitbot.remoteRMI.encryption.XorServerSocketFactory;
 import bitbot.Constants;
+import bitbot.server.threads.TimerManager;
 import java.io.FileReader;
 import java.rmi.AlreadyBoundException;
 import java.rmi.RMISecurityManager;
@@ -63,6 +64,10 @@ public class WorldServer {
             final Registry registry = LocateRegistry.createRegistry(Props_WorldRMIPort/*, srcsf, srssf*/);
             registry.bind(Constants.Server_AzureAuthorization, WorldRegistryImpl.getInstance());
 
+            // Start timer tasks
+            TimerManager.start();
+            Schedule_DailyPriceUpdates.start();
+            
             // Shutdown hooks
             System.out.println("[Info] Registering shutdown hooks");
             Runtime.getRuntime().addShutdownHook(new Thread(new ShutDownListener()));

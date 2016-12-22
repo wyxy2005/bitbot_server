@@ -24,11 +24,11 @@ public class WorldChannelInterfaceImpl extends UnicastRemoteObject implements Wo
     private boolean ready = false;
 
     // Summary index of the latest price propagated throughout the entire server network.
-    private final Map<String, TickerItemData> index_priceMinuteTicker = new HashMap<>(); // Key = ExchangeCurrencyPair
-    private final Lock index_priceMinuteTicker_Mutex = new ReentrantLock();
+    private static final Map<String, TickerItemData> index_priceMinuteTicker = new HashMap<>(); // Key = ExchangeCurrencyPair
+    private static final Lock index_priceMinuteTicker_Mutex = new ReentrantLock();
 
-    private final Map<String, Float> index_priceInstantTicker = new HashMap<>(); // Key = ExchangeCurrencyPair
-    private final Lock index_priceInstantTicker_Mutex = new ReentrantLock();
+    private static final Map<String, Float> index_priceInstantTicker = new HashMap<>(); // Key = ExchangeCurrencyPair
+    private static final Lock index_priceInstantTicker_Mutex = new ReentrantLock();
 
     public WorldChannelInterfaceImpl(ChannelWorldInterface cb, byte dbId) throws RemoteException {
         super(0, new XorClientSocketFactory(), new XorServerSocketFactory());
@@ -114,18 +114,25 @@ public class WorldChannelInterfaceImpl extends UnicastRemoteObject implements Wo
             index_priceInstantTicker_Mutex.unlock();
         }
     }
-    
+
     /**
-     * Returns the instant spot price of the Exchange, currencypair that's indexed on the 
-     * world server
-     * 
-     * @param  ExchangeCurrencyPair
-     *         A {@code String}
+     * Returns the instant spot price of the Exchange, currencypair that's
+     * indexed on the world server
+     *
+     * @param ExchangeCurrencyPair A {@code String}
      * @throws RemoteException
      * @return price 0 if unavailable.
      */
     @Override
     public float getInstantSpotPrice(String ExchangeCurrencyPair) throws RemoteException {
+        //System.out.println("getInstantSpotPrice = " + ExchangeCurrencyPair);
+        if (index_priceInstantTicker.containsKey(ExchangeCurrencyPair)) {
+            return index_priceInstantTicker.get(ExchangeCurrencyPair);
+        }
+        return 0;
+    }
+
+    public static float getInstantSpotPriceS(String ExchangeCurrencyPair) {
         //System.out.println("getInstantSpotPrice = " + ExchangeCurrencyPair);
         if (index_priceInstantTicker.containsKey(ExchangeCurrencyPair)) {
             return index_priceInstantTicker.get(ExchangeCurrencyPair);
@@ -147,8 +154,7 @@ public class WorldChannelInterfaceImpl extends UnicastRemoteObject implements Wo
             }
         }
     }
-    
-    
+
     @Override
     public void broadcastNewGraphEntry(String ExchangeCurrencyPair, long server_time, float close, float high, float low, float open, double volume, double volume_cur, float buysell_ratio) throws RemoteException {
         // Broadcast to clients
@@ -165,7 +171,7 @@ public class WorldChannelInterfaceImpl extends UnicastRemoteObject implements Wo
 
         // Update index
         final TickerItemData data = new TickerItemData(server_time, close, high, low, open, volume, volume_cur, buysell_ratio);
-        
+
         index_priceMinuteTicker_Mutex.lock();
         try {
             if (index_priceMinuteTicker.containsKey(ExchangeCurrencyPair)) {
@@ -179,11 +185,10 @@ public class WorldChannelInterfaceImpl extends UnicastRemoteObject implements Wo
     }
 
     /**
-     * Returns the instant spot price of the Exchange, currencypair that's indexed on the 
-     * world server
-     * 
-     * @param  ExchangeCurrencyPair
-     *         A {@code String}
+     * Returns the instant spot price of the Exchange, currencypair that's
+     * indexed on the world server
+     *
+     * @param ExchangeCurrencyPair A {@code String}
      * @throws RemoteException
      * @return TickerItemData null if unavailable
      */
@@ -194,7 +199,7 @@ public class WorldChannelInterfaceImpl extends UnicastRemoteObject implements Wo
         }
         return null;
     }
-    
+
     @Override
     public void broadcastSwapData(String ExchangeCurrency, float rate, float spot_price, double amount_lent, int timestamp) throws RemoteException {
         for (byte i : WorldRegistryImpl.getInstance().getChannelServer()) {
