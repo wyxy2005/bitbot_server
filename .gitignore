@@ -4,3 +4,10 @@
 /BitBot/DataLog*
 /BitBot/CachedPrice*
 /BitBot/CachedSwaps*
+
+/bitbot_maven/target/
+/bitbot_maven/build/
+/bitbot_maven/dist*
+/bitbot_maven/DataLog*
+/bitbot_maven/CachedPrice*
+/bitbot_maven/CachedSwaps*
