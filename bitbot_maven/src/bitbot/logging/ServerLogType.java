@@ -20,9 +20,10 @@ public enum ServerLogType {
     HistoryCacheTask	    ("server_info.HistoryCacheTask", ServerLogGroup.Warning),
     HistoryCacheTask_DB	    ("server_info.HistoryCacheTask_Database", ServerLogGroup.Warning),
     HistoryTradesTask_DB    ("server_info.HistoryTradesTask_Database", ServerLogGroup.Warning),
+    PushNotification        ("server_info.PushNotification", ServerLogGroup.Warning),
     ;
-    private String coutFile;
-    private ServerLogGroup group;
+    private final String coutFile;
+    private final ServerLogGroup group;
 
     private ServerLogType(String coutFile, ServerLogGroup group) {
 	this.coutFile = String.format("%s%s", System.getProperty("file.separator"),  coutFile);

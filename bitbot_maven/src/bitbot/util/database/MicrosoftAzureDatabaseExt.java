@@ -2,10 +2,8 @@ package bitbot.util.database;
 
 import bitbot.cache.swaps.SwapsItemData;
 import bitbot.Constants;
-import bitbot.util.database.DatabaseConnection;
 import bitbot.cache.tickers.TickerItemData;
 import bitbot.cache.trades.TradesItemData;
-import bitbot.util.database.DatabaseTablesConstants;
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.IOException;

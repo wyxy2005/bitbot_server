@@ -3,6 +3,7 @@ package bitbot;
 import bitbot.handler.CloudflareIPValidator;
 import bitbot.handler.channel.ChannelServer;
 import bitbot.handler.world.WorldServer;
+import bitbot.push.PeriodicPushNotification;
 import bitbot.server.threads.MultiThreadExecutor;
 import bitbot.server.threads.TimerManager;
 import bitbot.util.BitcoinWisdomReader;
