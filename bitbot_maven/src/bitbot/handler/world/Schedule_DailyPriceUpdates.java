@@ -45,7 +45,7 @@ public class Schedule_DailyPriceUpdates {
 
         @Override
         public void run() {
-            PeriodicPushNotification.getInstance().sendAndroidDailyNotification();
+            PeriodicPushNotification.getInstance().sendDailyPushNotification();
             
             calculateWeighing(); // recalculate
         }
