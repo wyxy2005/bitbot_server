@@ -30,7 +30,7 @@ public class PeriodicPushNotification {
     private static NotificationHub hub;
     private static NotificationHubDescription hubDesc;
 
-    private static boolean TESTER = false;
+    private static final boolean TESTER = false;
 
     public static PeriodicPushNotification getInstance() {
         if (INSTANCE == null) {

@@ -3,6 +3,7 @@ package bitbot.handler.world;
 import bitbot.remoteRMI.encryption.XorClientSocketFactory;
 import bitbot.remoteRMI.encryption.XorServerSocketFactory;
 import bitbot.Constants;
+import bitbot.server.threads.MultiThreadExecutor;
 import bitbot.server.threads.TimerManager;
 import java.io.FileReader;
 import java.rmi.AlreadyBoundException;
@@ -66,6 +67,7 @@ public class WorldServer {
 
             // Start timer tasks
             TimerManager.start();
+            MultiThreadExecutor.start();
             Schedule_DailyPriceUpdates.start();
             
             // Shutdown hooks
