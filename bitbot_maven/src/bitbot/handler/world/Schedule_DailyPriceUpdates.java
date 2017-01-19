@@ -13,6 +13,8 @@ public class Schedule_DailyPriceUpdates {
     private static Calendar CurrentRun = null;
 
     static {
+        System.out.println("Starting daily periodic daily price notification :::");
+
         calculateWeighing();
     }
 
@@ -21,8 +23,6 @@ public class Schedule_DailyPriceUpdates {
     }
 
     public static final void calculateWeighing() {
-        System.out.println("Calculating periodic daily price notification :::");
-
         final long cTime = System.currentTimeMillis();
         CurrentRun = Calendar.getInstance();
 
@@ -36,18 +36,21 @@ public class Schedule_DailyPriceUpdates {
         }
 
         long sch = Math.max(1, CurrentRun.getTimeInMillis() - cTime);
-        System.out.println(CurrentRun.getTime().toString() + " Scheduling periodic daily price notification in [" + sch / 1000 + " seconds]" + (sch / 1000 / 60 / 60) + " hours");
+        System.out.println(" Scheduling periodic daily price notification in [" + sch / 1000 + " seconds]" + (sch / 1000 / 60 / 60) + " hours");
 
         TimerManager.scheduleAtTimestamp(new ScheduleStartEvent(), CurrentRun.getTimeInMillis());
+        //TimerManager.scheduleAtTimestamp(new ScheduleStartEvent(), CurrentRun.getTimeInMillis());
     }
 
     private static class ScheduleStartEvent implements Runnable {
 
         @Override
         public void run() {
-            PeriodicPushNotification.getInstance().sendDailyPushNotification();
-            
-            calculateWeighing(); // recalculate
+            try {
+                PeriodicPushNotification.getInstance().sendDailyPushNotification();
+            } finally {
+                calculateWeighing(); // recalculate
+            }
         }
     }
 }

@@ -48,32 +48,17 @@ public class PeriodicPushNotification {
         return INSTANCE;
     }
 
-    private static final String[] USD_PAIRS_INDEX_LIST = {"bitfinex-btc_usd", "bitstamp-btc_usd", "btce-btc_usd", "gemini-btc_usd", "itbit-xbt_usd", "okcoininternational-btc_usd"};
-    private static final String[] CNY_PAIRS_INDEX_LIST = {"okcoin-btc_cny", "btcchina-btc_cny", "huobi-btc_cny"};
-
-    private static double getBitcoinIndexPrice(String[] pairsList) {
-        double avgBTCUSDPrice = 0;
-        int addedBTCCount = 0;
-        for (String s : pairsList) {
-            double price = WorldChannelInterfaceImpl.getInstantSpotPriceS(s);
-            if (price != 0) {
-                avgBTCUSDPrice += price;
-                addedBTCCount++;
-            }
-        }
-        avgBTCUSDPrice /= addedBTCCount;
-
-        return avgBTCUSDPrice;
-    }
-
     /**
      * Sends the daily push notification to all mobile devices registered in the
      * Azure Notification Hub system
      */
     public void sendDailyPushNotification() {
-        final double avgBTCUSDPrice = getBitcoinIndexPrice(USD_PAIRS_INDEX_LIST);
-        final double avgBTCCNYPrice = getBitcoinIndexPrice(CNY_PAIRS_INDEX_LIST);
+        final double avgBTCUSDPrice = WorldChannelInterfaceImpl.getBitcoinIndexPrice(WorldChannelInterfaceImpl.USD_PAIRS_INDEX_LIST);
+        final double avgBTCCNYPrice = WorldChannelInterfaceImpl.getBitcoinIndexPrice(WorldChannelInterfaceImpl.CNY_PAIRS_INDEX_LIST);
 
+        if (avgBTCUSDPrice == 0 || avgBTCCNYPrice == 0) {
+            return;
+        }
         final String message = String.format("BTCUSD: $%.2f, BTCCNY: ¥%.2f", avgBTCUSDPrice, avgBTCCNYPrice);
         final String title = "Daily price updates";
 

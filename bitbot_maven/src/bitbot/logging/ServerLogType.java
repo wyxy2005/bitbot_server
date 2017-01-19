@@ -19,6 +19,7 @@ public enum ServerLogType {
     SwapTask                ("server_info.SwapTask", ServerLogGroup.Warning),
     HistoryCacheTask	    ("server_info.HistoryCacheTask", ServerLogGroup.Warning),
     HistoryCacheTask_DB	    ("server_info.HistoryCacheTask_Database", ServerLogGroup.Warning),
+    HistoryIndexCacheTask_DB("server_info.HistoryIndexCacheTask_Database", ServerLogGroup.Warning),
     HistoryTradesTask_DB    ("server_info.HistoryTradesTask_Database", ServerLogGroup.Warning),
     PushNotification        ("server_info.PushNotification", ServerLogGroup.Warning),
     ;

@@ -1,5 +1,6 @@
 package bitbot.cache.tickers;
 
+import bitbot.cache.tickers.index.TickerHistoryIndexData;
 import bitbot.server.threads.LoggingSaveRunnable;
 import bitbot.server.threads.MultiThreadExecutor;
 import bitbot.server.threads.TimerManager;
@@ -20,6 +21,7 @@ public class BacklogCommitTask_Tickers {
     private static LoggingSaveRunnable schedule = null; // find something to do with this reference
 
     private static final List<TickerHistoryData> Cache_ImmediateBacklog = new ArrayList();
+    private static final List<TickerHistoryIndexData> Cache_ImmediateIndexBacklog = new ArrayList();
     private static final Lock ImmediateMutex = new ReentrantLock();
     private static LoggingSaveRunnable ImmediateSchedule = null; // find something to do with this reference
 
@@ -101,16 +103,25 @@ public class BacklogCommitTask_Tickers {
                 mutex.unlock();
             }
         }
-        
+
         // GC
         DatabaseCommitBacklog_Copy.clear();
         DatabaseCommitBacklog_Failed.clear();
     }
 
-    public static final void RegisterForImmediateLogging(TickerHistoryData type) {
+    public static final void registerForImmediateLogging(TickerHistoryData type) {
         ImmediateMutex.lock();
         try {
             Cache_ImmediateBacklog.add(type);
+        } finally {
+            ImmediateMutex.unlock();
+        }
+    }
+
+    public static final void registerForImmediateLogging(TickerHistoryIndexData type) {
+        ImmediateMutex.lock();
+        try {
+            Cache_ImmediateIndexBacklog.add(type);
         } finally {
             ImmediateMutex.unlock();
         }
@@ -140,11 +151,13 @@ public class BacklogCommitTask_Tickers {
         final List<TickerHistoryData> DatabaseCommitBacklog_Copy = new ArrayList<>();
         final List<TickerHistoryData> DatabaseCommitBacklog_Failed = new ArrayList<>(); // Create a new array off existing data
 
+        final List<TickerHistoryIndexData> DatabaseCommitBacklogIndex_Copy = new ArrayList<>();
+        final List<TickerHistoryIndexData> DatabaseCommitBacklogIndex_Failed = new ArrayList<>(); // Create a new array off existing data
+
         ImmediateMutex.lock();
         try {
             DatabaseCommitBacklog_Copy.addAll(Cache_ImmediateBacklog);
-
-            Cache_ImmediateBacklog.clear();
+            DatabaseCommitBacklogIndex_Copy.addAll(Cache_ImmediateIndexBacklog);
         } finally {
             ImmediateMutex.unlock();
         }
@@ -164,7 +177,6 @@ public class BacklogCommitTask_Tickers {
                 backlogItr.remove(); // remove list if successful
             }
         }
-
         // Register the failed items to the main backlog list that'll commit once every 5 minutes instead
         // This line must always be after the ImmediateMutex.unlock to avoid deadlocks
         if (!DatabaseCommitBacklog_Failed.isEmpty()) {
@@ -175,8 +187,36 @@ public class BacklogCommitTask_Tickers {
                 ImmediateMutex.unlock();
             }
         }
+        
+        // Index
+         // commit to database in non locking condition
+        Iterator<TickerHistoryIndexData> backlogItrIndex = DatabaseCommitBacklogIndex_Copy.iterator();
+        while (backlogItrIndex.hasNext()) {
+            TickerHistoryIndexData backlog = backlogItrIndex.next();
+
+            boolean commitResult = backlog.commitDatabase();
+
+            if (!commitResult) { // if failed once again, add back. Lulz.
+                DatabaseCommitBacklogIndex_Failed.add(backlog);
+            } else {
+                backlogItrIndex.remove(); // remove list if successful
+            }
+        }
+        // Register the failed items to the main backlog list that'll commit once every 5 minutes instead
+        // This line must always be after the ImmediateMutex.unlock to avoid deadlocks
+        if (!DatabaseCommitBacklogIndex_Failed.isEmpty()) {
+            ImmediateMutex.lock();
+            try {
+                Cache_ImmediateIndexBacklog.addAll(DatabaseCommitBacklogIndex_Failed);
+            } finally {
+                ImmediateMutex.unlock();
+            }
+        }
+        
         // GC
         DatabaseCommitBacklog_Failed.clear();
         DatabaseCommitBacklog_Copy.clear();
+        DatabaseCommitBacklogIndex_Copy.clear();
+        DatabaseCommitBacklogIndex_Failed.clear();
     }
 }

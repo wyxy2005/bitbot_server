@@ -89,7 +89,7 @@ public class TickerHistoryData {
                 // Broadcast to peers on other servers
                 broadcastCompletedMinuteCandleDataToPeers();
                 
-                BacklogCommitTask_Tickers.RegisterForImmediateLogging(this);
+                BacklogCommitTask_Tickers.registerForImmediateLogging(this);
 
                 // Debug
                 if (ChannelServer.getInstance().isEnableDebugSessionPrints()) {
@@ -131,14 +131,12 @@ public class TickerHistoryData {
         if (!ChannelServer.getInstance().isEnableTickerHistoryDatabaseCommit()) {
             return HistoryDatabaseCommitEnum.Ok;
         }
-        PreparedStatement ps = null;
         final String query = String.format("INSERT INTO bitcoinbot.%s (\"high\", \"low\", \"vol\", \"vol_cur\", \"open\", \"close\", \"server_time\", \"buysell_ratio\") VALUES (?,?,?,?,?,?,?,?);",
                 DatabaseTablesConstants.getDatabaseTableName(_TickerCacheTaskSource.getExchangeSite(), _TickerCacheTaskSource.getCurrencyPair()));
+        
+        Connection con = DatabaseConnection.getConnection();
 
-        try {
-            Connection con = DatabaseConnection.getConnection();
-
-            ps = con.prepareStatement(query);
+        try (PreparedStatement ps = con.prepareStatement(query)) {
             ps.setFloat(1, High);
             ps.setFloat(2, Low);
             ps.setDouble(3, Volume);
@@ -154,14 +152,6 @@ public class TickerHistoryData {
             ServerLog.RegisterForLoggingException(ServerLogType.HistoryCacheTask_DB, e);
             ServerLog.RegisterForLogging(ServerLogType.HistoryCacheTask_DB, "Query: " + query);
             return HistoryDatabaseCommitEnum.DatabaseError;
-        } finally {
-            try {
-                if (ps != null) {
-                    ps.close();
-                }
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
         }
         _TickerCacheTaskSource = null; // cleanup
         

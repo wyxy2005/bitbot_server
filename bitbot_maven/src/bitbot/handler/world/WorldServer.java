@@ -69,6 +69,7 @@ public class WorldServer {
             TimerManager.start();
             MultiThreadExecutor.start();
             Schedule_DailyPriceUpdates.start();
+            Schedule_PriceIndex.start();
             
             // Shutdown hooks
             System.out.println("[Info] Registering shutdown hooks");

@@ -132,7 +132,25 @@ public class WorldChannelInterfaceImpl extends UnicastRemoteObject implements Wo
         return 0;
     }
 
-    public static float getInstantSpotPriceS(String ExchangeCurrencyPair) {
+    public static final String[] USD_PAIRS_INDEX_LIST = {"bitfinex-btc_usd", "bitstamp-btc_usd", "btce-btc_usd", "gemini-btc_usd", "itbit-xbt_usd", "okcoininternational-btc_usd"};
+    public static final String[] CNY_PAIRS_INDEX_LIST = {"okcoin-btc_cny", "btcchina-btc_cny", "huobi-btc_cny"};
+
+    public static double getBitcoinIndexPrice(String[] pairsList) {
+        double avgBTCUSDPrice = 0;
+        int addedBTCCount = 0;
+        for (String s : pairsList) {
+            double price = getInstantSpotPriceS(s);
+            if (price != 0) {
+                avgBTCUSDPrice += price;
+                addedBTCCount++;
+            }
+        }
+        avgBTCUSDPrice /= addedBTCCount;
+
+        return avgBTCUSDPrice;
+    }
+
+    private static float getInstantSpotPriceS(String ExchangeCurrencyPair) {
         //System.out.println("getInstantSpotPrice = " + ExchangeCurrencyPair);
         if (index_priceInstantTicker.containsKey(ExchangeCurrencyPair)) {
             return index_priceInstantTicker.get(ExchangeCurrencyPair);
